@@ -4,55 +4,44 @@ import pathlib
 import os as _os
 if os.path.exists(".env"):
     load_dotenv(dotenv_path=".env", override=True)
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+import resend
 import logging
 
 logger = logging.getLogger(__name__)
 
 class EmailService:
     def __init__(self):
-        print(f"CWD: {os.getcwd()}")
-        print(f"ENV FILE EXISTS: {os.path.exists(os.path.join(os.getcwd(), '.env'))}")
-        print(f"GMAIL_USER RAW: {os.getenv('GMAIL_USER')}")
-        self.gmail_user = os.getenv("GMAIL_USER")
-        self.gmail_password = os.getenv("GMAIL_APP_PASSWORD")
+        self.api_key = os.getenv("RESEND_API_KEY")
+        self.from_email = os.getenv("RESEND_FROM_EMAIL", "hello@careloop.dpdns.org")
         self.from_name = os.getenv("SENDGRID_FROM_NAME", "Careloop")
-        if not self.gmail_user or not self.gmail_password:
-            print("WARNING: Gmail credentials not found")
+        if not self.api_key:
+            print("WARNING: Resend API key not found")
         else:
-            print("Gmail SMTP loaded successfully")
+            resend.api_key = self.api_key
+            print("Resend loaded successfully")
 
     def _send(self, to_email: str, subject: str, html: str) -> bool:
         try:
-            msg = MIMEMultipart("alternative")
-            msg["Subject"] = subject
-            msg["From"] = f"{self.from_name} <{self.gmail_user}>"
-            msg["To"] = to_email
-            plain = "Please view this email in an HTML-compatible email client."
-            msg.attach(MIMEText(plain, "plain"))
-            msg.attach(MIMEText(html, "html"))
-            with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-                server.login(self.gmail_user, self.gmail_password)
-                server.sendmail(self.gmail_user, to_email, msg.as_string())
-            logger.info(f"Email sent to {to_email}")
-            print(f"SMTP: Email successfully delivered to {to_email}")
+            params = {
+                "from": f"{self.from_name} <{self.from_email}>",
+                "to": [to_email],
+                "subject": subject,
+                "html": html,
+            }
+            response = resend.Emails.send(params)
+            logger.info(f"Email sent to {to_email}: {response}")
+            print(f"Email sent to {to_email}")
             return True
-        except smtplib.SMTPException as e:
-            print(f"SMTP ERROR: {e}")
-            logger.error(f"SMTP error: {e}")
-            return False
         except Exception as e:
-            print(f"GENERAL ERROR: {type(e).__name__}: {e}")
+            print(f"EMAIL ERROR: {type(e).__name__}: {e}")
             logger.error(f"Failed to send email: {e}")
             return False
 
-    async def send_verification_email(self, email: str, token: str, base_url: str = "http://localhost:8001") -> bool:
+    async def send_verification_email(self, email: str, token: str, base_url: str) -> bool:
         html = self._get_verification_email_template(token, base_url)
         return self._send(email, "Your Careloop verification link", html)
 
-    async def send_password_reset_email(self, email: str, token: str, base_url: str = "http://localhost:8001") -> bool:
+    async def send_password_reset_email(self, email: str, token: str, base_url: str ) -> bool:
         html = self._get_password_reset_email_template(token, base_url)
         return self._send(email, "Reset your Careloop password", html)
 
@@ -60,7 +49,7 @@ class EmailService:
         html = self._get_welcome_email_template(name)
         return self._send(email, "Welcome to Careloop!", html)
 
-    def _get_verification_email_template(self, token: str, base_url: str = "http://localhost:8001", name: str = "") -> str:
+    def _get_verification_email_template(self, token: str, base_url: str, name: str = "") -> str:
         verification_url = f"{base_url}/verify-email?token={token}"
         greeting = f"Hi {name}," if name else "Hi there,"
         return f"""
@@ -77,7 +66,7 @@ class EmailService:
         </body></html>
         """
 
-    def _get_password_reset_email_template(self, token: str, base_url: str = "http://localhost:8001") -> str:
+    def _get_password_reset_email_template(self, token: str, base_url: str) -> str:
         reset_url = f"{base_url}/reset-password?token={token}"
         return f"""
         <html><body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
