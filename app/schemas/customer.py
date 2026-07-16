@@ -19,6 +19,7 @@ class CustomerUpdate(BaseModel):
     name: Optional[str] = None
     phone_number: Optional[str] = None
     email: Optional[str] = None
+    date_of_birth: Optional[datetime] = None
     customer_type: Optional[CustomerType] = None
     has_purchased: Optional[bool] = None
     last_contact: Optional[datetime] = None
@@ -30,6 +31,7 @@ class CustomerResponse(BaseModel):
     name: str
     phone_number: Optional[str] = None
     email: Optional[str] = None
+    date_of_birth: Optional[datetime] = None
     customer_type: CustomerType = CustomerType.new
     has_purchased: bool = False
     last_contact: Optional[datetime] = None

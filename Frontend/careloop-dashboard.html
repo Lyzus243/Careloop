@@ -55,6 +55,11 @@
 
 /* Responsive breakpoints */
 @media (max-width: 768px) {
+  .header { padding: 0 8px; gap: 6px; }
+  .header-search { min-width: 0; flex: 1 1 auto; max-width: 140px; }
+  .header-right { flex-shrink: 0; gap: 4px; }
+  .bell-btn, .avatar-btn, .avatar-chevron { width: 30px; height: 30px; }
+  .mode-toggle { padding: 4px; }
   /* Show mobile menu toggle */
   .mobile-menu-toggle {
     display: flex;
@@ -531,13 +536,14 @@ body.dark-mode.eye-care {
   border:2px solid var(--bg);
 }
 .avatar-btn{
-  width:36px;height:36px;border-radius:50%;
+  position:relative;width:36px;height:36px;border-radius:50%;
   background:var(--blue);color:#fff;
   font-weight:700;font-size:.8rem;
   display:flex;align-items:center;justify-content:center;
   cursor:pointer;overflow:hidden;border:none;
 }
-.avatar-btn img{width:100%;height:100%;object-fit:cover;display:none;}
+.avatar-btn img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;}
+.avatar-btn span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;}
 .avatar-chevron{background:none;border:none;cursor:pointer;color:var(--text2);padding:2px;}
 
 /* ── LAYOUT ── */
@@ -941,6 +947,27 @@ body.dark-mode.eye-care {
     background: var(--bg2);
     border-color: var(--text2);
 }
+
+/* ── CUSTOM DIALOG ── */
+.cl-dialog-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;opacity:0;visibility:hidden;transition:all .2s;}
+.cl-dialog-backdrop.open{opacity:1;visibility:visible;}
+.cl-dialog{background:var(--bg);border-radius:var(--radius-xl);padding:28px 28px 20px;width:90%;max-width:400px;box-shadow:var(--shadow-lg);transform:translateY(8px);transition:transform .2s;}
+.cl-dialog-backdrop.open .cl-dialog{transform:translateY(0);}
+.cl-dialog-icon{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;}
+.cl-dialog-icon.success{background:#dcfce7;color:var(--green);}
+.cl-dialog-icon.error{background:#fee2e2;color:var(--red);}
+.cl-dialog-icon.info{background:var(--blue-light);color:var(--blue);}
+.cl-dialog-icon.warning{background:#fef9c3;color:var(--yellow);}
+.cl-dialog-title{font-size:1.1rem;font-weight:700;color:var(--text);text-align:center;margin-bottom:8px;}
+.cl-dialog-msg{font-size:.875rem;color:var(--text2);text-align:center;line-height:1.6;margin-bottom:20px;}
+.cl-dialog-btns{display:flex;gap:10px;justify-content:center;}
+.cl-dialog-btn{padding:10px 24px;border-radius:50px;font-size:.875rem;font-weight:600;cursor:pointer;font-family:"DM Sans",sans-serif;border:none;transition:all .15s;}
+.cl-dialog-btn.primary{background:var(--blue);color:#fff;}
+.cl-dialog-btn.primary:hover{background:var(--blue-mid);}
+.cl-dialog-btn.secondary{background:var(--bg2);color:var(--text);border:1.5px solid var(--border);}
+.cl-dialog-btn.secondary:hover{border-color:var(--text2);}
+.cl-dialog-btn.danger{background:var(--red);color:#fff;}
+
 </style>
 </head>
 <body>
@@ -968,9 +995,7 @@ body.dark-mode.eye-care {
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
       <span class="bell-badge" id="bell-badge"></span>
     </button>
-    <button class="avatar-btn" id="header-avatar" onclick="changeAvatar()">
-      <img id="header-avatar-img" alt="">
-    </button>
+    <button class="avatar-btn" id="header-avatar" onclick="changeAvatar()"><img id="header-avatar-img" alt=""><span id="header-avatar-initials"></span></button>
     <button class="avatar-chevron">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6,9 12,15 18,9"/></svg>
     </button>
@@ -980,7 +1005,7 @@ body.dark-mode.eye-care {
 <!-- SIDEBAR -->
 <aside class="sidebar">
   <div style="padding:20px 16px 16px;border-bottom:1px solid var(--border);margin-bottom:8px;">
-    <img src="/assets/primary_logo.jpg" alt="Careloop" style="height:32px;object-fit:contain;">
+    <img src="/assets/primary_logo.jpg" alt="Careloop" style="height:32px;object-fit:contain;cursor:pointer;" onclick="goToDashboardViaLogo()">
   </div>
   <button class="nav-item active" id="nav-dashboard" onclick="showPage('dashboard')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>
@@ -990,16 +1015,16 @@ body.dark-mode.eye-care {
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
     Customers
   </button>
+  <button class="nav-item" id="nav-sales" onclick="showPage('sales')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+    Sales
+  </button>
   <button class="nav-item" id="nav-add" onclick="showPage('add-customer')">
-    <button class="nav-item" id="nav-sales" onclick="showPage('sales')">
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
-  Sales
-<button class="nav-item" id="nav-add" onclick="showPage('add-customer')">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
     Add Customer
-</button>  <div class="sidebar-bottom">
+  </button>  <div class="sidebar-bottom">
     <div class="sidebar-user">
-      <button class="avatar-btn" id="sidebar-avatar" onclick="changeAvatar()"><img id="sidebar-avatar-img" alt=""></button>
+      <button class="avatar-btn" id="sidebar-avatar" onclick="changeAvatar()"><img id="sidebar-avatar-img" alt=""><span id="sidebar-avatar-initials"></span></button>
       <div class="sidebar-user-info">
         <div class="name" id="sidebar-name">—</div>
         <div class="biz" id="sidebar-biz">—</div>
@@ -1019,7 +1044,7 @@ body.dark-mode.eye-care {
   <div class="page active" id="page-dashboard">
     <div class="page-top">
       <div>
-        <h1 class="page-title" id="dash-greeting">Good Morning 👋</h1>
+        <h1 class="page-title" id="dash-greeting" style="display:flex;align-items:center;gap:10px;">Good Morning</h1>
         <p class="page-sub" id="dash-sub">Loading...</p>
       </div>
       <div class="action-row">
@@ -1076,13 +1101,25 @@ body.dark-mode.eye-care {
   <div class="page" id="page-customers">
     <div class="page-top">
       <div>
-        <h1 class="page-title">Customers</h1>
+        <h1 class="page-title" style="display:flex;align-items:center;gap:8px;"><img src="/assets/infinity-logo.png" alt="Infinity Logo" style="height:2.1em;width:auto;object-fit:contain;flex-shrink:0;transform:translateY(78px);transform:translateY(-3px);">Customers</h1>
         <p class="page-sub">Access all Customer information</p>
       </div>
     </div>
     <div class="customers-search">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text3)"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       <input type="text" placeholder="Search for Customers" id="cust-search" oninput="renderCustomers()">
+    </div>
+    <div id="bulk-action-bar" style="display:none;align-items:center;gap:12px;padding:12px 16px;background:var(--blue);border-radius:var(--radius);margin-bottom:12px;">
+      <span id="bulk-count" style="color:white;font-weight:600;font-size:.9rem;flex:1;"></span>
+      <button onclick="bulkWhatsApp()" style="background:white;color:#25D366;border:none;padding:8px 16px;border-radius:50px;font-weight:600;cursor:pointer;font-size:.85rem;">
+        WhatsApp
+      </button>
+      <button onclick="openBulkEmailModal()" style="background:white;color:var(--blue);border:none;padding:8px 16px;border-radius:50px;font-weight:600;cursor:pointer;font-size:.85rem;">
+        Email
+      </button>
+      <button onclick="selectedCustomers.clear();renderCustomers();updateBulkBar();" style="background:transparent;color:white;border:1.5px solid white;padding:8px 16px;border-radius:50px;font-weight:600;cursor:pointer;font-size:.85rem;">
+        Cancel
+      </button>
     </div>
     <div class="customer-list-table" id="customer-list-table"></div>
     <div class="view-more-row" id="cust-view-more" style="display:none;">
@@ -1103,7 +1140,7 @@ body.dark-mode.eye-care {
 <div class="page" id="page-sales">
   <div class="page-top">
     <div>
-      <h1 class="page-title">Sales Revenue</h1>
+      <h1 class="page-title" style="display:flex;align-items:center;gap:8px;"><img src="/assets/infinity-logo.png" alt="Careloop" style="height:2.1em;width:auto;object-fit:contain;flex-shrink:0;transform:translateY(78px);transform:translateY(-3px);">Sales Revenue</h1>
       <p class="page-sub" id="sales-sub">Loading...</p>
     </div>
     <div class="action-row">
@@ -1178,6 +1215,22 @@ body.dark-mode.eye-care {
   </div>
 
 </main>
+
+<!-- BULK EMAIL MODAL -->
+<div class="modal-backdrop" id="bulk-email-modal">
+  <div class="modal-card" style="text-align:left;max-width:480px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h3 style="font-size:1.1rem;font-weight:700;">Send Bulk Email</h3>
+      <button onclick="closeModal('bulk-email-modal')" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--text2);">&times;</button>
+    </div>
+    <div id="bulk-email-recipients" style="font-size:.8rem;color:var(--text2);margin-bottom:12px;"></div>
+    <label class="field-label">Subject</label>
+    <input class="field-input" id="bulk-email-subject" type="text" placeholder="Enter email subject" style="margin-bottom:12px;">
+    <label class="field-label">Message</label>
+    <textarea id="bulk-email-body" style="width:100%;min-height:120px;padding:12px;border:1.5px solid var(--border);border-radius:var(--radius);font-family:inherit;font-size:.9rem;resize:vertical;background:var(--bg);color:var(--text);" placeholder="Write your message here..."></textarea>
+    <button class="btn-primary" id="bulk-email-send-btn" style="width:100%;justify-content:center;padding:14px;border-radius:50px;margin-top:16px;" onclick="sendBulkEmail()">Send Email</button>
+  </div>
+</div>
 
 <!-- SNOOZE MODAL -->
 <div class="modal-backdrop" id="snooze-modal">
@@ -1276,6 +1329,7 @@ body.dark-mode.eye-care {
 <script>
 // ─── API CONFIG ───
 const API_URL = window.location.origin;
+const LOGO_MARK = '<img src="/assets/infinity-logo.png" alt="Infinity Logo" style="height:2.1em;width:auto;object-fit:contain;flex-shrink:0;transform:translateY(78px);transform:translateY(-3px);">';
 
 // ─── STATE ───
 let customers = [];
@@ -1292,6 +1346,7 @@ let addFlowStep = 1;
 let addFlowData = {};
 let custPageSize = 10;
 let custShowing = 10;
+let selectedCustomers = new Set();
 
 // ─── AVATAR COLORS ───
 const avColors = ['av-green','av-yellow','av-red','av-blue','av-purple','av-pink','av-orange'];
@@ -1438,12 +1493,13 @@ function updateUserUI(){
   ['header-avatar','sidebar-avatar'].forEach(id=>{
     const el=document.getElementById(id);
     const img=document.getElementById(id+'-img');
-    if(currentUser.avatar){img.src=currentUser.avatar;img.style.display='block';el.textContent='';}
-    else{img.style.display='none';el.textContent=initials(currentUser.name);}
+    const span=document.getElementById(id+'-initials');
+    if(currentUser.avatar){if(img){img.src=currentUser.avatar;img.style.display='block';}if(span)span.textContent='';}
+    else{if(img)img.style.display='none';if(span)span.textContent=initials(currentUser.name);}
   });
   const h=new Date().getHours();
   const g=h<12?'Good Morning':h<17?'Good Afternoon':'Good Evening';
-  document.getElementById('dash-greeting').textContent=`${g}, ${firstName} 👋`;
+  document.getElementById('dash-greeting').innerHTML=`${LOGO_MARK}<span>${g}, ${firstName}</span>`;
 }
 
 function changeAvatar(){
@@ -1457,7 +1513,7 @@ function changeAvatar(){
       try{
         await fetch(`${API_URL}/api/user/avatar`,{method:'PUT',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({avatar:b64})});
         currentUser.avatar=b64; updateUserUI();
-      }catch(e){alert('Failed to upload avatar.');}
+      }catch(e){console.error('AVATAR UPLOAD ERROR:', e); clAlert('Failed to upload avatar: ' + e.message, 'error');}
     };
     r.readAsDataURL(f);
   };
@@ -1685,7 +1741,7 @@ function selectSnooze(days,el){
   el.querySelector('.snooze-radio').classList.add('selected');
 }
 async function confirmSnooze(){
-  if(!selectedSnoozeDays){alert('Please select a snooze duration.');return;}
+  if(!selectedSnoozeDays){clAlert('Please select a snooze duration.','warning');return;}
   const btn=document.getElementById('snooze-btn');
   const orig=btn.innerHTML;
   btn.innerHTML='<div class="dot-spinner"><span></span><span></span><span></span></div>';
@@ -1750,7 +1806,7 @@ async function submitSale(){
   const amount=parseFloat(document.getElementById('sale-amount').value);
   const product=document.getElementById('sale-product').value.trim();
   const currency=document.getElementById('sale-currency').value||preferredCurrency;
-  if(!custId||isNaN(amount)||amount<=0){alert('Please select a customer and enter a valid amount.');return;}
+  if(!custId||isNaN(amount)||amount<=0){clAlert('Please select a customer and enter a valid amount.','warning');return;}
   const token=localStorage.getItem('authToken');
   try{
     const r=await fetch(`${API_URL}/api/sales`,{
@@ -1766,9 +1822,9 @@ async function submitSale(){
       closeModal('sale-modal');
       renderSalesPage();
     } else {
-      alert('Failed to record sale.');
+      clAlert('Failed to record sale.','error');
     }
-  }catch(e){alert('Failed to record sale: '+e.message);}
+  }catch(e){clAlert('Failed to record sale: '+e.message,'error');}
 }
 
 // ─── CUSTOMERS PAGE ───
@@ -1788,7 +1844,7 @@ function renderCustomers(){
   }
   container.innerHTML=shown.map(c=>`
     <div class="customer-row">
-      <input type="checkbox" class="cust-check">
+      <input type="checkbox" class="cust-check" ${selectedCustomers.has(c.id)?"checked":""} onchange="toggleCustomerSelect(${c.id},this)">
       ${avatar(c.name,44)}
       <div class="cust-info">
         <div class="cust-name">${esc(c.name)}</div>
@@ -1811,6 +1867,90 @@ function renderCustomers(){
 }
 function loadMoreCustomers(){custShowing+=10;renderCustomers();}
 
+function toggleCustomerSelect(id, checkbox){
+  if(checkbox.checked) selectedCustomers.add(id);
+  else selectedCustomers.delete(id);
+  updateBulkBar();
+}
+function updateBulkBar(){
+  const bar=document.getElementById("bulk-action-bar");
+  const count=document.getElementById("bulk-count");
+  if(selectedCustomers.size>0){
+    bar.style.display="flex";
+    count.textContent=`${selectedCustomers.size} customer${selectedCustomers.size!==1?"s":""} selected`;
+  } else {
+    bar.style.display="none";
+  }
+}
+function bulkWhatsApp(){
+  const selected=customers.filter(c=>selectedCustomers.has(c.id));
+  if(!selected.length) return;
+  const noPhone=selected.filter(c=>!c.phone_number).length;
+  if(selected.length>3 && !confirm(`This opens ${selected.length} WhatsApp tabs (one per customer). Continue?`)) return;
+  selected.forEach((c,i)=>{
+    if(!c.phone_number) return;
+    setTimeout(()=>{
+      const phone=c.phone_number.replace(/\D/g,"");
+      const msg=`Hi ${c.name}, just checking in! Let me know if you would like to place an order.`;
+      window.open("https://wa.me/"+phone+"?text="+encodeURIComponent(msg),"_blank");
+    }, i*400);
+  });
+  if(noPhone) alert(`${noPhone} customer(s) skipped, no phone number on file.`);
+  selectedCustomers.clear();
+  renderCustomers();
+  updateBulkBar();
+}
+function openBulkEmailModal(){
+  const selected=customers.filter(c=>selectedCustomers.has(c.id));
+  if(!selected.length) return;
+  const withEmail=selected.filter(c=>c.email);
+  const noEmail=selected.length-withEmail.length;
+  document.getElementById("bulk-email-recipients").innerHTML=
+    `Sending to: ${withEmail.map(c=>esc(c.name)).join(", ")||"none"}` +
+    (noEmail?`<br><span style="color:var(--red);">${noEmail} customer${noEmail!==1?"s":""} skipped, no email on file.</span>`:"");
+  document.getElementById("bulk-email-subject").value="";
+  document.getElementById("bulk-email-body").value="";
+  openModal("bulk-email-modal");
+}
+async function sendBulkEmail(){
+  const subject=document.getElementById("bulk-email-subject").value.trim();
+  const body=document.getElementById("bulk-email-body").value.trim();
+  if(!subject||!body){alert("Please enter a subject and message.");return;}
+  const selected=customers.filter(c=>selectedCustomers.has(c.id)&&c.email);
+  if(!selected.length){alert("No selected customers have an email on file.");return;}
+  const token=localStorage.getItem("authToken");
+  const btn=document.getElementById("bulk-email-send-btn");
+  const orig=btn.textContent;
+  btn.textContent="Sending...";
+  btn.disabled=true;
+  try{
+    const r=await fetch(`${API_URL}/api/messages/bulk-email`,{
+      method:"POST",
+      headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},
+      body:JSON.stringify({customer_ids:selected.map(c=>c.id),subject,message:body})
+    });
+    if(r.ok){
+      const result=await r.json();
+      addNotification({type:"check",title:"Bulk email sent",names:selected.map(c=>c.name).join(", ")});
+      closeModal("bulk-email-modal");
+      selectedCustomers.clear();
+      renderCustomers();
+      updateBulkBar();
+      alert(`Email sent to ${result.sent} of ${result.total} customer(s).`);
+    } else {
+      const err=await r.json().catch(()=>({}));
+      alert("Failed to send bulk email: "+(err.detail||r.status));
+    }
+  }catch(e){
+    alert("Error sending bulk email: "+e.message);
+  }
+  btn.textContent=orig;
+  btn.disabled=false;
+}
+
+
+
+
 // ─── VIEW PANEL ───
 function openViewPanel(id){
   const c=customers.find(x=>x.id===id); if(!c) return;
@@ -1823,11 +1963,45 @@ function openViewPanel(id){
     <div class="panel-divider"></div>
     <div class="panel-field"><span class="panel-field-label">Status</span><span class="panel-field-value">${c.customer_type==='active'?'Existing Customer':'New Customer'}</span></div>
     <div class="panel-field"><span class="panel-field-label">Relationship Status</span><span class="panel-field-value">Active</span></div>
-    <div class="panel-field"><span class="panel-field-label">Next suggested follow-up:</span><span class="panel-field-value">${nextFollowup}</span></div>
+    <div class="panel-field" style="flex-direction:column;align-items:flex-start;gap:6px;"><span class="panel-field-label">Date of Birth</span><input type="date" id="panel-dob" value="" style="border:1.5px solid var(--border);border-radius:var(--radius);padding:8px 12px;font-size:.875rem;color:var(--text);background:var(--bg);width:100%;margin-top:6px;"></div>
+    <div class="panel-field" style="flex-direction:column;align-items:flex-start;gap:6px;"><span class="panel-field-label">Email</span><input type="email" id="panel-email" value="" placeholder="customer@example.com" style="border:1.5px solid var(--border);border-radius:var(--radius);padding:8px 12px;font-size:.875rem;color:var(--text);background:var(--bg);width:100%;margin-top:6px;"></div>
+    <button class="btn-save-cust" id="dob-save-btn">Save Changes</button>
     <button class="btn-save-cust" onclick="closePanel()">Save Customer</button>
   `;
+  document.getElementById('panel-email').value = c.email || '';
   document.getElementById('view-panel').classList.add('open');
+  document.getElementById('dob-save-btn').onclick = () => saveCustomerDOB(id);
   document.getElementById('panel-backdrop').classList.add('open');
+}
+
+async function saveCustomerDOB(customerId){
+  const dob = document.getElementById('panel-dob').value;
+  const email = document.getElementById('panel-email').value.trim();
+  const token = localStorage.getItem('authToken');
+  try {
+  const r = await fetch(`${API_URL}/api/customers/${customerId}`, {
+  method: 'PUT',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  },
+  body: JSON.stringify({
+    date_of_birth: dob || null,
+    email: email || null
+  })
+});
+    if(r.ok){
+      const updated = await r.json();
+      const idx = customers.findIndex(c => c.id === customerId);
+      if(idx !== -1) customers[idx] = {...customers[idx], ...updated};
+      closePanel();
+      clAlert('Customer updated successfully!','success','Updated');
+    } else {
+      clAlert('Failed to update customer.','error');
+    }
+  } catch(e) {
+    clAlert('Error: ' + e.message,'error');
+  }
 }
 function closePanel(){
   document.getElementById('view-panel').classList.remove('open');
@@ -1843,7 +2017,7 @@ function renderAddStep(){
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15,18 9,12 15,6"/></svg>
         Back to Dashboard
       </button>
-      <h1 class="flow-title">Add Customer</h1>
+      <h1 class="flow-title" style="display:flex;align-items:center;gap:10px;">${LOGO_MARK}Add Customer</h1>
       <p class="flow-sub">Start building a stronger relationship with a customer.</p>
       <label class="field-label">Customer Name</label>
       <input class="field-input" id="add-name" type="text" placeholder="Enter customer name" oninput="checkStep1()">
@@ -1870,6 +2044,10 @@ function renderAddStep(){
         </div>
         <input class="phone-input" id="add-phone" type="tel" placeholder="----- ---- ----" oninput="checkStep1()">
       </div>
+      <label class="field-label">Date of Birth <span style="color:var(--text3);font-weight:400;">(optional)</span></label>
+      <input class="field-input" id="add-dob" type="date" onchange="addFlowData.dob=this.value">
+      <label class="field-label">Email <span style="color:var(--text3);font-weight:400;">(optional)</span></label>
+      <input class="field-input" id="add-email" type="email" placeholder="customer@example.com" onchange="addFlowData.email=this.value">
       <button class="btn-continue" id="step1-btn" onclick="goStep2()">Continue</button>
     `;
   } else if(addFlowStep===2){
@@ -1903,7 +2081,7 @@ function checkStep1(){
 function goStep2(){
   const name=document.getElementById('add-name').value.trim();
   const phone=document.getElementById('add-phone').value.trim();
-  if(!name||!phone){alert('Please enter name and phone.');return;}
+  if(!name||!phone){clAlert('Please enter name and phone number.','warning');return;}
   addFlowData.name=name; addFlowData.phone=phone;
   addFlowStep=2; renderAddStep();
 }
@@ -1916,22 +2094,35 @@ function selectPurchased(val,el){
 }
 
 async function goStep3(){
-  if(addFlowData.purchased===undefined){alert('Please select an option.');return;}
+  if(addFlowData.purchased===undefined){clAlert('Please select an option.','warning');return;}
   const token=localStorage.getItem('authToken');
   const body={
     name:addFlowData.name,
     phone_number:(addFlowData.dialCode||'+234')+addFlowData.phone.replace(/\D/g,''),
     email:addFlowData.email||null,
     customer_type:addFlowData.purchased?'active':'new',
-    has_purchased:addFlowData.purchased
+    has_purchased:addFlowData.purchased,
+    date_of_birth:addFlowData.dob||null
   };
+  const btn=document.getElementById('step2-btn');
+  const origBtnText=btn?btn.textContent:null;
+  if(btn){btn.textContent='Saving...';btn.disabled=true;}
   try{
     const r=await fetch(`${API_URL}/api/customers`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(body)});
     if(r.ok){
       const nc=await r.json();customers.push(nc);renderCustomers();
       localStorage.setItem('cl_customers',JSON.stringify(customers));
+    } else {
+      const err=await r.json().catch(()=>({}));
+      clAlert('Could not add customer: ' + (err.detail || ('Server returned status ' + r.status)),'error');
+      resetAddFlow();
+      return;
     }
-  }catch(e){}
+  }catch(e){
+    clAlert('Could not add customer: '+e.message,'error');
+    resetAddFlow();
+    return;
+  }
   const sub=addFlowData.purchased?"We'll suggest a check-in in 14 days.":"We'll remind you to follow up in a few days.";
   document.getElementById('success-sub').textContent=sub;
   buildFollowups();
@@ -2174,7 +2365,7 @@ function renderSalesTable(){
 }
 
 function downloadSalesCSV(){
-  if(!sales.length){alert('No sales to download.');return;}
+  if(!sales.length){clAlert('No sales to download.','warning');return;}
   const rows = [['Customer','Amount','Product/Service','Date']];
   sales.forEach(s=>{
     const c = customers.find(x=>String(x.id)===String(s.customerId));
@@ -2485,9 +2676,72 @@ function formatMoney(amount, currency) {
   }
 }
 
+
+// ── CUSTOM DIALOG ──
+function clDialog(msg, type='info', title='', onConfirm=null, confirmText='OK', cancelText=null){
+  const icons = {
+    success: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>',
+    error: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+    warning: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+    info: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
+  };
+  const defaultTitles = {success:'Success',error:'Error',warning:'Warning',info:'Info'};
+  document.getElementById('cl-dialog-icon').className = 'cl-dialog-icon ' + type;
+  document.getElementById('cl-dialog-icon').innerHTML = icons[type] || icons.info;
+  document.getElementById('cl-dialog-title').textContent = title || defaultTitles[type] || '';
+  document.getElementById('cl-dialog-msg').textContent = msg;
+  const btns = document.getElementById('cl-dialog-btns');
+  btns.innerHTML = '';
+  if(cancelText){
+    const cancel = document.createElement('button');
+    cancel.className = 'cl-dialog-btn secondary';
+    cancel.textContent = cancelText;
+    cancel.onclick = () => { document.getElementById('cl-dialog').classList.remove('open'); };
+    btns.appendChild(cancel);
+  }
+  const ok = document.createElement('button');
+  ok.className = 'cl-dialog-btn ' + (type === 'error' ? 'danger' : 'primary');
+  ok.textContent = confirmText;
+  ok.onclick = () => {
+    document.getElementById('cl-dialog').classList.remove('open');
+    if(onConfirm) onConfirm();
+  };
+  btns.appendChild(ok);
+  document.getElementById('cl-dialog').classList.add('open');
+}
+
+// Shorthand helpers
+function clAlert(msg, type='info', title=''){return new Promise(r=>clDialog(msg,type,title,r));}
+function clConfirm(msg, title=''){return new Promise(r=>clDialog(msg,'warning',title,()=>r(true),'Yes','No'));}
+
+
+async function goToDashboardViaLogo(){
+  const onAddCustomerPage = document.getElementById('page-add-customer') && document.getElementById('page-add-customer').classList.contains('active');
+  const hasUnsavedData = typeof addFlowData !== 'undefined' && addFlowData && Object.keys(addFlowData).length > 0;
+  if(onAddCustomerPage && hasUnsavedData){
+    const proceed = await clConfirm('You have unsaved changes on this page. Leave anyway?', 'Unsaved changes');
+    if(!proceed) return;
+  }
+  showPage('dashboard');
+}
+
 // --- START ---
 window.addEventListener('DOMContentLoaded',init);
 </script>
+
+<!-- CUSTOM DIALOG -->
+<div class="cl-dialog-backdrop" id="cl-dialog">
+  <div class="cl-dialog">
+    <div class="cl-dialog-mark" style="display:flex;justify-content:center;margin-bottom:8px;"><img src="/assets/infinity-logo.png" alt="Careloop" style="height:44px;width:auto;object-fit:contain;"></div>
+    <div class="cl-dialog-icon info" id="cl-dialog-icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    </div>
+    <div class="cl-dialog-title" id="cl-dialog-title"></div>
+    <div class="cl-dialog-msg" id="cl-dialog-msg"></div>
+    <div class="cl-dialog-btns" id="cl-dialog-btns"></div>
+  </div>
+</div>
+
 </body>
 </html>
 

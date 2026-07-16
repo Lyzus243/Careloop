@@ -15,6 +15,7 @@ from app.schemas.user import ResetPasswordRequest, SetInitialPasswordRequest
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.controllers.auth_controller import AuthController
+from app.services.email_service import email_service
 
 from app.rate_limit import limiter, RateLimitedRouter, add_rate_limit_exception_handler
 
@@ -341,3 +342,38 @@ async def debug_env():
         "gmail_password_set": bool(os.getenv("GMAIL_APP_PASSWORD")),
         "mail_from_name": os.getenv("MAIL_FROM_NAME")
     }
+
+async def check_birthdays():
+    while True:
+        try:
+            today = datetime.utcnow()
+            async with AsyncSessionLocal() as db:
+                from sqlalchemy import select, and_, extract
+                from app.models.customer import Customer
+                from app.models.user import User
+                result = await db.execute(
+                    select(Customer).where(
+                        and_(
+                            extract('month', Customer.date_of_birth) == today.month,
+                            extract('day', Customer.date_of_birth) == today.day,
+                            Customer.date_of_birth != None
+                        )
+                    )
+                )
+                customers = result.scalars().all()
+                for customer in customers:
+                    owner = await db.get(User, customer.user_id)
+                    if owner and owner.email:
+                        await email_service.send_birthday_reminder(
+                            owner.email,
+                            customer.name,
+                            owner.full_name or "there"
+                        )
+                        print(f"Birthday reminder sent for {customer.name} to {owner.email}")
+        except Exception as e:
+            print(f"Birthday check error: {e}")
+        await asyncio.sleep(86400)
+
+@app.on_event("startup")
+async def start_birthday_checker():
+    asyncio.create_task(check_birthdays())

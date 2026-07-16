@@ -1,0 +1,41 @@
+{
+  "days": 4,
+  "total_sent": 7,
+  "history": [
+    {
+      "date": "2026-07-02",
+      "day": 1,
+      "sent": 1,
+      "recipients": [
+        "olaniranj6@gmail.com"
+      ]
+    },
+    {
+      "date": "2026-07-10",
+      "day": 2,
+      "sent": 2,
+      "recipients": [
+        "blessedolubiyi40@gmail.com",
+        "talktolawrenceibolo@gmail.com"
+      ]
+    },
+    {
+      "date": "2026-07-13",
+      "day": 3,
+      "sent": 2,
+      "recipients": [
+        "adewonisekayode@gmail.com",
+        "blessedolubiyi40@gmail.com"
+      ]
+    },
+    {
+      "date": "2026-07-15",
+      "day": 4,
+      "sent": 2,
+      "recipients": [
+        "talktolawrenceibolo@gmail.com",
+        "adewonisekayode@gmail.com"
+      ]
+    }
+  ]
+}
