@@ -34,3 +34,5 @@ node_modules/
 careloop.db
 careloop.db-wal
 careloop.db-shm
+.env.local
+.vercel/
