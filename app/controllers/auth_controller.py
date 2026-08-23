@@ -28,7 +28,7 @@ class AuthController:
     async def create_user(
         db: AsyncSession,
         user_data: UserCreate,
-        base_url: str = "http://localhost:8001"
+        base_url: str = "https://mycareloop.com.ng"
     ) -> UserCreateResponse:
         try:
             existing_user = await AuthController._get_user_by_email(db, user_data.email)
@@ -201,7 +201,7 @@ class AuthController:
         return {"message": "Email verified successfully"}
 
     @staticmethod
-    async def forgot_password(db: AsyncSession, request: ForgotPasswordRequest, base_url: str = "http://localhost:8001") -> ForgotPasswordResponse:
+    async def forgot_password(db: AsyncSession, request: ForgotPasswordRequest, base_url: str = "https://mycareloop.com.ng") -> ForgotPasswordResponse:
         user = await AuthController._get_user_by_email(db, request.email)
         if not user:
             raise HTTPException(
@@ -312,9 +312,7 @@ class AuthController:
             email=user.email,
             full_name=user.full_name,
             business_name=user.business_name,
-            avatar=user.avatar,
             is_active=user.is_active,
-            is_email_verified=getattr(user, 'is_email_verified', False),
             created_at=user.created_at,
             updated_at=user.updated_at,
             last_login_at=user.last_login_at,
