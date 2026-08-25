@@ -22,7 +22,7 @@ slowapi
 limits
 
 # Email service (you are using SendGrid)
-sendgrid
+resend
 
 # External APIs
 openai
