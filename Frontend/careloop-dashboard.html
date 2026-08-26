@@ -1289,6 +1289,20 @@ body.dark-mode.eye-care {
   </div>
 </div>
 
+<!-- BIRTHDAY MODAL -->
+<div class="modal-backdrop" id="birthday-modal">
+  <div class="modal-card">
+    <div class="success-icon-wrap">
+      <div class="success-icon" style="background:#be185d;">
+        <span style="font-size:24px;line-height:1;display:flex;align-items:center;justify-content:center;">🎂</span>
+      </div>
+    </div>
+    <div class="success-title" id="birthday-modal-title">Birthday Alert!</div>
+    <div class="success-sub" id="birthday-modal-sub"></div>
+    <button class="btn-primary" style="width:100%;justify-content:center;padding:14px;border-radius:50px;" onclick="closeModal('birthday-modal')">Got it!</button>
+  </div>
+</div>
+
 <!-- RECORD SALE MODAL -->
 <div class="modal-backdrop" id="sale-modal">
   <div class="modal-card" style="text-align:left;">
@@ -1430,6 +1444,7 @@ updateUserUI();
   await loadCustomers();
   buildFollowups();
   buildNotifications();
+  checkBirthdayNotifications();
   renderDashboard();
   renderNotifPage();
   // restore saved preferences
@@ -2131,6 +2146,31 @@ async function goStep3(){
 }
 
 function resetAddFlow(){addFlowStep=1;addFlowData={};renderAddStep();}
+
+// ─── BIRTHDAY ───
+function checkBirthdayNotifications(){
+  const today = new Date();
+  const todayMonth = today.getMonth();
+  const todayDay = today.getDate();
+  customers.forEach(c => {
+    if(!c.date_of_birth) return;
+    const dob = new Date(c.date_of_birth);
+    const thisYearBday = new Date(today.getFullYear(), dob.getMonth(), dob.getDate());
+    const diffDays = Math.ceil((thisYearBday - today) / 86400000);
+    if(dob.getMonth()===todayMonth && dob.getDate()===todayDay){
+      showBirthdayDialog(c.name, 'today');
+    } else if(diffDays > 0 && diffDays <= 7){
+      showBirthdayDialog(c.name, 'in ' + diffDays + ' day' + (diffDays!==1?'s':''));
+    }
+  });
+}
+function showBirthdayDialog(name, when){
+  document.getElementById('birthday-modal-title').textContent = "🎂 " + name + "'s Birthday!";
+  document.getElementById('birthday-modal-sub').textContent = when === 'today'
+    ? "Today is " + name + "'s birthday! Send them a special message."
+    : name + "'s birthday is " + when + ". Plan something special!";
+  openModal('birthday-modal');
+}
 
 // ─── NOTIFICATIONS ───
 // ─── NOTIFICATIONS ───
