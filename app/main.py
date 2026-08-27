@@ -262,6 +262,11 @@ async def serve_customers_page():
     except FileNotFoundError:
         return HTMLResponse(content="<h1>Page not found</h1>", status_code=404)
 
+@app.get("/api/config")
+async def get_config():
+    from app.followup_config import FOLLOWUP_RULES
+    return FOLLOWUP_RULES
+
 @app.get("/api")
 async def api_root():
     return {

@@ -1206,10 +1206,6 @@ body.dark-mode.eye-care {
   <div class="page" id="page-notifications">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
       <h1 class="page-title">Notifications</h1>
-      <button class="view-all-link" onclick="markAllRead()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:4px"><polyline points="20 6 9 17 4 12"/></svg>
-        Mark all as read
-      </button>
     </div>
     <div id="notif-page-content"></div>
   </div>
@@ -1242,13 +1238,16 @@ body.dark-mode.eye-care {
         <div class="snooze-radio" id="snooze-7"></div>
         <span class="snooze-label">7 days</span>
       </div>
-      <div class="snooze-option" onclick="selectSnooze(14,this)">
-        <div class="snooze-radio" id="snooze-14"></div>
-        <span class="snooze-label">14 days</span>
-      </div>
-      <div class="snooze-option" onclick="selectSnooze(30,this)">
-        <div class="snooze-radio" id="snooze-30"></div>
-        <span class="snooze-label">30 days</span>
+      <div class="snooze-option" onclick="selectSnooze('custom',this)" id="snooze-custom-option">
+        <div class="snooze-radio" id="snooze-custom"></div>
+        <div style="display:flex;align-items:center;gap:8px;flex:1;">
+          <span class="snooze-label">Custom:</span>
+          <input type="number" id="snooze-custom-days" min="1" max="365" placeholder="e.g. 21"
+            style="width:80px;padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:.85rem;background:var(--bg);color:var(--text);outline:none;"
+            onclick="event.stopPropagation();selectSnooze('custom',document.getElementById('snooze-custom-option'))"
+            oninput="selectSnooze('custom',document.getElementById('snooze-custom-option'))">
+          <span class="snooze-label">days</span>
+        </div>
       </div>
     </div>
     <button class="btn-primary" id="snooze-btn" style="width:100%;justify-content:center;padding:14px;border-radius:50px;" onclick="confirmSnooze()">
@@ -1299,7 +1298,8 @@ body.dark-mode.eye-care {
     </div>
     <div class="success-title" id="birthday-modal-title">Birthday Alert!</div>
     <div class="success-sub" id="birthday-modal-sub"></div>
-    <button class="btn-primary" style="width:100%;justify-content:center;padding:14px;border-radius:50px;" onclick="closeModal('birthday-modal')">Got it!</button>
+    <button class="btn-primary" style="width:100%;justify-content:center;padding:14px;border-radius:50px;margin-bottom:10px;" onclick="sendBirthdayEmail()">🎂 Send Birthday Email</button>
+    <button class="back-dash-link" onclick="closeModal('birthday-modal')">Maybe later</button>
   </div>
 </div>
 
@@ -1349,6 +1349,7 @@ const LOGO_MARK = '';
 let customers = [];
 let followups = [];
 let notifications = [];
+let followupConfig = {new_customer_followup_days:14,existing_customer_followup_days:7,overdue_grace_days:3};
 let sales = [];
 let preferredCurrency = localStorage.getItem('cl_currency') || 'USD';
 let currentUser = {name:'User',business:'Business',avatar:null};
@@ -1442,6 +1443,11 @@ updateUserUI();
   await loadPreferences();
   await loadSales();
   await loadCustomers();
+  try{
+    const cfgR=await fetch(`${API_URL}/api/config`);
+    if(cfgR.ok) followupConfig=await cfgR.json();
+  }catch(e){}
+
   buildFollowups();
   buildNotifications();
   checkBirthdayNotifications();
@@ -1597,9 +1603,9 @@ function buildFollowups(){
     const lastContact=c.lastContact||c.created_at;
     const daysSince=lastContact?Math.floor((Date.now()-new Date(lastContact))/86400000):999;
     const isExisting=c.customer_type==='active'||c.has_purchased;
-    const followupDays=isExisting?7:14;
+    const followupDays=isExisting?followupConfig.existing_customer_followup_days:followupConfig.new_customer_followup_days;
     let status='pending';
-    if(daysSince>=followupDays+3) status='overdue';
+    if(daysSince>=followupDays+followupConfig.overdue_grace_days) status='overdue';
     else if(daysSince>=followupDays) status='due';
     return{...c,daysSince,status,isExisting,followupDays};
   });
@@ -1714,6 +1720,10 @@ function buildRow(c){
         <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12.032 2.001a9.995 9.995 0 0 0-9.032 13.776l-1.998 5.233a1 1 0 0 0 1.257 1.23l5.047-1.68A9.991 9.991 0 0 0 12.032 22.002c5.517 0 10-4.483 10-10s-4.483-10-10-10z"/></svg>
         Send
       </button>
+      <button class="btn-send" onclick="sendFollowupEmail(${c.id})" style="border-color:#22c55e;color:#22c55e;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Email
+      </button>
       <button class="btn-snooze" onclick="openSnoozeModal(${c.id})">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         Snooze
@@ -1740,6 +1750,29 @@ function markAllDone(){
   renderDashboard();
 }
 
+// ─── FOLLOW-UP EMAIL ───
+async function sendFollowupEmail(id){
+  const c=customers.find(x=>x.id===id);
+  if(!c) return;
+  if(!c.email){clAlert("This customer has no email address on file.","warning");return;}
+  const token=localStorage.getItem("authToken");
+  try{
+    const r=await fetch(`${API_URL}/api/customers/${id}/followup-email`,{
+      method:"POST",
+      headers:{"Authorization":"Bearer "+token}
+    });
+    const d=await r.json();
+    if(d.success){
+      addNotification({type:"check",title:"Follow-up email sent",names:c.name});
+      clAlert("Follow-up email sent to "+c.name+"!","success");
+    } else {
+      clAlert("Failed to send email. Please try again.","warning");
+    }
+  }catch(e){
+    clAlert("Network error. Please try again.","warning");
+  }
+}
+
 // ─── SNOOZE ───
 function openSnoozeModal(id){
   snoozeCustomerId=id; selectedSnoozeDays=null;
@@ -1752,24 +1785,36 @@ function openSnoozeModal(id){
 }
 function selectSnooze(days,el){
   selectedSnoozeDays=days;
-  document.querySelectorAll('.snooze-radio').forEach(r=>r.classList.remove('selected'));
-  el.querySelector('.snooze-radio').classList.add('selected');
+  document.querySelectorAll(".snooze-radio").forEach(r=>r.classList.remove("selected"));
+  el.querySelector(".snooze-radio").classList.add("selected");
 }
 async function confirmSnooze(){
-  if(!selectedSnoozeDays){clAlert('Please select a snooze duration.','warning');return;}
-  const btn=document.getElementById('snooze-btn');
+  let days=selectedSnoozeDays;
+  if(days==="custom"){
+    days=parseInt(document.getElementById("snooze-custom-days").value);
+    if(!days||days<1){clAlert("Please enter a valid number of days.","warning");return;}
+  }
+  if(!days){clAlert("Please select a snooze duration.","warning");return;}
+  const btn=document.getElementById("snooze-btn");
   const orig=btn.innerHTML;
   btn.innerHTML='<div class="dot-spinner"><span></span><span></span><span></span></div>';
   await new Promise(r=>setTimeout(r,1200));
   btn.innerHTML=orig;
   const c=customers.find(x=>x.id===snoozeCustomerId);
   if(c){
-    const newDate=new Date(Date.now()+selectedSnoozeDays*86400000);
+    const newDate=new Date(Date.now()+days*86400000);
     c.lastContact=newDate.toISOString();
-    addNotification({type:'clock',title:'You snoozed a follow-up',names:c.name});
+    const token=localStorage.getItem("authToken");
+    try{
+      await fetch(`${API_URL}/api/customers/${c.id}/snooze?days=${days}`,{
+        method:"PUT",
+        headers:{"Authorization":"Bearer "+token}
+      });
+    }catch(e){}
+    addNotification({type:"clock",title:"You snoozed a follow-up",names:c.name});
     buildFollowups(); renderDashboard();
   }
-  closeModal('snooze-modal');
+  closeModal("snooze-modal");
 }
 
 // ─── MESSAGE ───
@@ -1871,7 +1916,11 @@ function renderCustomers(){
           <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12.032 2.001a9.995 9.995 0 0 0-9.032 13.776l-1.998 5.233a1 1 0 0 0 1.257 1.23l5.047-1.68A9.991 9.991 0 0 0 12.032 22.002c5.517 0 10-4.483 10-10s-4.483-10-10-10z"/></svg>
           Send
         </button>
-        <button class="btn-snooze" onclick="openSnoozeModal(${c.id})">
+        <button class="btn-send" onclick="sendFollowupEmail(${c.id})" style="border-color:#22c55e;color:#22c55e;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Email
+      </button>
+      <button class="btn-snooze" onclick="openSnoozeModal(${c.id})">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
           Snooze
         </button>
@@ -1939,7 +1988,7 @@ async function sendBulkEmail(){
   btn.textContent="Sending...";
   btn.disabled=true;
   try{
-    const r=await fetch(`${API_URL}/api/messages/bulk-email`,{
+    const r=await fetch(`${API_URL}/api/notifications/bulk-email`,{
       method:"POST",
       headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},
       body:JSON.stringify({customer_ids:selected.map(c=>c.id),subject,message:body})
@@ -2158,18 +2207,42 @@ function checkBirthdayNotifications(){
     const thisYearBday = new Date(today.getFullYear(), dob.getMonth(), dob.getDate());
     const diffDays = Math.ceil((thisYearBday - today) / 86400000);
     if(dob.getMonth()===todayMonth && dob.getDate()===todayDay){
-      showBirthdayDialog(c.name, 'today');
+      showBirthdayDialog(c.name, 'today', c.id);
     } else if(diffDays > 0 && diffDays <= 7){
-      showBirthdayDialog(c.name, 'in ' + diffDays + ' day' + (diffDays!==1?'s':''));
+      showBirthdayDialog(c.name, 'in ' + diffDays + ' day' + (diffDays!==1?'s':''), c.id);
     }
   });
 }
-function showBirthdayDialog(name, when){
-  document.getElementById('birthday-modal-title').textContent = "🎂 " + name + "'s Birthday!";
-  document.getElementById('birthday-modal-sub').textContent = when === 'today'
-    ? "Today is " + name + "'s birthday! Send them a special message."
+function showBirthdayDialog(name, when, customerId){
+  document.getElementById("birthday-modal-title").textContent = "🎂 " + name + "'s Birthday!";
+  document.getElementById("birthday-modal-sub").textContent = when === "today"
+    ? "Today is " + name + "'s birthday! Send them a special email."
     : name + "'s birthday is " + when + ". Plan something special!";
-  openModal('birthday-modal');
+  document.getElementById("birthday-modal").dataset.customerId = customerId;
+  openModal("birthday-modal");
+}
+async function sendBirthdayEmail(){
+  const customerId = document.getElementById("birthday-modal").dataset.customerId;
+  if(!customerId){closeModal("birthday-modal");return;}
+  const token = localStorage.getItem("authToken");
+  try{
+    const r = await fetch(`${API_URL}/api/notifications/birthday-email`,{
+      method:"POST",
+      headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},
+      body:JSON.stringify({customer_id:parseInt(customerId)})
+    });
+    const d = await r.json();
+    if(d.success){
+      const c = customers.find(x=>x.id===parseInt(customerId));
+      addNotification({type:"cake",title:"Birthday email sent",names:c?c.name:""});
+      clAlert("Birthday email sent successfully!","success");
+    } else {
+      clAlert("Failed to send birthday email.","warning");
+    }
+  }catch(e){
+    clAlert("Network error. Please try again.","warning");
+  }
+  closeModal("birthday-modal");
 }
 
 // ─── NOTIFICATIONS ───

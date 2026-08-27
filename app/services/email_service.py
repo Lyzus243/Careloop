@@ -115,5 +115,41 @@ class EmailService:
         </html>
         """
 
+    def send_followup_email(self, to_email: str, customer_name: str, business_name: str) -> bool:
+        subject = f"Hey {customer_name}, just thinking of you 😊"
+        html = f"""
+        <html><body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:32px 24px;color:#333;line-height:1.8;">
+        <p style="font-size:16px;">Hi {customer_name},</p>
+        <p style="font-size:15px;">Hope you are doing well! We just wanted to check in and let you know that we genuinely appreciate your support of <strong>{business_name}</strong>.</p>
+        <p style="font-size:15px;">If there is anything you need, any questions you have, or anything we can do better for you — we are always here and happy to help.</p>
+        <p style="font-size:15px;">We value you not just as a customer, but as someone whose trust means a lot to us. Thank you for being part of our journey.</p>
+        <p style="font-size:15px;">Warmly,<br><strong>{business_name}</strong></p>
+        </body></html>
+        """
+        return self._send(to_email, subject, html)
+
+    def send_birthday_email(self, to_email: str, customer_name: str, business_name: str) -> bool:
+        subject = f"Happy Birthday {customer_name}! 🎂"
+        html = f"""
+        <html><body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:32px 24px;color:#333;line-height:1.8;">
+        <p style="font-size:16px;">Hi {customer_name},</p>
+        <p style="font-size:15px;">Wishing you a very <strong>Happy Birthday</strong>! 🎉</p>
+        <p style="font-size:15px;">On your special day, we just want you to know how much we appreciate you. Your support of <strong>{business_name}</strong> means the world to us, and we are grateful to have you.</p>
+        <p style="font-size:15px;">We hope today is filled with joy, laughter, and everything that makes you happy. You deserve it all!</p>
+        <p style="font-size:15px;">With love,<br><strong>{business_name}</strong> 🎂</p>
+        </body></html>
+        """
+        return self._send(to_email, subject, html)
+
+    def send_bulk_email(self, to_email: str, customer_name: str, subject: str, message: str, business_name: str) -> bool:
+        html = f"""
+        <html><body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:32px 24px;color:#333;line-height:1.8;">
+        <p style="font-size:16px;">Hi {customer_name},</p>
+        <p style="font-size:15px;">{message}</p>
+        <p style="font-size:14px;color:#999;margin-top:32px;">Sent with care by <strong>{business_name}</strong> via Careloop.</p>
+        </body></html>
+        """
+        return self._send(to_email, subject, html)
+
 # Create a singleton instance
 email_service = EmailService()
