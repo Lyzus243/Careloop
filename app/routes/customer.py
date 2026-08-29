@@ -114,25 +114,3 @@ async def snooze_customer(
     await db.commit()
     await db.refresh(customer)
     return {"success": True, "next_followup": customer.last_contact}
-
-@router.post("/{customer_id}/followup-email")
-async def send_followup_email(
-    customer_id: int,
-    user_id: int = Depends(get_current_user_id),
-    db: AsyncSession = Depends(get_db)
-):
-    """Send a follow-up email to a customer"""
-    from app.services.email_service import email_service
-    from app.models.user import User
-    user_result = await db.execute(select(User).where(User.id == user_id))
-    user = user_result.scalar_one_or_none()
-    business_name = user.business_name if user else "Our Business"
-    customer = await CustomerController.get_customer_by_id(db, customer_id, user_id)
-    if not customer.email:
-        raise HTTPException(status_code=400, detail="Customer has no email address")
-    success = email_service.send_followup_email(
-        to_email=customer.email,
-        customer_name=customer.name,
-        business_name=business_name
-    )
-    return {"success": success}

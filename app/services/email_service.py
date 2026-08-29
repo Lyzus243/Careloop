@@ -7,6 +7,16 @@ import resend
 
 logger = logging.getLogger(__name__)
 
+import base64 as _b64
+import os as _os
+
+_LOGO_PATH = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))), "Frontend", "assets", "primary_logo.jpg")
+try:
+    with open(_LOGO_PATH, "rb") as _logo_file:
+        CARELOOP_LOGO_B64 = _b64.b64encode(_logo_file.read()).decode("utf-8")
+except Exception:
+    CARELOOP_LOGO_B64 = ""
+
 class EmailService:
     def __init__(self):
         self.api_key = os.getenv("RESEND_API_KEY")
@@ -128,17 +138,117 @@ class EmailService:
         """
         return self._send(to_email, subject, html)
 
-    def send_birthday_email(self, to_email: str, customer_name: str, business_name: str) -> bool:
-        subject = f"Happy Birthday {customer_name}! 🎂"
+    def render_birthday_email_html(self, customer_name: str, business_name: str) -> tuple[str, str]:
+        """Build the birthday email subject and HTML without sending. Used for both sending and previewing."""
+        subject = f"Happy Birthday {customer_name}!"
         html = f"""
-        <html><body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:32px 24px;color:#333;line-height:1.8;">
-        <p style="font-size:16px;">Hi {customer_name},</p>
-        <p style="font-size:15px;">Wishing you a very <strong>Happy Birthday</strong>! 🎉</p>
-        <p style="font-size:15px;">On your special day, we just want you to know how much we appreciate you. Your support of <strong>{business_name}</strong> means the world to us, and we are grateful to have you.</p>
-        <p style="font-size:15px;">We hope today is filled with joy, laughter, and everything that makes you happy. You deserve it all!</p>
-        <p style="font-size:15px;">With love,<br><strong>{business_name}</strong> 🎂</p>
-        </body></html>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:8px;overflow:hidden;border:1px solid #e5e7eb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+          <tr>
+            <td style="height:4px;background:#4F46E5;line-height:4px;font-size:1px;">&nbsp;</td>
+          </tr>
+          <tr>
+            <td style="padding:44px 36px 8px;">
+              <div style="font-size:13px;font-weight:600;color:#4F46E5;letter-spacing:0.6px;text-transform:uppercase;margin-bottom:14px;">
+                It's your birthday
+              </div>
+              <div style="font-size:24px;font-weight:700;color:#111111;line-height:1.3;margin-bottom:20px;letter-spacing:-0.4px;">
+                Happy Birthday, {customer_name}
+              </div>
+              <p style="font-size:15px;color:#4b5563;line-height:1.7;margin:0 0 16px;">
+                Hi {customer_name},
+              </p>
+              <p style="font-size:15px;color:#4b5563;line-height:1.7;margin:0 0 16px;">
+                We want to take a moment on your birthday to say a big thank you. Your support means a great deal to us all at <strong style="color:#1a1a1a;">{business_name}</strong>, and We most certainly do not take it for granted.
+              </p>
+              <p style="font-size:15px;color:#4b5563;line-height:1.7;margin:0 0 32px;">
+                We sincerly  hope you have a wonderful day, however you choose to spend it.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:0 36px 40px;">
+              <p style="font-size:15px;color:#4b5563;line-height:1.7;margin:0;">
+                Best,<br>
+                <strong style="color:#1a1a1a;">{business_name}</strong>
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:18px 36px;background:#fafafa;border-top:1px solid #f0f0f0;">
+              <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td style="font-size:11px;color:#b0b3b9;vertical-align:middle;">
+                    Sent with
+                  </td>
+                  <td style="width:70px;vertical-align:middle;padding-left:6px;">
+                    <img src="data:image/jpeg;base64,{CARELOOP_LOGO_B64}" alt="Careloop" style="height:16px;width:auto;display:block;opacity:0.55;">
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
         """
+        return subject, html
+
+    def send_birthday_email(self, to_email: str, customer_name: str, business_name: str) -> bool:
+        subject, html = self.render_birthday_email_html(customer_name, business_name)
+        return self._send(to_email, subject, html)
+
+    def render_birthday_reminder_html(self, customer_name: str, owner_name: str, base_url: str = "https://mycareloop.com.ng") -> tuple[str, str]:
+        """Build the birthday reminder subject and HTML without sending. Used for both sending and previewing."""
+        dashboard_url = f"{base_url}/careloop-dashboard.html"
+        subject = f"It's {customer_name}'s birthday today!"
+        html = f"""
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:8px;overflow:hidden;border:1px solid #e5e7eb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+          <tr>
+            <td style="height:4px;background:#4F46E5;line-height:4px;font-size:1px;">&nbsp;</td>
+          </tr>
+          <tr>
+            <td style="padding:40px 36px 8px;">
+              <div style="font-size:13px;font-weight:600;color:#4F46E5;letter-spacing:0.6px;text-transform:uppercase;margin-bottom:14px;">
+                Birthday reminder
+              </div>
+              <div style="font-size:22px;font-weight:700;color:#111111;line-height:1.3;margin-bottom:20px;letter-spacing:-0.4px;">
+                It's {customer_name}'s birthday today
+              </div>
+              <p style="font-size:15px;color:#4b5563;line-height:1.7;margin:0 0 16px;">
+                Hi {owner_name},
+              </p>
+              <p style="font-size:15px;color:#4b5563;line-height:1.7;margin:0 0 28px;">
+                Just a heads up — today is {customer_name}'s birthday. Head to your Careloop dashboard to send them a birthday email.
+              </p>
+              <table role="presentation" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="border-radius:6px;background:#4F46E5;">
+                    <a href="{dashboard_url}" style="display:inline-block;padding:12px 24px;font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:6px;">
+                      Open Dashboard
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:18px 36px;background:#fafafa;border-top:1px solid #f0f0f0;">
+              <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td style="font-size:11px;color:#b0b3b9;vertical-align:middle;">
+                    Sent with
+                  </td>
+                  <td style="width:70px;vertical-align:middle;padding-left:6px;">
+                    <img src="data:image/jpeg;base64,{CARELOOP_LOGO_B64}" alt="Careloop" style="height:16px;width:auto;display:block;opacity:0.55;">
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+        """
+        return subject, html
+
+    async def send_birthday_reminder(self, to_email: str, customer_name: str, owner_name: str, base_url: str = "https://mycareloop.com.ng") -> bool:
+        subject, html = self.render_birthday_reminder_html(customer_name, owner_name, base_url)
         return self._send(to_email, subject, html)
 
     def send_bulk_email(self, to_email: str, customer_name: str, subject: str, message: str, business_name: str) -> bool:
