@@ -28,6 +28,11 @@ class EmailService:
             print("Resend loaded successfully")
 
     def _send(self, to_email: str, subject: str, html: str) -> bool:
+        if not self.api_key:
+            print(f"[LOCAL DEV MODE - NO RESEND KEY] Simulated email send to {to_email}")
+            print(f"[LOCAL DEV MODE] Subject: {subject}")
+            print(f"[LOCAL DEV MODE] (Email not actually sent - RESEND_API_KEY missing)")
+            return True
         try:
             params = {
                 "from": self.from_email,
@@ -141,40 +146,75 @@ class EmailService:
     def render_birthday_email_html(self, customer_name: str, business_name: str) -> tuple[str, str]:
         """Build the birthday email subject and HTML without sending. Used for both sending and previewing."""
         subject = f"Happy Birthday {customer_name}!"
+        business_name_upper = business_name.upper()
         html = f"""
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:8px;overflow:hidden;border:1px solid #e5e7eb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background:#ffffff;overflow:hidden;font-family:Georgia,'Times New Roman',serif;">
           <tr>
-            <td style="height:4px;background:#4F46E5;line-height:4px;font-size:1px;">&nbsp;</td>
+            <td style="padding:0;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#0F1E33;">
+                <tr>
+                  <td style="padding:28px 40px 0;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td style="font-family:Georgia,serif;font-size:17px;font-weight:700;color:#F4EFE6;letter-spacing:0.3px;">
+                          {business_name}
+                        </td>
+                        <td style="text-align:right;font-family:Arial,sans-serif;font-size:10px;font-weight:700;color:#C9A54A;letter-spacing:1.2px;">
+                          FROM {business_name_upper}
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:56px 40px 0;text-align:center;">
+                    <div style="width:36px;height:1px;background:#C9A54A;margin:0 auto 22px;"></div>
+                    <div style="font-family:Arial,sans-serif;font-size:11px;font-weight:700;color:#C9A54A;letter-spacing:2px;margin-bottom:18px;">
+                      A PERSONAL NOTE FOR YOU
+                    </div>
+                    <div style="font-family:Georgia,serif;font-size:34px;color:#F4EFE6;line-height:1.3;margin-bottom:0;">
+                      Happy Birthday,<br>
+                      <em style="font-style:italic;">{customer_name}.</em>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0;height:48px;position:relative;">
+                    <div style="width:100%;height:48px;background:#0F1E33;position:relative;overflow:hidden;">
+                      <div style="position:absolute;bottom:0;left:0;width:0;height:0;border-left:560px solid transparent;border-bottom:48px solid #ffffff;"></div>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+            </td>
           </tr>
           <tr>
-            <td style="padding:44px 36px 8px;">
-              <div style="font-size:13px;font-weight:600;color:#4F46E5;letter-spacing:0.6px;text-transform:uppercase;margin-bottom:14px;">
-                It's your birthday
+            <td style="text-align:center;padding:0 0 8px;">
+              <div style="display:inline-block;width:1px;height:14px;background:#C9A54A;margin:0 auto;"></div>
+              <div style="width:22px;height:26px;background:#F4EFE6;border:1.5px solid #C9A54A;border-radius:2px;margin:0 auto;position:relative;">
+                <div style="width:5px;height:5px;border-radius:50%;background:#0F1E33;position:absolute;top:4px;left:50%;transform:translateX(-50%);"></div>
               </div>
-              <div style="font-size:24px;font-weight:700;color:#111111;line-height:1.3;margin-bottom:20px;letter-spacing:-0.4px;">
-                Happy Birthday, {customer_name}
-              </div>
-              <p style="font-size:15px;color:#4b5563;line-height:1.7;margin:0 0 16px;">
-                Hi {customer_name},
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:20px 44px 8px;font-family:Georgia,serif;">
+              <p style="font-size:15px;color:#2E3B4E;line-height:1.9;margin:0 0 18px;">
+                On behalf of everyone at <strong>{business_name}</strong>, we'd like to take a moment to celebrate you — not as a customer, but as someone who has trusted us and grown with us over the years.
               </p>
-              <p style="font-size:15px;color:#4b5563;line-height:1.7;margin:0 0 16px;">
-                We want to take a moment on your birthday to say a big thank you. Your support means a great deal to us all at <strong style="color:#1a1a1a;">{business_name}</strong>, and We most certainly do not take it for granted.
+              <p style="font-size:15px;color:#2E3B4E;line-height:1.9;margin:0 0 18px;">
+                Your birthday is a reminder of the people who make what we do meaningful. We hope this year brings you everything you deserve — joy, good health, and moments worth remembering.
               </p>
-              <p style="font-size:15px;color:#4b5563;line-height:1.7;margin:0 0 32px;">
-                We sincerly  hope you have a wonderful day, however you choose to spend it.
+              <p style="font-size:15px;color:#2E3B4E;line-height:1.9;margin:0 0 30px;">
+                Wishing you a wonderful celebration, however you choose to spend it.
+              </p>
+              <p style="font-size:15px;color:#2E3B4E;line-height:1.9;margin:0;">
+                With warm regards,<br>
+                <strong style="color:#0F1E33;">{business_name}</strong>
               </p>
             </td>
           </tr>
           <tr>
-            <td style="padding:0 36px 40px;">
-              <p style="font-size:15px;color:#4b5563;line-height:1.7;margin:0;">
-                Best,<br>
-                <strong style="color:#1a1a1a;">{business_name}</strong>
-              </p>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:18px 36px;background:#fafafa;border-top:1px solid #f0f0f0;">
+            <td style="padding:24px 44px;border-top:1px solid #eee;font-family:Arial,sans-serif;">
               <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
                 <tr>
                   <td style="font-size:11px;color:#b0b3b9;vertical-align:middle;">

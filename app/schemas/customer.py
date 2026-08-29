@@ -35,6 +35,7 @@ class CustomerResponse(BaseModel):
     customer_type: CustomerType = CustomerType.new
     has_purchased: bool = False
     last_contact: Optional[datetime] = None
+    last_birthday_email_sent: Optional[datetime] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
     user_id: int

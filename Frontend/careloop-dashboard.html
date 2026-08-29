@@ -2187,8 +2187,8 @@ function checkBirthdayNotifications(){
     const diffDays = Math.ceil((thisYearBday - today) / 86400000);
     if(dob.getMonth()===todayMonth && dob.getDate()===todayDay){
       const todayKey = today.toISOString().slice(0,10);
-      const sentFlag = localStorage.getItem(`cl_birthday_sent_${c.id}_${todayKey}`);
-      if(!sentFlag){
+      const alreadySentToday = c.last_birthday_email_sent && new Date(c.last_birthday_email_sent).toISOString().slice(0,10) === todayKey;
+      if(!alreadySentToday){
         showBirthdayDialog(c.name, 'today', c.id);
       }
     } else if(diffDays > 0 && diffDays <= 7){
@@ -2217,6 +2217,7 @@ async function sendBirthdayEmail(){
     const d = await r.json();
     if(d.success){
       const c = customers.find(x=>x.id===parseInt(customerId));
+      if(c) c.last_birthday_email_sent = new Date().toISOString();
       addNotification({type:"cake",title:"Birthday email sent",names:c?c.name:""});
       clAlert("Birthday email sent successfully!","success");
     } else {

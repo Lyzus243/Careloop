@@ -140,6 +140,10 @@ async def send_birthday_email(
         customer_name=customer.name,
         business_name=business_name
     )
+    if success:
+        from datetime import datetime
+        customer.last_birthday_email_sent = datetime.utcnow()
+        await db.commit()
     return {"success": success}
 
 @router.get("/birthday-email/preview")
