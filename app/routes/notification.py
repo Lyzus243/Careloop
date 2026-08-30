@@ -140,4 +140,60 @@ async def send_birthday_email(
         customer_name=customer.name,
         business_name=business_name
     )
+    if success:
+        from datetime import datetime
+        customer.last_birthday_email_sent = datetime.utcnow()
+        await db.commit()
     return {"success": success}
+
+@router.get("/birthday-email/preview")
+async def preview_birthday_email(
+    customer_id: int,
+    user_id: int = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db)
+):
+    """Render the birthday email HTML for a customer without sending it."""
+    from app.models.user import User
+    user_result = await db.execute(select(User).where(User.id == user_id))
+    user = user_result.scalar_one_or_none()
+    business_name = user.business_name if user else "Our Business"
+    result = await db.execute(
+        select(Customer).where(
+            and_(Customer.id == customer_id, Customer.user_id == user_id)
+        )
+    )
+    customer = result.scalar_one_or_none()
+    if not customer:
+        raise HTTPException(status_code=404, detail="Customer not found")
+    subject, html = email_service.render_birthday_email_html(
+        customer_name=customer.name,
+        business_name=business_name
+    )
+    return {"subject": subject, "html": html}
+
+@router.get("/birthday-reminder/preview")
+async def preview_birthday_reminder(
+    customer_id: int,
+    user_id: int = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db)
+):
+    """Render the birthday reminder HTML for a customer without sending it."""
+    from app.models.user import User
+    user_result = await db.execute(select(User).where(User.id == user_id))
+    user = user_result.scalar_one_or_none()
+    owner_name = user.full_name if user else "there"
+    result = await db.execute(
+        select(Customer).where(
+            and_(Customer.id == customer_id, Customer.user_id == user_id)
+        )
+    )
+    customer = result.scalar_one_or_none()
+    if not customer:
+        raise HTTPException(status_code=404, detail="Customer not found")
+    subject, html = email_service.render_birthday_reminder_html(
+        customer_name=customer.name,
+        owner_name=owner_name
+    )
+    return {"subject": subject, "html": html}
+
+

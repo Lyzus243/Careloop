@@ -28,6 +28,7 @@ class Customer(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     last_contact: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    last_birthday_email_sent: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
     # Relationships - TODO: Add these when Purchase, FollowUp, and CustomerSettings models are created
     # purchases: Mapped[List["Purchase"]] = relationship(
