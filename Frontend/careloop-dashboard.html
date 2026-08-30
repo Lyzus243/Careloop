@@ -2011,6 +2011,7 @@ function openViewPanel(id){
     <button class="btn-save-cust" id="dob-save-btn">Save Changes</button>
     <button class="btn-save-cust" onclick="closePanel()">Save Customer</button>
   `;
+  document.getElementById('panel-dob').value = c.date_of_birth ? c.date_of_birth.split('T')[0] : '';
   document.getElementById('panel-email').value = c.email || '';
   document.getElementById('view-panel').classList.add('open');
   document.getElementById('dob-save-btn').onclick = () => saveCustomerDOB(id);
@@ -2204,6 +2205,35 @@ function showBirthdayDialog(name, when, customerId){
   document.getElementById("birthday-modal").dataset.customerId = customerId;
   openModal("birthday-modal");
 }
+async function previewBirthdayEmail(){
+  const customerId = document.getElementById("birthday-modal").dataset.customerId;
+  if(!customerId) return;
+  const token = localStorage.getItem("authToken");
+  const btn = document.getElementById("birthday-modal-preview-btn");
+  const orig = btn.textContent;
+  btn.textContent = "Loading preview...";
+  btn.disabled = true;
+  try{
+    const r = await fetch(`${API_URL}/api/notifications/birthday-email/preview?customer_id=${customerId}`,{
+      headers:{"Authorization":"Bearer "+token}
+    });
+    if(r.ok){
+      const d = await r.json();
+      const frame = document.getElementById("birthday-modal-preview-frame");
+      frame.srcdoc = d.html;
+      document.getElementById("birthday-modal-preview-wrap").style.display = "block";
+      btn.style.display = "none";
+      document.getElementById("birthday-modal-send-btn").style.display = "flex";
+    } else {
+      clAlert("Failed to load preview.","warning");
+    }
+  }catch(e){
+    clAlert("Network error loading preview.","warning");
+  }
+  btn.textContent = orig;
+  btn.disabled = false;
+}
+
 async function sendBirthdayEmail(){
   const customerId = document.getElementById("birthday-modal").dataset.customerId;
   if(!customerId){closeModal("birthday-modal");return;}
