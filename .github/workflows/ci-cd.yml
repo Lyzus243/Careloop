@@ -30,6 +30,9 @@ jobs:
           fi
 
       - name: Check FastAPI Import
+        env:
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           python -c "from app.main import app"
 
@@ -70,7 +73,7 @@ jobs:
           fi
 
   deploy:
-    name: Railway Deploy
+    name: Render Deploy
     needs:
       - backend-test
       - frontend-build
@@ -80,6 +83,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Trigger Deployment
+      - name: Trigger Render Deploy
         run: |
-          echo "Railway Auto Deploy Enabled"
+          if [ -z "${{ secrets.RENDER_DEPLOY_HOOK_URL }}" ]; then
+            echo "RENDER_DEPLOY_HOOK_URL secret not set — skipping explicit trigger."
+            echo "If Render's own auto-deploy-on-push is enabled for this repo, no action is needed here."
+            exit 0
+          fi
+          curl -fsS -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"

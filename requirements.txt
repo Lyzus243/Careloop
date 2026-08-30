@@ -11,7 +11,7 @@ asyncpg
 passlib[bcrypt]
 PyJWT
 python-jose[cryptography]
-bcrypt
+bcrypt==4.0.1
 
 # Validation / schemas
 pydantic
@@ -22,7 +22,7 @@ slowapi
 limits
 
 # Email service (you are using SendGrid)
-sendgrid
+resend
 
 # External APIs
 openai
