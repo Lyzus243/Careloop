@@ -977,7 +977,7 @@ body.dark-mode.eye-care {
   <span class="header-label" id="header-label">Dashboard</span>
   <div class="header-search">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-    <input type="text" placeholder="Search for Customers" id="global-search" oninput="handleGlobalSearch(this.value)">
+    <input type="text" placeholder="Search for Customers" id="global-search" name="cl-nosuggest-1" autocomplete="off" data-lpignore="true" data-form-type="other" oninput="handleGlobalSearch(this.value)">
   </div>
   <div class="header-right">
     <button id="darkModeToggle" class="mode-toggle" title="Toggle Dark Mode">
@@ -996,9 +996,21 @@ body.dark-mode.eye-care {
       <span class="bell-badge" id="bell-badge"></span>
     </button>
     <button class="avatar-btn" id="header-avatar" onclick="changeAvatar()"><img id="header-avatar-img" alt=""><span id="header-avatar-initials"></span></button>
-    <button class="avatar-chevron">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6,9 12,15 18,9"/></svg>
-    </button>
+    <div style="position:relative;">
+      <button class="avatar-chevron" onclick="toggleHeaderMenu(event)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6,9 12,15 18,9"/></svg>
+      </button>
+      <div id="header-dropdown-menu" style="display:none;position:absolute;top:calc(100% + 8px);right:0;background:#ffffff;border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.12);min-width:180px;z-index:1000;overflow:hidden;">
+        <button onclick="showPage('account-settings');closeHeaderMenu();" style="width:100%;display:flex;align-items:center;gap:10px;padding:12px 16px;border:none;background:none;color:var(--text);font-size:14px;font-family:inherit;cursor:pointer;text-align:left;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+          Account Settings
+        </button>
+        <button onclick="logout()" style="width:100%;display:flex;align-items:center;gap:10px;padding:12px 16px;border:none;background:none;color:#A32D2D;font-size:14px;font-family:inherit;cursor:pointer;text-align:left;border-top:1px solid var(--border);">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Logout
+        </button>
+      </div>
+    </div>
   </div>
 </header>
 
@@ -1099,6 +1111,71 @@ body.dark-mode.eye-care {
   </div>
 
   <!-- CUSTOMERS PAGE -->
+  <div class="page" id="page-account-settings">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+      <img src="/assets/primary_logo.jpg" alt="Careloop" style="height:24px;width:auto;">
+    </div>
+    <div class="page-top">
+      <div>
+        <h1 class="page-title">Account Settings</h1>
+        <p class="page-sub">Manage your reminder email preferences</p>
+      </div>
+    </div>
+    <div style="max-width:520px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:24px;margin-top:16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div style="padding-right:16px;">
+          <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:4px;">Reminder emails</div>
+          <div style="font-size:13px;color:var(--text2);line-height:1.5;">Receive birthday reminders, follow-up nudges, and weekly activity summaries by email.</div>
+        </div>
+        <button id="consent-toggle-btn" onclick="toggleAccountConsent()" style="flex-shrink:0;width:48px;height:28px;border-radius:20px;border:none;background:#d9dce3;position:relative;cursor:pointer;transition:background 0.2s;">
+          <span id="consent-toggle-knob" style="position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.2);transition:left 0.2s;"></span>
+        </button>
+      </div>
+    </div>
+
+    <div style="max-width:520px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:24px;margin-top:16px;">
+      <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:14px;">Preferred currency</div>
+      <select id="settings-currency-select" class="field-input" style="width:100%;cursor:pointer;" onchange="saveCurrencyPreference(this.value)">
+        <option value="USD">USD - US Dollar</option>
+        <option value="NGN">NGN - Nigerian Naira</option>
+        <option value="EUR">EUR - Euro</option>
+        <option value="GBP">GBP - British Pound</option>
+      </select>
+    </div>
+
+    <div style="max-width:520px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:24px;margin-top:16px;">
+      <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:14px;">Change password</div>
+      <label class="field-label">Current password</label>
+      <input type="password" class="field-input" id="settings-current-password" style="margin-bottom:14px;">
+      <label class="field-label">New password</label>
+      <input type="password" class="field-input" id="settings-new-password" style="margin-bottom:14px;">
+      <label class="field-label">Confirm new password</label>
+      <input type="password" class="field-input" id="settings-confirm-password" style="margin-bottom:18px;">
+      <button class="btn-primary" onclick="changeAccountPassword()" style="width:100%;justify-content:center;padding:12px;border-radius:10px;">Update Password</button>
+    </div>
+
+    <div style="max-width:520px;background:#fff;border:1px solid #FCA5A5;border-radius:12px;padding:24px;margin-top:16px;">
+      <div style="font-size:15px;font-weight:600;color:#B91C1C;margin-bottom:6px;">Danger zone</div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:16px;">Permanently delete your account and all associated data. This cannot be undone.</div>
+      <button onclick="openDeleteAccountModal()" style="padding:10px 18px;border-radius:8px;border:1px solid #FCA5A5;background:#FEF2F2;color:#B91C1C;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;">Delete Account</button>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="delete-account-modal">
+    <div class="modal-card" style="text-align:left;max-width:400px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <h3 style="font-size:1.1rem;font-weight:700;color:#B91C1C;margin:0;">Delete Account</h3>
+        <button onclick="closeModal('delete-account-modal')" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--text2);">&times;</button>
+      </div>
+      <p style="font-size:13.5px;color:#4b5563;line-height:1.6;margin:0 0 16px;">
+        This will permanently delete your account, all customers, and all sales data. This action cannot be undone.
+      </p>
+      <label class="field-label">Type your email address to confirm</label>
+      <input type="email" class="field-input" id="delete-confirm-email" autocomplete="off" placeholder="your@email.com" style="margin-bottom:16px;">
+      <button id="delete-account-confirm-btn" onclick="confirmDeleteAccount()" disabled style="width:100%;padding:13px;border-radius:10px;border:none;background:#d9dce3;color:#9ca3af;font-size:14px;font-weight:600;cursor:not-allowed;font-family:inherit;" oninput="">Permanently Delete Account</button>
+    </div>
+  </div>
+
   <div class="page" id="page-customers">
     <div class="page-top">
       <div>
@@ -1108,7 +1185,7 @@ body.dark-mode.eye-care {
     </div>
     <div class="customers-search">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text3)"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input type="text" placeholder="Search for Customers" id="cust-search" oninput="renderCustomers()">
+      <input type="text" placeholder="Search for Customers" id="cust-search" name="cl-nosuggest-2" autocomplete="off" data-lpignore="true" data-form-type="other" oninput="renderCustomers()">
     </div>
     <div id="bulk-action-bar" style="display:none;align-items:center;gap:12px;padding:12px 16px;background:var(--blue);border-radius:var(--radius);margin-bottom:12px;">
       <span id="bulk-count" style="color:white;font-weight:600;font-size:.9rem;flex:1;"></span>
@@ -1289,6 +1366,36 @@ body.dark-mode.eye-care {
   </div>
 </div>
 
+<!-- CONSENT MODAL -->
+<div class="modal-backdrop" id="consent-modal">
+  <div class="modal-card" style="text-align:left;max-width:400px;padding:28px 28px 22px;">
+    <div style="display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
+      <img src="/assets/primary_logo.jpg" alt="Careloop" style="height:22px;width:auto;">
+    </div>
+    <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:14px;">
+      <div style="width:38px;height:38px;border-radius:10px;background:#EEF2FF;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+          <polyline points="22,6 12,13 2,6"/>
+        </svg>
+      </div>
+      <div>
+        <p style="font-size:16px;font-weight:700;color:#111827;margin:0 0 2px;">Stay in the loop</p>
+        <p style="font-size:13px;color:#9ca3af;margin:0;">Reminder emails from your account</p>
+      </div>
+    </div>
+    <p style="font-size:13.5px;color:#4b5563;line-height:1.6;margin:0 0 18px;">
+      Would you like us to send you helpful reminder emails on your behalf — like customer follow-up nudges, birthday reminders, and activity summaries? You can unsubscribe any time from your account settings.
+    </p>
+    <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:18px;cursor:pointer;" onclick="document.getElementById('consent-check').click()">
+      <input type="checkbox" id="consent-check" onchange="toggleConsentAccept(this)" style="margin-top:2px;width:16px;height:16px;flex-shrink:0;accent-color:#4F46E5;">
+      <label style="font-size:12.5px;color:#4b5563;line-height:1.5;cursor:pointer;">Yes, I agree to receive reminder and summary emails from this service. I understand I can opt out at any time.</label>
+    </div>
+    <button id="consent-accept-btn" onclick="acceptConsent()" disabled style="width:100%;padding:13px;border-radius:10px;border:none;background:#d9dce3;color:#9ca3af;font-size:14px;font-weight:600;cursor:not-allowed;margin-bottom:14px;transition:background 0.2s,color 0.2s;">Accept &amp; Continue</button>
+    <a onclick="skipConsent()" style="display:block;text-align:center;font-size:13px;color:#6b7280;text-decoration:none;cursor:pointer;">No thanks, skip for now</a>
+  </div>
+</div>
+
 <!-- BIRTHDAY MODAL -->
 <div class="modal-backdrop" id="birthday-modal">
   <div class="modal-card">
@@ -1405,7 +1512,7 @@ function fmtAgo(d){
 function showPage(page){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-  const labels={dashboard:'Dashboard',customers:'Customers','add-customer':'Add Customer',notifications:'Notifications',sales:'Sales'};
+  const labels={dashboard:'Dashboard',customers:'Customers','add-customer':'Add Customer',notifications:'Notifications',sales:'Sales','account-settings':'Account Settings'};
   document.getElementById('header-label').textContent=labels[page]||'Careloop';
   document.getElementById('page-'+page).classList.add('active');
   const navMap={dashboard:'nav-dashboard',customers:'nav-customers','add-customer':'nav-add',sales:'nav-sales'};
@@ -1415,6 +1522,7 @@ function showPage(page){
   if(page==='customers'){loadCustomers().then(()=>renderCustomers());}
   if(page==='dashboard') renderDashboard();
   if(page==='sales') renderSalesPage();
+  if(page==='account-settings') renderAccountSettings();
 }
 
 // ─── AUTH & USER ───
@@ -1428,6 +1536,7 @@ async function init(){
     currentUser.name=u.full_name||u.fullName||u.name||'User';
     currentUser.business=u.business_name||u.businessName||'';
     currentUser.avatar=u.avatar||null;
+    currentUser.email=u.email||'';
     
   }catch(e){
     const saved=localStorage.getItem('cl_user');
@@ -1452,6 +1561,7 @@ updateUserUI();
     const cfgR=await fetch(`${API_URL}/api/config`);
     if(cfgR.ok) followupConfig=await cfgR.json();
   }catch(e){}
+  checkConsentPrompt();
 
   buildFollowups();
   buildNotifications();
@@ -1572,6 +1682,204 @@ async function loadPreferences(){
       }
     }
   }catch(e){}
+}
+
+// --- ACCOUNT SETTINGS ---
+let accountConsentState = false;
+async function renderAccountSettings(){
+  const token = localStorage.getItem("authToken");
+  if(!token) return;
+  try{
+    const r = await fetch(`${API_URL}/api/user/profile`,{headers:{"Authorization":"Bearer "+token}});
+    if(r.ok){
+      const u = await r.json();
+      accountConsentState = u.email_reminders_consent === true;
+      updateConsentToggleUI();
+      const currencySelect = document.getElementById("settings-currency-select");
+      if(currencySelect) currencySelect.value = u.preferred_currency || "USD";
+    }
+  }catch(e){}
+}
+function updateConsentToggleUI(){
+  const btn = document.getElementById("consent-toggle-btn");
+  const knob = document.getElementById("consent-toggle-knob");
+  if(!btn || !knob) return;
+  if(accountConsentState){
+    btn.style.background = "#4F46E5";
+    knob.style.left = "23px";
+  } else {
+    btn.style.background = "#d9dce3";
+    knob.style.left = "3px";
+  }
+}
+async function toggleAccountConsent(){
+  accountConsentState = !accountConsentState;
+  updateConsentToggleUI();
+  const token = localStorage.getItem("authToken");
+  try{
+    const r = await fetch(`${API_URL}/api/user/consent/set`,{
+      method:"PUT",
+      headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},
+      body:JSON.stringify({accepted: accountConsentState})
+    });
+    if(r.ok){
+      clAlert(accountConsentState ? "Reminder emails turned on." : "Reminder emails turned off.","success");
+    } else {
+      accountConsentState = !accountConsentState;
+      updateConsentToggleUI();
+      clAlert("Failed to update preference.","warning");
+    }
+  }catch(e){
+    accountConsentState = !accountConsentState;
+    updateConsentToggleUI();
+    clAlert("Network error. Please try again.","warning");
+  }
+}
+async function changeAccountPassword(){
+  const current = document.getElementById("settings-current-password").value;
+  const next = document.getElementById("settings-new-password").value;
+  const confirm = document.getElementById("settings-confirm-password").value;
+  if(!current || !next || !confirm){
+    clAlert("Please fill in all password fields.","warning");
+    return;
+  }
+  if(next !== confirm){
+    clAlert("New passwords do not match.","warning");
+    return;
+  }
+  if(next.length < 8){
+    clAlert("New password must be at least 8 characters.","warning");
+    return;
+  }
+  const token = localStorage.getItem("authToken");
+  try{
+    const r = await fetch(`${API_URL}/api/auth/change-password`,{
+      method:"POST",
+      headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},
+      body:JSON.stringify({current_password: current, new_password: next})
+    });
+    if(r.ok){
+      clAlert("Password updated successfully!","success");
+      document.getElementById("settings-current-password").value = "";
+      document.getElementById("settings-new-password").value = "";
+      document.getElementById("settings-confirm-password").value = "";
+    } else {
+      const err = await r.json().catch(()=>({}));
+      clAlert(err.detail || "Failed to update password. Check your current password.","warning");
+    }
+  }catch(e){
+    clAlert("Network error. Please try again.","warning");
+  }
+}
+
+// --- DELETE ACCOUNT ---
+function openDeleteAccountModal(){
+  document.getElementById("delete-confirm-email").value = "";
+  const btn = document.getElementById("delete-account-confirm-btn");
+  btn.disabled = true;
+  btn.style.background = "#d9dce3";
+  btn.style.color = "#9ca3af";
+  btn.style.cursor = "not-allowed";
+  openModal("delete-account-modal");
+  document.getElementById("delete-confirm-email").addEventListener("input", checkDeleteEmailMatch);
+}
+function checkDeleteEmailMatch(){
+  const typed = document.getElementById("delete-confirm-email").value.trim().toLowerCase();
+  const real = (currentUser.email || "").trim().toLowerCase();
+  const btn = document.getElementById("delete-account-confirm-btn");
+  const matches = typed.length > 0 && typed === real;
+  btn.disabled = !matches;
+  if(matches){
+    btn.style.background = "#DC2626";
+    btn.style.color = "#ffffff";
+    btn.style.cursor = "pointer";
+  } else {
+    btn.style.background = "#d9dce3";
+    btn.style.color = "#9ca3af";
+    btn.style.cursor = "not-allowed";
+  }
+}
+async function confirmDeleteAccount(){
+  const typed = document.getElementById("delete-confirm-email").value.trim();
+  const token = localStorage.getItem("authToken");
+  const btn = document.getElementById("delete-account-confirm-btn");
+  btn.textContent = "Deleting...";
+  btn.disabled = true;
+  try{
+    const r = await fetch(`${API_URL}/api/user/account`,{
+      method:"DELETE",
+      headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},
+      body:JSON.stringify({confirm_email: typed})
+    });
+    if(r.ok){
+      localStorage.removeItem("authToken");
+      window.location.href = "careloop-login.html";
+    } else {
+      const err = await r.json().catch(()=>({}));
+      clAlert(err.detail || "Failed to delete account.","warning");
+      btn.textContent = "Permanently Delete Account";
+      checkDeleteEmailMatch();
+    }
+  }catch(e){
+    clAlert("Network error. Please try again.","warning");
+    btn.textContent = "Permanently Delete Account";
+    checkDeleteEmailMatch();
+  }
+}
+
+// --- CONSENT MODAL ---
+async function checkConsentPrompt(){
+  const token = localStorage.getItem("authToken");
+  if(!token) return;
+  try{
+    const r = await fetch(`${API_URL}/api/user/profile`,{headers:{"Authorization":"Bearer "+token}});
+    if(!r.ok) return;
+    const u = await r.json();
+    if(u.email_reminders_consent === true) return;
+    const lastPrompted = u.last_consent_prompted_at;
+    let shouldShow = false;
+    if(!lastPrompted){
+      shouldShow = true;
+    } else {
+      const daysSince = Math.floor((Date.now() - new Date(lastPrompted)) / 86400000);
+      shouldShow = daysSince >= 7;
+    }
+    if(shouldShow){
+      openModal("consent-modal");
+      fetch(`${API_URL}/api/user/consent/prompt`,{
+        method:"PUT",
+        headers:{"Authorization":"Bearer "+token}
+      }).catch(()=>{});
+    }
+  }catch(e){}
+}
+function toggleConsentAccept(checkbox){
+  const btn = document.getElementById("consent-accept-btn");
+  if(checkbox.checked){
+    btn.disabled = false;
+    btn.style.background = "#4F46E5";
+    btn.style.color = "#ffffff";
+    btn.style.cursor = "pointer";
+  } else {
+    btn.disabled = true;
+    btn.style.background = "#d9dce3";
+    btn.style.color = "#9ca3af";
+    btn.style.cursor = "not-allowed";
+  }
+}
+async function acceptConsent(){
+  const token = localStorage.getItem("authToken");
+  try{
+    await fetch(`${API_URL}/api/user/consent/accept`,{
+      method:"PUT",
+      headers:{"Authorization":"Bearer "+token}
+    });
+  }catch(e){}
+  closeModal("consent-modal");
+  clAlert("Thanks! You're all set to receive reminder emails.","success");
+}
+function skipConsent(){
+  closeModal("consent-modal");
 }
 
 // --- SAVE CURRENCY PREFERENCE ---
@@ -2824,6 +3132,21 @@ if (document.readyState === 'loading') {
 } else {
   fixModalPosition();
 }
+function toggleHeaderMenu(e){
+  e.stopPropagation();
+  const menu = document.getElementById("header-dropdown-menu");
+  const isOpen = menu.style.display === "block";
+  menu.style.display = isOpen ? "none" : "block";
+}
+function closeHeaderMenu(){
+  document.getElementById("header-dropdown-menu").style.display = "none";
+}
+document.addEventListener("click", function(e){
+  const menu = document.getElementById("header-dropdown-menu");
+  if(menu && menu.style.display === "block" && !menu.contains(e.target)){
+    menu.style.display = "none";
+  }
+});
 async function logout(){
   const token=localStorage.getItem('authToken');
   try{

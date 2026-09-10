@@ -31,6 +31,8 @@ class UserResponse(BaseModel):
     avatar: Optional[str] = None
     is_active: bool = True
     is_email_verified: bool = False
+    email_reminders_consent: Optional[bool] = None
+    last_consent_prompted_at: Optional[datetime] = None
     created_at: Optional[datetime] = None
 
 class UserUpdate(BaseModel):

@@ -22,3 +22,6 @@ class User(Base):
     password_reset_token = Column(String, nullable=True)
     password_reset_expires_at = Column(DateTime(timezone=True), nullable=True)
     preferred_currency = Column(String(10), default="USD", nullable=True)
+    email_reminders_consent = Column(Boolean, nullable=True)
+    last_consent_prompted_at = Column(DateTime(timezone=True), nullable=True)
+    last_activity_summary_sent_at = Column(DateTime(timezone=True), nullable=True)

@@ -301,5 +301,129 @@ class EmailService:
         """
         return self._send(to_email, subject, html)
 
+    def send_followup_nudge(self, to_email: str, owner_name: str, due_count: int, overdue_count: int, base_url: str = "https://mycareloop.com.ng") -> bool:
+        """Notify the business owner of how many customer follow-ups need attention today."""
+        dashboard_url = f"{base_url}/careloop-dashboard.html"
+        total = due_count + overdue_count
+        subject = f"You have {total} follow-up{'s' if total != 1 else ''} today"
+        overdue_line = f"<strong style=\"color:#dc2626;\">{overdue_count} overdue</strong>" if overdue_count else ""
+        due_line = f"{due_count} due today" if due_count else ""
+        parts = [p for p in [overdue_line, due_line] if p]
+        summary = " and ".join(parts) if parts else "some follow-ups"
+        html = f"""
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:8px;overflow:hidden;border:1px solid #e5e7eb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+          <tr>
+            <td style="height:4px;background:#4F46E5;line-height:4px;font-size:1px;">&nbsp;</td>
+          </tr>
+          <tr>
+            <td style="padding:40px 36px 8px;">
+              <div style="font-size:13px;font-weight:600;color:#4F46E5;letter-spacing:0.6px;text-transform:uppercase;margin-bottom:14px;">
+                Follow-up reminder
+              </div>
+              <div style="font-size:22px;font-weight:700;color:#111111;line-height:1.3;margin-bottom:20px;letter-spacing:-0.4px;">
+                You have {total} follow-up{'s' if total != 1 else ''} today
+              </div>
+              <p style="font-size:15px;color:#4b5563;line-height:1.7;margin:0 0 16px;">
+                Hi {owner_name},
+              </p>
+              <p style="font-size:15px;color:#4b5563;line-height:1.7;margin:0 0 28px;">
+                You have {summary} waiting for a follow-up. Head to your Careloop dashboard to review and reach out.
+              </p>
+              <table role="presentation" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="border-radius:6px;background:#4F46E5;">
+                    <a href="{dashboard_url}" style="display:inline-block;padding:12px 24px;font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:6px;">
+                      Open Dashboard
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:18px 36px;background:#fafafa;border-top:1px solid #f0f0f0;">
+              <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td style="font-size:11px;color:#b0b3b9;vertical-align:middle;">
+                    Sent with
+                  </td>
+                  <td style="width:70px;vertical-align:middle;padding-left:6px;">
+                    <img src="data:image/jpeg;base64,{CARELOOP_LOGO_B64}" alt="Careloop" style="height:16px;width:auto;display:block;opacity:0.55;">
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+        """
+        return self._send(to_email, subject, html)
+
+    def send_activity_summary(self, to_email: str, owner_name: str, new_customers: int, sales_count: int, sales_total: float, currency: str, followups_completed: int, birthday_emails_sent: int, base_url: str = "https://mycareloop.com.ng") -> bool:
+        """Send a weekly recap of account activity to the business owner."""
+        dashboard_url = f"{base_url}/careloop-dashboard.html"
+        subject = "Your weekly Careloop activity summary"
+        html = f"""
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:8px;overflow:hidden;border:1px solid #e5e7eb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+          <tr>
+            <td style="height:4px;background:#4F46E5;line-height:4px;font-size:1px;">&nbsp;</td>
+          </tr>
+          <tr>
+            <td style="padding:40px 36px 8px;">
+              <div style="font-size:13px;font-weight:600;color:#4F46E5;letter-spacing:0.6px;text-transform:uppercase;margin-bottom:14px;">
+                Weekly summary
+              </div>
+              <div style="font-size:22px;font-weight:700;color:#111111;line-height:1.3;margin-bottom:20px;letter-spacing:-0.4px;">
+                Here is what happened this week
+              </div>
+              <p style="font-size:15px;color:#4b5563;line-height:1.7;margin:0 0 24px;">
+                Hi {owner_name}, here is a quick recap of your account activity over the past 7 days.
+              </p>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+                <tr>
+                  <td style="padding:12px 0;border-bottom:1px solid #f0f0f0;font-size:14px;color:#4b5563;">New customers added</td>
+                  <td style="padding:12px 0;border-bottom:1px solid #f0f0f0;font-size:14px;color:#111111;font-weight:700;text-align:right;">{new_customers}</td>
+                </tr>
+                <tr>
+                  <td style="padding:12px 0;border-bottom:1px solid #f0f0f0;font-size:14px;color:#4b5563;">Sales recorded</td>
+                  <td style="padding:12px 0;border-bottom:1px solid #f0f0f0;font-size:14px;color:#111111;font-weight:700;text-align:right;">{sales_count} ({currency} {sales_total:,.2f})</td>
+                </tr>
+                <tr>
+                  <td style="padding:12px 0;border-bottom:1px solid #f0f0f0;font-size:14px;color:#4b5563;">Follow-ups completed</td>
+                  <td style="padding:12px 0;border-bottom:1px solid #f0f0f0;font-size:14px;color:#111111;font-weight:700;text-align:right;">{followups_completed}</td>
+                </tr>
+                <tr>
+                  <td style="padding:12px 0;font-size:14px;color:#4b5563;">Birthday emails sent</td>
+                  <td style="padding:12px 0;font-size:14px;color:#111111;font-weight:700;text-align:right;">{birthday_emails_sent}</td>
+                </tr>
+              </table>
+              <table role="presentation" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="border-radius:6px;background:#4F46E5;">
+                    <a href="{dashboard_url}" style="display:inline-block;padding:12px 24px;font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:6px;">
+                      Open Dashboard
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:18px 36px;background:#fafafa;border-top:1px solid #f0f0f0;">
+              <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td style="font-size:11px;color:#b0b3b9;vertical-align:middle;">
+                    Sent with
+                  </td>
+                  <td style="width:70px;vertical-align:middle;padding-left:6px;">
+                    <img src="data:image/jpeg;base64,{CARELOOP_LOGO_B64}" alt="Careloop" style="height:16px;width:auto;display:block;opacity:0.55;">
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+        """
+        return self._send(to_email, subject, html)
+
 # Create a singleton instance
 email_service = EmailService()
