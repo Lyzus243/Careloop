@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -1077,6 +1077,7 @@ body.dark-mode.eye-care {
       <button class="tab" onclick="switchTab('due',this)">Due today <span class="tab-badge" id="tab-due-badge">0</span></button>
       <button class="tab" onclick="switchTab('overdue',this)">Overdue <span class="tab-badge red-badge" id="tab-overdue-badge">0</span></button>
       <button class="tab" onclick="switchTab('pending',this)">Pending <span class="tab-badge" id="tab-pending-badge">0</span></button>
+      <button class="tab" onclick="switchTab('completed',this)">Completed <span class="tab-badge" id="tab-completed-badge">0</span></button>
       <div style="margin-left:auto;" class="filter-right">
         <button class="filter-btn" id="filter-btn" style="display:none;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
@@ -1603,14 +1604,17 @@ async function loadCustomers(){
 
 // ─── FOLLOWUPS ───
 function buildFollowups(){
+  const todayKey=new Date().toISOString().slice(0,10);
   followups=customers.map(c=>{
-    const lastContact=c.lastContact||c.created_at;
+    const lastContact=c.last_contact||c.created_at;
     const daysSince=lastContact?Math.floor((Date.now()-new Date(lastContact))/86400000):999;
     const isExisting=c.customer_type==='active'||c.has_purchased;
     const followupDays=isExisting?followupConfig.existing_customer_followup_days:followupConfig.new_customer_followup_days;
     let status='pending';
     if(daysSince>=followupDays+followupConfig.overdue_grace_days) status='overdue';
     else if(daysSince>=followupDays) status='due';
+    const completedToday=c.last_followed_up_at && new Date(c.last_followed_up_at).toISOString().slice(0,10)===todayKey;
+    if(completedToday) status='completed';
     return{...c,daysSince,status,isExisting,followupDays};
   });
 }
@@ -1621,16 +1625,17 @@ function renderDashboard(){
   const due=followups.filter(f=>f.status==='due');
   const overdue=followups.filter(f=>f.status==='overdue');
   const pending=followups.filter(f=>f.status==='pending');
-  const done=followups.filter(f=>f.status==='done');
-  const total=followups.length;
-  const completion=total?Math.round(done.length/total*100):0;
+  const completed=followups.filter(f=>f.status==='completed');
+  const completionDenominator=due.length+overdue.length+completed.length;
+  const completion=completionDenominator?Math.round(completed.length/completionDenominator*100):100;
 
-  document.getElementById('stat-today').textContent=due.length;
+  document.getElementById('stat-today').textContent=completionDenominator;
   document.getElementById('stat-overdue').textContent=overdue.length;
   document.getElementById('stat-completion').textContent=completion+'%';
   document.getElementById('tab-due-badge').textContent=due.length;
   document.getElementById('tab-overdue-badge').textContent=overdue.length;
   document.getElementById('tab-pending-badge').textContent=pending.length;
+  document.getElementById('tab-completed-badge').textContent=completed.length;
 
   if(overdue.length===0 && due.length===0){
     document.getElementById('dash-sub').textContent="You're all caught up!";
@@ -1657,6 +1662,7 @@ function renderTabContent(tab){
   const due=followups.filter(f=>f.status==='due');
   const overdue=followups.filter(f=>f.status==='overdue');
   const pending=followups.filter(f=>f.status==='pending');
+  const completed=followups.filter(f=>f.status==='completed');
   const container=document.getElementById('followup-content');
 
   if(!followups.length){
@@ -1674,12 +1680,15 @@ function renderTabContent(tab){
     if(due.length) html+=buildSection('Due today','Follow-ups that are pending today',due,'blue',true);
     if(overdue.length) html+=buildSection('Overdue','Follow-ups that are pending today',overdue,'red',false,true);
     if(pending.length) html+=buildSection('Pending','Follow-ups that are not due yet',pending,'gray',false,false,true);
+    if(completed.length) html+=buildSection('Completed','Follow-ups you have handled today',completed,'green',false,false,true);
   } else if(tab==='due'){
     html=due.length?buildSection('Due today','',due,'blue',true):`<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-title">No follow-ups right now.</div><div class="empty-sub">You are all caught up.</div></div>`;
   } else if(tab==='overdue'){
     html=overdue.length?buildSection('Overdue','',overdue,'red',false,true):`<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-title">No follow-ups right now.</div><div class="empty-sub">You are all caught up.</div></div>`;
   } else if(tab==='pending'){
     html=pending.length?buildSection('Pending','',pending,'gray'):`<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-title">No follow-ups right now.</div><div class="empty-sub">You are all caught up.</div></div>`;
+  } else if(tab==='completed'){
+    html=completed.length?buildSection('Completed','',completed,'green'):`<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-title">Nothing completed yet today.</div><div class="empty-sub">Follow-ups you finish will show up here.</div></div>`;
   }
   container.innerHTML=html;
 }
@@ -1711,12 +1720,15 @@ function expandSection(btn,ids){
 
 function buildRow(c){
   const reason=c.isExisting?'Check-in to encourage repeat purchase':'Introduce and build relationship';
+  const hideDoneAction = c.status === 'pending' || c.status === 'completed';
+  const checkboxHtml = hideDoneAction ? '<span style="width:18px;display:inline-block;"></span>' : `<input type="checkbox" class="row-check" onchange="markDone(${c.id},this)">`;
+  const doneBtnHtml = hideDoneAction ? '' : `<button class="btn-done" onclick="markDoneBtn(${c.id})">Mark as Done</button>`;
   return `<div class="followup-row" id="row-${c.id}">
-    <input type="checkbox" class="row-check" onchange="markDone(${c.id},this)">
+    ${checkboxHtml}
     ${avatar(c.name)}
     <div class="row-info">
       <div class="row-name">${esc(c.name)}</div>
-      <div class="row-meta">Last Purchase: ${c.lastContact?fmtDate(c.lastContact):'None'}</div>
+      <div class="row-meta">Last Purchase: ${c.last_contact?fmtDate(c.last_contact):'None'}</div>
     </div>
     <div class="row-reason">${reason}</div>
     <div class="row-actions">
@@ -1729,7 +1741,7 @@ function buildRow(c){
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         Snooze
       </button>
-      <button class="btn-done" onclick="markDoneBtn(${c.id})">Mark as Done</button>
+      ${doneBtnHtml}
     </div>
   </div>`;
 }
@@ -1737,17 +1749,52 @@ function buildRow(c){
 function markDone(id,checkbox){
   if(checkbox.checked) markDoneBtn(id);
 }
-function markDoneBtn(id){
-  const idx=followups.findIndex(f=>f.id===id);
-  if(idx>-1){
-    followups[idx].status='done';
-    addNotification({type:'check',title:'You marked a follow-up as done',names:followups[idx].name});
+async function markDoneBtn(id){
+  const token = localStorage.getItem("authToken");
+  try{
+    const r = await fetch(`${API_URL}/api/customers/${id}/mark-followed-up`,{
+      method:"PUT",
+      headers:{"Authorization":"Bearer "+token}
+    });
+    if(r.ok){
+      const d = await r.json();
+      const c = customers.find(x=>x.id===id);
+      if(c){
+        c.last_contact = d.last_followed_up_at;
+        c.last_followed_up_at = d.last_followed_up_at;
+      }
+      const f = followups.find(x=>x.id===id);
+      addNotification({type:'check',title:'You marked a follow-up as done',names:f?f.name:''});
+      clAlert((f?f.name:'Customer')+" marked as followed up!","success");
+    } else {
+      clAlert("Failed to mark as done.","warning");
+    }
+  }catch(e){
+    clAlert("Network error. Please try again.","warning");
   }
   renderDashboard();
 }
-function markAllDone(){
-  followups.filter(f=>f.status==='due').forEach(f=>{f.status='done';});
-  addNotification({type:'check',title:'You marked multiple follow-ups as done',names:followups.filter(f=>f.status==='done').slice(0,4).map(f=>f.name).join(', ')+'...'});
+async function markAllDone(){
+  const targets = followups.filter(f=>f.status==='due');
+  const token = localStorage.getItem("authToken");
+  for(const f of targets){
+    try{
+      const r = await fetch(`${API_URL}/api/customers/${f.id}/mark-followed-up`,{
+        method:"PUT",
+        headers:{"Authorization":"Bearer "+token}
+      });
+      if(r.ok){
+        const d = await r.json();
+        const c = customers.find(x=>x.id===f.id);
+        if(c){
+          c.last_contact = d.last_followed_up_at;
+          c.last_followed_up_at = d.last_followed_up_at;
+        }
+      }
+    }catch(e){}
+  }
+  addNotification({type:'check',title:'You marked multiple follow-ups as done',names:targets.slice(0,4).map(f=>f.name).join(', ')+(targets.length>4?'...':'')});
+  clAlert(targets.length+" follow-up"+(targets.length!==1?'s':'')+" marked as done!","success");
   renderDashboard();
 }
 
@@ -1783,7 +1830,7 @@ async function confirmSnooze(){
   const c=customers.find(x=>x.id===snoozeCustomerId);
   if(c){
     const newDate=new Date(Date.now()+days*86400000);
-    c.lastContact=newDate.toISOString();
+    c.last_contact=newDate.toISOString();
     const token=localStorage.getItem("authToken");
     try{
       await fetch(`${API_URL}/api/customers/${c.id}/snooze?days=${days}`,{
@@ -1829,7 +1876,7 @@ function sendWhatsApp(){
   const msg=document.getElementById('msg-textarea').value.trim(); if(!msg) return;
   const phone=c.phone_number.replace(/\D/g,'');
   window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(msg),'_blank');
-  if(c){c.lastContact=new Date().toISOString();buildFollowups();renderDashboard();}
+  if(c){c.last_contact=new Date().toISOString();buildFollowups();renderDashboard();}
   closeModal('message-modal');
 }
 
@@ -1888,7 +1935,7 @@ function renderCustomers(){
       ${avatar(c.name,44)}
       <div class="cust-info">
         <div class="cust-name">${esc(c.name)}</div>
-        <div class="cust-meta">Last Purchase: ${c.lastContact?fmtDate(c.lastContact):'None'}</div>
+        <div class="cust-meta">Last Purchase: ${c.last_contact?fmtDate(c.last_contact):'None'}</div>
       </div>
       <div class="cust-type">${c.customer_type==='active'?'Existing Customer':'New Customer'}</div>
       <div class="cust-actions">
@@ -1997,12 +2044,12 @@ async function sendBulkEmail(){
 // ─── VIEW PANEL ───
 function openViewPanel(id){
   const c=customers.find(x=>x.id===id); if(!c) return;
-  const daysSince=c.lastContact?Math.floor((Date.now()-new Date(c.lastContact))/86400000):null;
+  const daysSince=c.last_contact?Math.floor((Date.now()-new Date(c.last_contact))/86400000):null;
   const nextFollowup=daysSince!==null?Math.max(0,7-daysSince)+' days':'N/A';
   document.getElementById('panel-content').innerHTML=`
     <div class="panel-avatar ${getAvColor(c.name)}" style="font-size:1.4rem;">${initials(c.name)}</div>
     <div class="panel-name">${esc(c.name)}</div>
-    <div class="panel-sub">${c.lastContact?'Last Purchase: '+fmtDate(c.lastContact):'No purchases yet'}</div>
+    <div class="panel-sub">${c.last_contact?'Last Purchase: '+fmtDate(c.last_contact):'No purchases yet'}</div>
     <div class="panel-divider"></div>
     <div class="panel-field"><span class="panel-field-label">Status</span><span class="panel-field-value">${c.customer_type==='active'?'Existing Customer':'New Customer'}</span></div>
     <div class="panel-field"><span class="panel-field-label">Relationship Status</span><span class="panel-field-value">Active</span></div>

@@ -114,3 +114,21 @@ async def snooze_customer(
     await db.commit()
     await db.refresh(customer)
     return {"success": True, "next_followup": customer.last_contact}
+
+@router.put("/{customer_id}/mark-followed-up")
+async def mark_followed_up(
+    customer_id: int,
+    user_id: int = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db)
+):
+    """Mark a customer as followed up today - resets both last_contact and last_followed_up_at."""
+    from datetime import datetime
+    customer = await CustomerController.get_customer_by_id(db, customer_id, user_id)
+    now = datetime.utcnow()
+    customer.last_contact = now
+    customer.last_followed_up_at = now
+    customer.updated_at = now
+    await db.commit()
+    await db.refresh(customer)
+    return {"success": True, "last_followed_up_at": customer.last_followed_up_at}
+
