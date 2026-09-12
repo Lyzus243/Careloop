@@ -33,6 +33,12 @@ class UserResponse(BaseModel):
     is_email_verified: bool = False
     email_reminders_consent: Optional[bool] = None
     last_consent_prompted_at: Optional[datetime] = None
+    business_logo: Optional[str] = None
+    followup_message_new: Optional[str] = None
+    followup_message_existing: Optional[str] = None
+    birthday_message: Optional[str] = None
+    custom_new_customer_days: Optional[int] = None
+    custom_existing_customer_days: Optional[int] = None
     created_at: Optional[datetime] = None
 
 class UserUpdate(BaseModel):

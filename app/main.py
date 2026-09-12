@@ -16,6 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.controllers.auth_controller import AuthController
 from app.services.email_service import email_service
+from app.dependencies import get_current_user_id
 
 from app.rate_limit import limiter, RateLimitedRouter, add_rate_limit_exception_handler
 
@@ -263,9 +264,20 @@ async def serve_customers_page():
         return HTMLResponse(content="<h1>Page not found</h1>", status_code=404)
 
 @app.get("/api/config")
-async def get_config():
+async def get_config(user_id: int = Depends(get_current_user_id), db: AsyncSession = Depends(get_db)):
     from app.followup_config import FOLLOWUP_RULES
-    return FOLLOWUP_RULES
+    from sqlalchemy import select
+    from app.models.user import User
+
+    rules = dict(FOLLOWUP_RULES)
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if user:
+        if user.custom_new_customer_days is not None:
+            rules["new_customer_followup_days"] = user.custom_new_customer_days
+        if user.custom_existing_customer_days is not None:
+            rules["existing_customer_followup_days"] = user.custom_existing_customer_days
+    return rules
 
 @app.get("/api")
 async def api_root():

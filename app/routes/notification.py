@@ -138,7 +138,8 @@ async def send_birthday_email(
     success = email_service.send_birthday_email(
         to_email=customer.email,
         customer_name=customer.name,
-        business_name=business_name
+        business_name=business_name,
+        business_logo=user.business_logo
     )
     if success:
         from datetime import datetime
@@ -167,7 +168,8 @@ async def preview_birthday_email(
         raise HTTPException(status_code=404, detail="Customer not found")
     subject, html = email_service.render_birthday_email_html(
         customer_name=customer.name,
-        business_name=business_name
+        business_name=business_name,
+        business_logo=user.business_logo
     )
     return {"subject": subject, "html": html}
 

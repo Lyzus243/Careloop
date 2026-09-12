@@ -69,6 +69,51 @@ async def delete_account(
 
     return {"success": True, "message": "Account permanently deleted"}
 
+@router.put("/business-logo")
+async def update_business_logo(
+    request: Request,
+    logo_data: dict,
+    user_id: int = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db)
+):
+    logo_url = logo_data.get("business_logo")
+    if not logo_url:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Logo data is required"
+        )
+    return await AuthController.update_user_business_logo(db, user_id, logo_url)
+
+@router.put("/settings")
+async def update_user_settings(
+    data: dict,
+    user_id: int = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db)
+):
+    """Update follow-up messages, birthday message, and reminder timing for the current user."""
+    from sqlalchemy import select
+    from app.models.user import User
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if "followup_message_new" in data:
+        user.followup_message_new = data["followup_message_new"] or None
+    if "followup_message_existing" in data:
+        user.followup_message_existing = data["followup_message_existing"] or None
+    if "birthday_message" in data:
+        user.birthday_message = data["birthday_message"] or None
+    if "custom_new_customer_days" in data:
+        val = data["custom_new_customer_days"]
+        user.custom_new_customer_days = int(val) if val not in (None, "") else None
+    if "custom_existing_customer_days" in data:
+        val = data["custom_existing_customer_days"]
+        user.custom_existing_customer_days = int(val) if val not in (None, "") else None
+
+    await db.commit()
+    return {"success": True}
+
 @router.put("/consent/prompt")
 async def mark_consent_prompted(
     user_id: int = Depends(get_current_user_id),

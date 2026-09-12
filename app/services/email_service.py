@@ -143,10 +143,11 @@ class EmailService:
         """
         return self._send(to_email, subject, html)
 
-    def render_birthday_email_html(self, customer_name: str, business_name: str) -> tuple[str, str]:
+    def render_birthday_email_html(self, customer_name: str, business_name: str, business_logo: str = None) -> tuple[str, str]:
         """Build the birthday email subject and HTML without sending. Used for both sending and previewing."""
         subject = f"Happy Birthday {customer_name}!"
         business_name_upper = business_name.upper()
+        business_brand_html = f'<span style="display:inline-block;background:#ffffff;border-radius:6px;padding:5px 10px;line-height:0;"><img src="{business_logo}" alt="{business_name}" style="height:22px;max-width:130px;object-fit:contain;display:block;"></span>' if business_logo else business_name
         html = f"""
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background:#ffffff;overflow:hidden;font-family:Georgia,'Times New Roman',serif;">
           <tr>
@@ -157,7 +158,7 @@ class EmailService:
                     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                       <tr>
                         <td style="font-family:Georgia,serif;font-size:17px;font-weight:700;color:#F4EFE6;letter-spacing:0.3px;">
-                          {business_name}
+                          {business_brand_html}
                         </td>
                         <td style="text-align:right;font-family:Arial,sans-serif;font-size:10px;font-weight:700;color:#C9A54A;letter-spacing:1.2px;">
                           FROM {business_name_upper}
@@ -231,8 +232,8 @@ class EmailService:
         """
         return subject, html
 
-    def send_birthday_email(self, to_email: str, customer_name: str, business_name: str) -> bool:
-        subject, html = self.render_birthday_email_html(customer_name, business_name)
+    def send_birthday_email(self, to_email: str, customer_name: str, business_name: str, business_logo: str = None) -> bool:
+        subject, html = self.render_birthday_email_html(customer_name, business_name, business_logo)
         return self._send(to_email, subject, html)
 
     def render_birthday_reminder_html(self, customer_name: str, owner_name: str, base_url: str = "https://mycareloop.com.ng") -> tuple[str, str]:
