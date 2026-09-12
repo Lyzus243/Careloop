@@ -143,11 +143,25 @@ class EmailService:
         """
         return self._send(to_email, subject, html)
 
-    def render_birthday_email_html(self, customer_name: str, business_name: str, business_logo: str = None) -> tuple[str, str]:
+    def render_birthday_email_html(self, customer_name: str, business_name: str, business_logo: str = None, birthday_message: str = None) -> tuple[str, str]:
         """Build the birthday email subject and HTML without sending. Used for both sending and previewing."""
         subject = f"Happy Birthday {customer_name}!"
         business_name_upper = business_name.upper()
         business_brand_html = f'<span style="display:inline-block;background:#ffffff;border-radius:6px;padding:5px 10px;line-height:0;"><img src="{business_logo}" alt="{business_name}" style="height:22px;max-width:130px;object-fit:contain;display:block;"></span>' if business_logo else business_name
+        if birthday_message:
+            body_paragraphs_html = f'<p style="font-size:15px;color:#2E3B4E;line-height:1.9;margin:0 0 30px;">{birthday_message}</p>'
+        else:
+            body_paragraphs_html = (
+                f'<p style="font-size:15px;color:#2E3B4E;line-height:1.9;margin:0 0 18px;">'
+                f'On behalf of everyone at <strong>{business_name}</strong>, we\'d like to take a moment to celebrate you \u2014 not as a customer, but as someone who has trusted us and grown with us over the years.'
+                f'</p>'
+                f'<p style="font-size:15px;color:#2E3B4E;line-height:1.9;margin:0 0 18px;">'
+                f'Your birthday is a reminder of the people who make what we do meaningful. We hope this year brings you everything you deserve \u2014 joy, good health, and moments worth remembering.'
+                f'</p>'
+                f'<p style="font-size:15px;color:#2E3B4E;line-height:1.9;margin:0 0 30px;">'
+                f'Wishing you a wonderful celebration, however you choose to spend it.'
+                f'</p>'
+            )
         html = f"""
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background:#ffffff;overflow:hidden;font-family:Georgia,'Times New Roman',serif;">
           <tr>

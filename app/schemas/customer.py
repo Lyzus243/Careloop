@@ -6,6 +6,7 @@ from enum import Enum
 class CustomerType(str, Enum):
     active = "active"
     new = "new"
+    inactive = "inactive"
 
 class CustomerCreate(BaseModel):
     name: str

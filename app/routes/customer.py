@@ -1,5 +1,5 @@
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, Query, status, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, status, Request, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -131,4 +131,117 @@ async def mark_followed_up(
     await db.commit()
     await db.refresh(customer)
     return {"success": True, "last_followed_up_at": customer.last_followed_up_at}
+
+@router.post("/bulk-import")
+async def bulk_import_customers(
+    file: UploadFile = File(...),
+    user_id: int = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db)
+):
+    """Import customers from an uploaded Excel file. Rejects the entire file if any row is invalid."""
+    import pandas as pd
+    from datetime import datetime as dt
+    from app.models.customer import Customer, CustomerType as ModelCustomerType
+
+    try:
+        df = pd.read_excel(file.file, sheet_name=0)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Could not read the uploaded file: {str(e)}")
+
+    expected_cols = ["Name", "Phone Number", "Email", "Date of Birth", "Customer Type", "Has Purchased"]
+    df.columns = [str(c).strip() for c in df.columns]
+    missing_cols = [c for c in expected_cols if c not in df.columns]
+    if missing_cols:
+        raise HTTPException(status_code=400, detail=f"Missing required columns: {', '.join(missing_cols)}. Please use the provided template.")
+
+    errors = []
+    parsed_rows = []
+
+    for idx, row in df.iterrows():
+        row_num = idx + 2
+        name = str(row.get("Name", "")).strip() if pd.notna(row.get("Name")) else ""
+        if not name:
+            errors.append(f"Row {row_num}: Name is required")
+            continue
+
+        phone = str(row.get("Phone Number", "")).strip() if pd.notna(row.get("Phone Number")) else None
+        email = str(row.get("Email", "")).strip() if pd.notna(row.get("Email")) else None
+
+        dob = None
+        dob_raw = row.get("Date of Birth")
+        if pd.notna(dob_raw):
+            try:
+                dob = pd.to_datetime(dob_raw).to_pydatetime()
+            except Exception:
+                errors.append(f"Row {row_num}: Date of Birth '{dob_raw}' is not a valid date")
+                continue
+
+        cust_type_raw = str(row.get("Customer Type", "")).strip().lower() if pd.notna(row.get("Customer Type")) else "new"
+        if cust_type_raw not in ("new", "active"):
+            errors.append(f"Row {row_num}: Customer Type must be 'new' or 'active', got '{cust_type_raw}'")
+            continue
+
+        has_purchased_raw = str(row.get("Has Purchased", "")).strip().lower() if pd.notna(row.get("Has Purchased")) else "no"
+        if has_purchased_raw not in ("yes", "no", "true", "false", ""):
+            errors.append(f"Row {row_num}: Has Purchased must be 'yes' or 'no', got '{has_purchased_raw}'")
+            continue
+        has_purchased = has_purchased_raw in ("yes", "true")
+
+        parsed_rows.append({
+            "name": name,
+            "phone_number": phone,
+            "email": email,
+            "date_of_birth": dob,
+            "customer_type": cust_type_raw,
+            "has_purchased": has_purchased,
+        })
+
+    if errors:
+        raise HTTPException(status_code=400, detail={"message": "Import rejected due to invalid rows", "errors": errors})
+
+    existing_result = await db.execute(select(Customer).where(Customer.user_id == user_id))
+    existing_customers = existing_result.scalars().all()
+    existing_by_email = {c.email.strip().lower(): c for c in existing_customers if c.email}
+
+    created = 0
+    updated = 0
+    skipped = 0
+
+    for row_data in parsed_rows:
+        match = existing_by_email.get(row_data["email"].strip().lower()) if row_data["email"] else None
+        if match:
+            changed = False
+            for field in ["name", "phone_number", "date_of_birth", "customer_type", "has_purchased"]:
+                new_val = row_data[field]
+                old_val = getattr(match, field)
+                if new_val not in (None, "") and new_val != old_val:
+                    setattr(match, field, new_val)
+                    changed = True
+            if changed:
+                match.updated_at = dt.utcnow()
+                updated += 1
+            else:
+                skipped += 1
+        else:
+            new_customer = Customer(
+                user_id=user_id,
+                name=row_data["name"],
+                phone_number=row_data["phone_number"],
+                email=row_data["email"],
+                date_of_birth=row_data["date_of_birth"],
+                customer_type=row_data["customer_type"],
+                has_purchased=row_data["has_purchased"],
+            )
+            db.add(new_customer)
+            created += 1
+
+    await db.commit()
+
+    return {
+        "success": True,
+        "created": created,
+        "updated": updated,
+        "skipped": skipped,
+        "total_rows": len(parsed_rows)
+    }
 

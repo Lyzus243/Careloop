@@ -1159,7 +1159,7 @@ body.dark-mode.eye-care {
     <div style="max-width:520px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:24px;margin-top:16px;">
       <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:14px;">Change password</div>
       <label class="field-label">Current password</label>
-      <input type="password" class="field-input" id="settings-current-password" style="margin-bottom:14px;">
+      <input type="password" class="field-input" id="settings-current-password" name="cl-nosuggest-3" autocomplete="off" data-lpignore="true" data-form-type="other" readonly onfocus="this.removeAttribute('readonly')" style="margin-bottom:14px;">
       <label class="field-label">New password</label>
       <input type="password" class="field-input" id="settings-new-password" style="margin-bottom:14px;">
       <label class="field-label">Confirm new password</label>
@@ -1224,6 +1224,13 @@ body.dark-mode.eye-care {
     <div class="customers-search">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text3)"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       <input type="text" placeholder="Search for Customers" id="cust-search" name="cl-nosuggest-2" autocomplete="off" data-lpignore="true" data-form-type="other" oninput="renderCustomers()">
+    </div>
+    <div style="display:flex;gap:12px;align-items:center;margin-bottom:20px;">
+      <button onclick="openBulkImportPicker()" style="padding:9px 16px;border-radius:50px;border:1px solid var(--border);background:#fff;color:var(--text);font-size:.85rem;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Import from Excel
+      </button>
+      <a href="/assets/careloop_customer_import_template.xlsx" download style="font-size:.95rem;font-weight:600;color:var(--blue);text-decoration:underline;">Download template</a>
     </div>
     <div id="bulk-action-bar" style="display:none;align-items:center;gap:12px;padding:12px 16px;background:var(--blue);border-radius:var(--radius);margin-bottom:12px;">
       <span id="bulk-count" style="color:white;font-weight:600;font-size:.9rem;flex:1;"></span>
@@ -2006,6 +2013,44 @@ async function saveCurrencyPreference(currency){
       body:JSON.stringify({preferred_currency:currency})
     });
   }catch(e){}
+}
+
+// --- BULK IMPORT ---
+function openBulkImportPicker(){
+  const inp = document.createElement("input");
+  inp.type = "file";
+  inp.accept = ".xlsx,.xls";
+  inp.onchange = async e => {
+    const f = e.target.files[0];
+    if(!f) return;
+    const token = localStorage.getItem("authToken");
+    const formData = new FormData();
+    formData.append("file", f);
+    clAlert("Importing customers, please wait...", "success");
+    try{
+      const r = await fetch(`${API_URL}/api/customers/bulk-import`, {
+        method: "POST",
+        headers: { "Authorization": "Bearer " + token },
+        body: formData
+      });
+      const d = await r.json();
+      if(r.ok){
+        clAlert(`Import complete: ${d.created} created, ${d.updated} updated, ${d.skipped} unchanged.`, "success");
+        await loadCustomers();
+        renderCustomers();
+      } else {
+        const detail = d.detail;
+        if(detail && typeof detail === "object" && detail.errors){
+          clAlert(`Import rejected: ${detail.errors.slice(0,3).join("; ")}${detail.errors.length > 3 ? "..." : ""}`, "warning");
+        } else {
+          clAlert(detail || "Import failed.", "warning");
+        }
+      }
+    }catch(err){
+      clAlert("Network error during import. Please try again.", "warning");
+    }
+  };
+  inp.click();
 }
 
 // ─── LOAD CUSTOMERS ───
