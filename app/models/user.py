@@ -31,3 +31,4 @@ class User(Base):
     birthday_message = Column(Text, nullable=True)
     custom_new_customer_days = Column(Integer, nullable=True)
     custom_existing_customer_days = Column(Integer, nullable=True)
+    last_unresponsive_prompt_at = Column(DateTime(timezone=True), nullable=True)

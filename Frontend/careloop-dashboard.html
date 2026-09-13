@@ -1000,7 +1000,7 @@ body.dark-mode.eye-care {
       <button class="avatar-chevron" onclick="toggleHeaderMenu(event)">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6,9 12,15 18,9"/></svg>
       </button>
-      <div id="header-dropdown-menu" style="display:none;position:absolute;top:calc(100% + 8px);right:0;background:#ffffff;border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.12);min-width:180px;z-index:1000;overflow:hidden;">
+      <div id="header-dropdown-menu" style="display:none;position:absolute;top:calc(100% + 8px);right:0;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.12);min-width:180px;z-index:1000;overflow:hidden;">
         <button onclick="showPage('account-settings');closeHeaderMenu();" style="width:100%;display:flex;align-items:center;gap:10px;padding:12px 16px;border:none;background:none;color:var(--text);font-size:14px;font-family:inherit;cursor:pointer;text-align:left;">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
           Account Settings
@@ -1122,7 +1122,7 @@ body.dark-mode.eye-care {
       </div>
     </div>
 
-    <div style="max-width:520px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:24px;margin-top:16px;">
+    <div style="max-width:520px;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:24px;margin-top:16px;">
       <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:4px;">Business logo</div>
       <div style="font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:16px;">Shown alongside the Careloop watermark in emails sent to your customers, such as birthday messages.</div>
       <div style="display:flex;align-items:center;gap:16px;">
@@ -1130,11 +1130,11 @@ body.dark-mode.eye-care {
           <img id="business-logo-img" src="" alt="" style="width:100%;height:100%;object-fit:contain;display:none;">
           <span id="business-logo-placeholder" style="font-size:11px;color:var(--text2);text-align:center;">No logo</span>
         </div>
-        <button onclick="changeBusinessLogo()" style="padding:10px 18px;border-radius:8px;border:1px solid var(--border);background:#fff;color:var(--text);font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;">Upload Logo</button>
+        <button onclick="changeBusinessLogo()" style="padding:10px 18px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;">Upload Logo</button>
       </div>
     </div>
 
-    <div style="max-width:520px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:24px;margin-top:16px;">
+    <div style="max-width:520px;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:24px;margin-top:16px;">
       <div style="display:flex;align-items:center;justify-content:space-between;">
         <div style="padding-right:16px;">
           <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:4px;">Reminder emails</div>
@@ -1146,7 +1146,7 @@ body.dark-mode.eye-care {
       </div>
     </div>
 
-    <div style="max-width:520px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:24px;margin-top:16px;">
+    <div style="max-width:520px;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:24px;margin-top:16px;">
       <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:14px;">Preferred currency</div>
       <select id="settings-currency-select" class="field-input" style="width:100%;cursor:pointer;" onchange="saveCurrencyPreference(this.value)">
         <option value="USD">USD - US Dollar</option>
@@ -1156,7 +1156,7 @@ body.dark-mode.eye-care {
       </select>
     </div>
 
-    <div style="max-width:520px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:24px;margin-top:16px;">
+    <div style="max-width:520px;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:24px;margin-top:16px;">
       <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:14px;">Change password</div>
       <label class="field-label">Current password</label>
       <input type="password" class="field-input" id="settings-current-password" name="cl-nosuggest-3" autocomplete="off" data-lpignore="true" data-form-type="other" readonly onfocus="this.removeAttribute('readonly')" style="margin-bottom:14px;">
@@ -1167,7 +1167,7 @@ body.dark-mode.eye-care {
       <button class="btn-primary" onclick="changeAccountPassword()" style="width:100%;justify-content:center;padding:12px;border-radius:10px;">Update Password</button>
     </div>
 
-    <div style="max-width:520px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:24px;margin-top:16px;">
+    <div style="max-width:520px;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:24px;margin-top:16px;">
       <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:14px;">Follow-up messages</div>
       <label class="field-label">New customer message</label>
       <textarea id="settings-followup-new" class="field-input" rows="2" placeholder="Introduce and build relationship" style="margin-bottom:14px;resize:vertical;"></textarea>
@@ -1176,14 +1176,14 @@ body.dark-mode.eye-care {
       <button class="btn-primary" onclick="saveMessageSettings()" style="width:100%;justify-content:center;padding:12px;border-radius:10px;">Save Messages</button>
     </div>
 
-    <div style="max-width:520px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:24px;margin-top:16px;">
+    <div style="max-width:520px;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:24px;margin-top:16px;">
       <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:6px;">Birthday email message</div>
       <div style="font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:14px;">Replaces the default thank-you message in birthday emails. Leave blank to use the default.</div>
       <textarea id="settings-birthday-message" class="field-input" rows="4" placeholder="On behalf of everyone at us, we'd like to take a moment to celebrate you..." style="margin-bottom:18px;resize:vertical;"></textarea>
       <button class="btn-primary" onclick="saveMessageSettings()" style="width:100%;justify-content:center;padding:12px;border-radius:10px;">Save Message</button>
     </div>
 
-    <div style="max-width:520px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:24px;margin-top:16px;">
+    <div style="max-width:520px;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:24px;margin-top:16px;">
       <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:14px;">Reminder timing</div>
       <label class="field-label">Follow up with new customers after (days)</label>
       <input type="number" id="settings-new-days" class="field-input" min="1" max="365" placeholder="14" style="margin-bottom:14px;">
@@ -1192,7 +1192,7 @@ body.dark-mode.eye-care {
       <button class="btn-primary" onclick="saveMessageSettings()" style="width:100%;justify-content:center;padding:12px;border-radius:10px;">Save Timing</button>
     </div>
 
-    <div style="max-width:520px;background:#fff;border:1px solid #FCA5A5;border-radius:12px;padding:24px;margin-top:16px;">
+    <div style="max-width:520px;background:var(--bg);border:1px solid #FCA5A5;border-radius:12px;padding:24px;margin-top:16px;">
       <div style="font-size:15px;font-weight:600;color:#B91C1C;margin-bottom:6px;">Danger zone</div>
       <div style="font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:16px;">Permanently delete your account and all associated data. This cannot be undone.</div>
       <button onclick="openDeleteAccountModal()" style="padding:10px 18px;border-radius:8px;border:1px solid #FCA5A5;background:#FEF2F2;color:#B91C1C;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;">Delete Account</button>
@@ -1232,10 +1232,14 @@ body.dark-mode.eye-care {
         <option value="active">Active/Existing</option>
         <option value="inactive">Inactive</option>
       </select>
+      <label style="display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:50px;border:1px solid var(--border);background:var(--bg2);cursor:pointer;white-space:nowrap;font-size:.875rem;color:var(--text);">
+        <input type="checkbox" id="cust-select-all" onchange="toggleSelectAllCustomers(this)">
+        Select all
+      </label>
     </div>
     <div style="height:24px;"></div>
     <div style="display:flex;gap:12px;align-items:center;margin-bottom:20px;">
-      <button onclick="openBulkImportPicker()" style="padding:9px 16px;border-radius:50px;border:1px solid var(--border);background:#fff;color:var(--text);font-size:.85rem;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px;">
+      <button onclick="openBulkImportPicker()" style="padding:9px 16px;border-radius:50px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:.85rem;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px;">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
         Import from Excel
       </button>
@@ -1428,6 +1432,28 @@ body.dark-mode.eye-care {
     <div class="success-sub" id="success-sub">We'll remind you to follow up in a few days.</div>
     <button class="btn-primary" style="width:100%;justify-content:center;padding:14px;border-radius:50px;" onclick="resetAddFlow();closeModal('success-modal')">Add new customer</button>
     <button class="back-dash-link" onclick="closeModal('success-modal');showPage('dashboard')">Back to Dashboard</button>
+  </div>
+</div>
+
+<!-- UNRESPONSIVE NUDGE MODAL -->
+<div class="modal-backdrop" id="unresponsive-modal">
+  <div class="modal-card" style="text-align:left;max-width:400px;">
+    <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:14px;">
+      <div style="width:38px;height:38px;border-radius:10px;background:#FEF3C7;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B45309" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+          <path d="M13.73 21a2 2 0 01-3.46 0"/>
+        </svg>
+      </div>
+      <div>
+        <p style="font-size:16px;font-weight:700;color:#111827;margin:0 0 2px;">Some customers have gone quiet</p>
+        <p style="font-size:13px;color:#9ca3af;margin:0;">Keep your list focused</p>
+      </div>
+    </div>
+    <p id="unresponsive-modal-body" style="font-size:13.5px;color:#4b5563;line-height:1.6;margin:0 0 16px;"></p>
+    <div id="unresponsive-modal-list" style="max-height:140px;overflow-y:auto;margin-bottom:18px;font-size:13px;color:#4b5563;"></div>
+    <button class="btn-primary" onclick="unsubscribeUnresponsive()" style="width:100%;justify-content:center;padding:13px;border-radius:10px;margin-bottom:10px;">Mark as Inactive</button>
+    <a onclick="dismissUnresponsiveNudge()" style="display:block;text-align:center;font-size:13px;color:#6b7280;text-decoration:none;cursor:pointer;">Not now</a>
   </div>
 </div>
 
@@ -1630,6 +1656,7 @@ updateUserUI();
     if(cfgR.ok) followupConfig=await cfgR.json();
   }catch(e){}
   checkConsentPrompt();
+  checkUnresponsiveNudge();
 
   buildFollowups();
   buildNotifications();
@@ -1964,6 +1991,78 @@ async function confirmDeleteAccount(){
     btn.textContent = "Permanently Delete Account";
     checkDeleteEmailMatch();
   }
+}
+
+let unresponsiveCandidateIds = [];
+async function checkUnresponsiveNudge(){
+  const token = localStorage.getItem("authToken");
+  if(!token) return;
+  try{
+    const r = await fetch(`${API_URL}/api/user/profile`,{headers:{"Authorization":"Bearer "+token}});
+    if(!r.ok) return;
+    const u = await r.json();
+    const lastPrompted = u.last_unresponsive_prompt_at;
+    let shouldShow = false;
+    if(!lastPrompted){
+      shouldShow = true;
+    } else {
+      const daysSince = Math.floor((Date.now() - new Date(lastPrompted)) / 86400000);
+      shouldShow = daysSince >= 7;
+    }
+    if(!shouldShow) return;
+
+    const candidates = customers.filter(c=>{
+      if(c.customer_type === "inactive") return false;
+      if(c.has_purchased) return false;
+      const lastContact = c.last_contact || c.created_at;
+      if(!lastContact) return false;
+      const daysSince = Math.floor((Date.now() - new Date(lastContact)) / 86400000);
+      return daysSince >= 30;
+    });
+
+    if(!candidates.length) return;
+
+    unresponsiveCandidateIds = candidates.map(c=>c.id);
+    const names = candidates.slice(0,5).map(c=>c.name);
+    const extra = candidates.length > 5 ? ` and ${candidates.length - 5} more` : "";
+    document.getElementById("unresponsive-modal-body").textContent =
+      `${candidates.length} customer${candidates.length!==1?'s':''} haven't purchased or been contacted in over 30 days:`;
+    document.getElementById("unresponsive-modal-list").innerHTML =
+      names.map(n=>`&bull; ${esc(n)}`).join("<br>") + (extra ? `<br><em>${extra}</em>` : "");
+    openModal("unresponsive-modal");
+
+    fetch(`${API_URL}/api/user/unresponsive-prompt`,{
+      method:"PUT",
+      headers:{"Authorization":"Bearer "+token}
+    }).catch(()=>{});
+  }catch(e){}
+}
+async function unsubscribeUnresponsive(){
+  if(!unresponsiveCandidateIds.length) return;
+  const token = localStorage.getItem("authToken");
+  try{
+    const r = await fetch(`${API_URL}/api/customers/bulk-categorize`,{
+      method:"PUT",
+      headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},
+      body:JSON.stringify({customer_ids: unresponsiveCandidateIds, customer_type: "inactive"})
+    });
+    if(r.ok){
+      unresponsiveCandidateIds.forEach(id=>{
+        const c = customers.find(x=>x.id===id);
+        if(c) c.customer_type = "inactive";
+      });
+      clAlert("Those customers have been marked inactive.","success");
+      renderDashboard();
+    } else {
+      clAlert("Failed to update customers.","warning");
+    }
+  }catch(e){
+    clAlert("Network error. Please try again.","warning");
+  }
+  closeModal("unresponsive-modal");
+}
+function dismissUnresponsiveNudge(){
+  closeModal("unresponsive-modal");
 }
 
 // --- CONSENT MODAL ---
@@ -2448,6 +2547,10 @@ function renderCustomers(){
   );
   const shown=filtered.slice(0,custShowing);
   const container=document.getElementById('customer-list-table');
+  const selectAllBox = document.getElementById('cust-select-all');
+  if(selectAllBox){
+    selectAllBox.checked = filtered.length > 0 && filtered.every(c=>selectedCustomers.has(c.id));
+  }
   if(!filtered.length){
     container.innerHTML='<div style="padding:40px;text-align:center;color:var(--text2);">No customers found.</div>';
     document.getElementById('cust-view-more').style.display='none';
@@ -2482,6 +2585,35 @@ function loadMoreCustomers(){custShowing+=10;renderCustomers();}
 function toggleCustomerSelect(id, checkbox){
   if(checkbox.checked) selectedCustomers.add(id);
   else selectedCustomers.delete(id);
+  updateBulkBar();
+  const selectAllBox = document.getElementById('cust-select-all');
+  if(selectAllBox){
+    const q=(document.getElementById('cust-search')||{}).value?.toLowerCase()||'';
+    const catFilter=(document.getElementById('cust-category-filter')||{}).value||'';
+    const filtered=customers.filter(c=>
+      (c.name.toLowerCase().includes(q)||
+      (c.phone_number||'').includes(q)||
+      (c.email||'').toLowerCase().includes(q))
+      && (!catFilter || c.customer_type===catFilter)
+    );
+    selectAllBox.checked = filtered.length > 0 && filtered.every(c=>selectedCustomers.has(c.id));
+  }
+}
+function toggleSelectAllCustomers(checkbox){
+  const q=(document.getElementById('cust-search')||{}).value?.toLowerCase()||'';
+  const catFilter=(document.getElementById('cust-category-filter')||{}).value||'';
+  const filtered=customers.filter(c=>
+    (c.name.toLowerCase().includes(q)||
+    (c.phone_number||'').includes(q)||
+    (c.email||'').toLowerCase().includes(q))
+    && (!catFilter || c.customer_type===catFilter)
+  );
+  if(checkbox.checked){
+    filtered.forEach(c=>selectedCustomers.add(c.id));
+  } else {
+    filtered.forEach(c=>selectedCustomers.delete(c.id));
+  }
+  renderCustomers();
   updateBulkBar();
 }
 function updateBulkBar(){

@@ -114,6 +114,23 @@ async def update_user_settings(
     await db.commit()
     return {"success": True}
 
+@router.put("/unresponsive-prompt")
+async def mark_unresponsive_prompted(
+    user_id: int = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db)
+):
+    """Record that the unresponsive-customer nudge was just shown."""
+    from datetime import datetime
+    from sqlalchemy import select
+    from app.models.user import User
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    user.last_unresponsive_prompt_at = datetime.utcnow()
+    await db.commit()
+    return {"success": True}
+
 @router.put("/consent/prompt")
 async def mark_consent_prompted(
     user_id: int = Depends(get_current_user_id),

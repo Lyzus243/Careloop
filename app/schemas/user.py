@@ -39,6 +39,7 @@ class UserResponse(BaseModel):
     birthday_message: Optional[str] = None
     custom_new_customer_days: Optional[int] = None
     custom_existing_customer_days: Optional[int] = None
+    last_unresponsive_prompt_at: Optional[datetime] = None
     created_at: Optional[datetime] = None
 
 class UserUpdate(BaseModel):

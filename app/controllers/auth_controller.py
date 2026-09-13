@@ -326,7 +326,8 @@ class AuthController:
             followup_message_existing=getattr(user, 'followup_message_existing', None),
             birthday_message=getattr(user, 'birthday_message', None),
             custom_new_customer_days=getattr(user, 'custom_new_customer_days', None),
-            custom_existing_customer_days=getattr(user, 'custom_existing_customer_days', None)
+            custom_existing_customer_days=getattr(user, 'custom_existing_customer_days', None),
+            last_unresponsive_prompt_at=getattr(user, 'last_unresponsive_prompt_at', None)
         )
 
     @staticmethod
