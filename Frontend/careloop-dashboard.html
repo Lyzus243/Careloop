@@ -1609,7 +1609,7 @@ function showPage(page){
   const navMap={dashboard:'nav-dashboard',customers:'nav-customers','add-customer':'nav-add',sales:'nav-sales'};
   if(navMap[page]) document.getElementById(navMap[page]).classList.add('active');
   if(page==='add-customer') renderAddStep();
-  if(page==='notifications') renderNotifPage();
+  if(page==='notifications'){ renderNotifPage(); markAllRead(); }
   if(page==='customers'){loadCustomers().then(()=>renderCustomers());}
   if(page==='dashboard') renderDashboard();
   if(page==='sales') renderSalesPage();
@@ -1702,20 +1702,6 @@ updateUserUI();
 //     renderNotifPage();
 //     document.getElementById('bell-badge').style.display = 'block';
 // }
-
-async function markAllRead() {
-    const token = localStorage.getItem('authToken');
-    try {
-        await fetch(`${API_URL}/api/notifications/mark-all-read`, {
-            method: 'PUT',
-            headers: { 'Authorization': 'Bearer ' + token }
-        });
-    } catch (e) {}
-    notifications = [];
-    document.getElementById('bell-badge').style.display = 'none';
-    renderDashNotifs();
-    renderNotifPage();
-}
 
 function updateUserUI(){
   const firstName=currentUser.name.split(' ')[0];
@@ -3092,10 +3078,7 @@ async function markAllRead(){
       headers:{'Authorization':'Bearer '+token}
     });
   }catch(e){}
-  notifications=[];
   document.getElementById('bell-badge').style.display='none';
-  renderDashNotifs();
-  renderNotifPage();
 }
 
 
