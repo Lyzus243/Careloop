@@ -1221,10 +1221,19 @@ body.dark-mode.eye-care {
         <p class="page-sub">Access all Customer information</p>
       </div>
     </div>
-    <div class="customers-search">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text3)"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input type="text" placeholder="Search for Customers" id="cust-search" name="cl-nosuggest-2" autocomplete="off" data-lpignore="true" data-form-type="other" oninput="renderCustomers()">
+    <div style="display:flex;gap:12px;align-items:center;">
+      <div class="customers-search" style="flex:1;margin-bottom:0;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text3)"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" placeholder="Search for Customers" id="cust-search" name="cl-nosuggest-2" autocomplete="off" data-lpignore="true" data-form-type="other" oninput="renderCustomers()">
+      </div>
+      <select id="cust-category-filter" onchange="renderCustomers()" style="padding:10px 16px;border-radius:50px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:.875rem;cursor:pointer;font-family:inherit;">
+        <option value="">All categories</option>
+        <option value="new">New</option>
+        <option value="active">Active/Existing</option>
+        <option value="inactive">Inactive</option>
+      </select>
     </div>
+    <div style="height:24px;"></div>
     <div style="display:flex;gap:12px;align-items:center;margin-bottom:20px;">
       <button onclick="openBulkImportPicker()" style="padding:9px 16px;border-radius:50px;border:1px solid var(--border);background:#fff;color:var(--text);font-size:.85rem;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px;">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -1240,6 +1249,12 @@ body.dark-mode.eye-care {
       <button onclick="openBulkEmailModal()" style="background:white;color:var(--blue);border:none;padding:8px 16px;border-radius:50px;font-weight:600;cursor:pointer;font-size:.85rem;">
         Email
       </button>
+      <select onchange="if(this.value){bulkCategorize(this.value);this.value='';}" style="background:white;color:var(--blue);border:none;padding:8px 16px;border-radius:50px;font-weight:600;cursor:pointer;font-size:.85rem;">
+        <option value="">Mark as...</option>
+        <option value="new">New</option>
+        <option value="active">Active/Existing</option>
+        <option value="inactive">Inactive</option>
+      </select>
       <button onclick="selectedCustomers.clear();renderCustomers();updateBulkBar();" style="background:transparent;color:white;border:1.5px solid white;padding:8px 16px;border-radius:50px;font-weight:600;cursor:pointer;font-size:.85rem;">
         Cancel
       </button>
@@ -1272,6 +1287,11 @@ body.dark-mode.eye-care {
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         Download CSV
       </button>
+      <button class="btn-outline" onclick="openBulkSalesImportPicker()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Import from Excel
+      </button>
+      <a href="/assets/careloop_sales_import_template.xlsx" download style="font-size:.85rem;font-weight:600;color:var(--blue);text-decoration:underline;align-self:center;">Download template</a>
     </div>
   </div>
 
@@ -2053,6 +2073,43 @@ function openBulkImportPicker(){
   inp.click();
 }
 
+function openBulkSalesImportPicker(){
+  const inp = document.createElement("input");
+  inp.type = "file";
+  inp.accept = ".xlsx,.xls";
+  inp.onchange = async e => {
+    const f = e.target.files[0];
+    if(!f) return;
+    const token = localStorage.getItem("authToken");
+    const formData = new FormData();
+    formData.append("file", f);
+    clAlert("Importing sales, please wait...", "success");
+    try{
+      const r = await fetch(`${API_URL}/api/sales/bulk-import`, {
+        method: "POST",
+        headers: { "Authorization": "Bearer " + token },
+        body: formData
+      });
+      const d = await r.json();
+      if(r.ok){
+        clAlert(`Import complete: ${d.created} sale(s) added.`, "success");
+        await loadSales();
+        renderSalesPage();
+      } else {
+        const detail = d.detail;
+        if(detail && typeof detail === "object" && detail.errors){
+          clAlert(`Import rejected: ${detail.errors.slice(0,3).join("; ")}${detail.errors.length > 3 ? "..." : ""}`, "warning");
+        } else {
+          clAlert(detail || "Import failed.", "warning");
+        }
+      }
+    }catch(err){
+      clAlert("Network error during import. Please try again.", "warning");
+    }
+  };
+  inp.click();
+}
+
 // ─── LOAD CUSTOMERS ───
 async function loadCustomers(){
   const token=localStorage.getItem('authToken'); if(!token) return;
@@ -2070,7 +2127,7 @@ async function loadCustomers(){
 // ─── FOLLOWUPS ───
 function buildFollowups(){
   const todayKey=new Date().toISOString().slice(0,10);
-  followups=customers.map(c=>{
+  followups=customers.filter(c=>c.customer_type!=='inactive').map(c=>{
     const lastContact=c.last_contact||c.created_at;
     const daysSince=lastContact?Math.floor((Date.now()-new Date(lastContact))/86400000):999;
     const isExisting=c.customer_type==='active'||c.has_purchased;
@@ -2382,10 +2439,12 @@ async function submitSale(){
 // ─── CUSTOMERS PAGE ───
 function renderCustomers(){
   const q=(document.getElementById('cust-search')||{}).value?.toLowerCase()||'';
+  const catFilter=(document.getElementById('cust-category-filter')||{}).value||'';
   const filtered=customers.filter(c=>
-    c.name.toLowerCase().includes(q)||
+    (c.name.toLowerCase().includes(q)||
     (c.phone_number||'').includes(q)||
-    (c.email||'').toLowerCase().includes(q)
+    (c.email||'').toLowerCase().includes(q))
+    && (!catFilter || c.customer_type===catFilter)
   );
   const shown=filtered.slice(0,custShowing);
   const container=document.getElementById('customer-list-table');
@@ -2435,6 +2494,34 @@ function updateBulkBar(){
     if(waBtn) waBtn.style.display = selectedCustomers.size===1 ? "" : "none";
   } else {
     bar.style.display="none";
+  }
+}
+async function bulkCategorize(newType){
+  const selected = Array.from(selectedCustomers);
+  if(!selected.length) return;
+  const labels = {new: "New", active: "Active/Existing", inactive: "Inactive"};
+  const token = localStorage.getItem("authToken");
+  try{
+    const r = await fetch(`${API_URL}/api/customers/bulk-categorize`,{
+      method:"PUT",
+      headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},
+      body:JSON.stringify({customer_ids: selected, customer_type: newType})
+    });
+    if(r.ok){
+      const d = await r.json();
+      selected.forEach(id=>{
+        const c = customers.find(x=>x.id===id);
+        if(c) c.customer_type = newType;
+      });
+      clAlert(`${d.updated} customer${d.updated!==1?'s':''} marked as ${labels[newType]}.`,"success");
+      selectedCustomers.clear();
+      renderCustomers();
+      updateBulkBar();
+    } else {
+      clAlert("Failed to update customers.","warning");
+    }
+  }catch(e){
+    clAlert("Network error. Please try again.","warning");
   }
 }
 function bulkWhatsApp(){

@@ -1,7 +1,7 @@
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status, Request, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, and_
 
 from app.database import get_db
 from app.dependencies import get_current_user_id
@@ -51,6 +51,41 @@ async def get_customers(
         )
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to fetch customers: {str(e)}")
+
+@router.put("/bulk-categorize")
+async def bulk_categorize_customers(
+    data: dict,
+    user_id: int = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db)
+):
+    """Bulk update customer_type for multiple customers at once."""
+    from app.models.customer import Customer
+    from datetime import datetime as dt
+
+    customer_ids = data.get("customer_ids", [])
+    new_type = data.get("customer_type", "")
+
+    if new_type not in ("new", "active", "inactive"):
+        raise HTTPException(status_code=400, detail="customer_type must be 'new', 'active', or 'inactive'")
+    if not customer_ids:
+        raise HTTPException(status_code=400, detail="No customers selected")
+
+    result = await db.execute(
+        select(Customer).where(
+            and_(Customer.id.in_(customer_ids), Customer.user_id == user_id)
+        )
+    )
+    customers = result.scalars().all()
+
+    updated = 0
+    for c in customers:
+        c.customer_type = new_type
+        c.updated_at = dt.utcnow()
+        updated += 1
+
+    await db.commit()
+    return {"success": True, "updated": updated}
+
 
 @router.get("/{customer_id}", response_model=CustomerResponse)
 async def get_customer(
@@ -177,8 +212,8 @@ async def bulk_import_customers(
                 continue
 
         cust_type_raw = str(row.get("Customer Type", "")).strip().lower() if pd.notna(row.get("Customer Type")) else "new"
-        if cust_type_raw not in ("new", "active"):
-            errors.append(f"Row {row_num}: Customer Type must be 'new' or 'active', got '{cust_type_raw}'")
+        if cust_type_raw not in ("new", "active", "inactive"):
+            errors.append(f"Row {row_num}: Customer Type must be 'new', 'active', or 'inactive', got '{cust_type_raw}'")
             continue
 
         has_purchased_raw = str(row.get("Has Purchased", "")).strip().lower() if pd.notna(row.get("Has Purchased")) else "no"
