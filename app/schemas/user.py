@@ -31,6 +31,15 @@ class UserResponse(BaseModel):
     avatar: Optional[str] = None
     is_active: bool = True
     is_email_verified: bool = False
+    email_reminders_consent: Optional[bool] = None
+    last_consent_prompted_at: Optional[datetime] = None
+    business_logo: Optional[str] = None
+    followup_message_new: Optional[str] = None
+    followup_message_existing: Optional[str] = None
+    birthday_message: Optional[str] = None
+    custom_new_customer_days: Optional[int] = None
+    custom_existing_customer_days: Optional[int] = None
+    last_unresponsive_prompt_at: Optional[datetime] = None
     created_at: Optional[datetime] = None
 
 class UserUpdate(BaseModel):

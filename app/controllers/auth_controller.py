@@ -312,11 +312,22 @@ class AuthController:
             email=user.email,
             full_name=user.full_name,
             business_name=user.business_name,
+            avatar=getattr(user, 'avatar', None),
             is_active=user.is_active,
+            is_email_verified=getattr(user, 'is_email_verified', False),
             created_at=user.created_at,
             updated_at=user.updated_at,
             last_login_at=user.last_login_at,
-            preferred_currency=getattr(user, 'preferred_currency', 'USD')
+            preferred_currency=getattr(user, 'preferred_currency', 'USD'),
+            email_reminders_consent=getattr(user, 'email_reminders_consent', None),
+            last_consent_prompted_at=getattr(user, 'last_consent_prompted_at', None),
+            business_logo=getattr(user, 'business_logo', None),
+            followup_message_new=getattr(user, 'followup_message_new', None),
+            followup_message_existing=getattr(user, 'followup_message_existing', None),
+            birthday_message=getattr(user, 'birthday_message', None),
+            custom_new_customer_days=getattr(user, 'custom_new_customer_days', None),
+            custom_existing_customer_days=getattr(user, 'custom_existing_customer_days', None),
+            last_unresponsive_prompt_at=getattr(user, 'last_unresponsive_prompt_at', None)
         )
 
     @staticmethod
@@ -356,6 +367,17 @@ class AuthController:
         user.updated_at = datetime.utcnow()
         await db.commit()
         return {"message": "Avatar updated successfully", "avatar": avatar_url}
+
+    @staticmethod
+    async def update_user_business_logo(db: AsyncSession, user_id: int, logo_url: str) -> dict:
+        user = await AuthController._get_user_by_id(db, user_id)
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+        user.business_logo = logo_url
+        user.updated_at = datetime.utcnow()
+        await db.commit()
+        return {"message": "Business logo updated successfully", "business_logo": logo_url}
 
     @staticmethod
     async def _get_user_by_email(db: AsyncSession, email: str) -> Optional[User]:

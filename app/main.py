@@ -16,6 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.controllers.auth_controller import AuthController
 from app.services.email_service import email_service
+from app.dependencies import get_current_user_id
 
 from app.rate_limit import limiter, RateLimitedRouter, add_rate_limit_exception_handler
 
@@ -263,9 +264,20 @@ async def serve_customers_page():
         return HTMLResponse(content="<h1>Page not found</h1>", status_code=404)
 
 @app.get("/api/config")
-async def get_config():
+async def get_config(user_id: int = Depends(get_current_user_id), db: AsyncSession = Depends(get_db)):
     from app.followup_config import FOLLOWUP_RULES
-    return FOLLOWUP_RULES
+    from sqlalchemy import select
+    from app.models.user import User
+
+    rules = dict(FOLLOWUP_RULES)
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if user:
+        if user.custom_new_customer_days is not None:
+            rules["new_customer_followup_days"] = user.custom_new_customer_days
+        if user.custom_existing_customer_days is not None:
+            rules["existing_customer_followup_days"] = user.custom_existing_customer_days
+    return rules
 
 @app.get("/api")
 async def api_root():
@@ -368,7 +380,7 @@ async def check_birthdays():
                 customers = result.scalars().all()
                 for customer in customers:
                     owner = await db.get(User, customer.user_id)
-                    if owner and owner.email:
+                    if owner and owner.email and owner.email_reminders_consent:
                         await email_service.send_birthday_reminder(
                             owner.email,
                             customer.name,
@@ -382,3 +394,119 @@ async def check_birthdays():
 @app.on_event("startup")
 async def start_birthday_checker():
     asyncio.create_task(check_birthdays())
+
+async def check_followup_nudges():
+    while True:
+        try:
+            today = datetime.utcnow()
+            async with AsyncSessionLocal() as db:
+                from sqlalchemy import select
+                from app.models.customer import Customer
+                from app.models.user import User
+                from app.followup_config import FOLLOWUP_RULES
+
+                users_result = await db.execute(select(User).where(User.email_reminders_consent == True))
+                users = users_result.scalars().all()
+                for owner in users:
+                    if not owner.email:
+                        continue
+                    cust_result = await db.execute(select(Customer).where(Customer.user_id == owner.id))
+                    customers = cust_result.scalars().all()
+                    due_count = 0
+                    overdue_count = 0
+                    for c in customers:
+                        last_contact = c.last_contact or c.created_at
+                        if not last_contact:
+                            continue
+                        days_since = (today - last_contact).days
+                        is_existing = c.customer_type == 'active' or c.has_purchased
+                        followup_days = FOLLOWUP_RULES['existing_customer_followup_days'] if is_existing else FOLLOWUP_RULES['new_customer_followup_days']
+                        if days_since >= followup_days + FOLLOWUP_RULES['overdue_grace_days']:
+                            overdue_count += 1
+                        elif days_since >= followup_days:
+                            due_count += 1
+                    if due_count + overdue_count > 0:
+                        await email_service.send_followup_nudge(
+                            owner.email,
+                            owner.full_name or "there",
+                            due_count,
+                            overdue_count
+                        )
+        except Exception as e:
+            print(f"FOLLOWUP NUDGE ERROR: {e}")
+        await asyncio.sleep(86400)
+
+@app.on_event("startup")
+async def start_followup_nudge_checker():
+    asyncio.create_task(check_followup_nudges())
+
+async def check_activity_summaries():
+    while True:
+        try:
+            today = datetime.utcnow()
+            if today.weekday() == 0:
+                async with AsyncSessionLocal() as db:
+                    from sqlalchemy import select, and_
+                    from app.models.customer import Customer
+                    from app.models.sale import Sale
+                    from app.models.user import User
+                    from datetime import timedelta
+
+                    week_ago = today - timedelta(days=7)
+
+                    users_result = await db.execute(select(User).where(User.email_reminders_consent == True))
+                    users = users_result.scalars().all()
+                    for owner in users:
+                        if not owner.email:
+                            continue
+                        already_sent_this_week = (
+                            owner.last_activity_summary_sent_at is not None
+                            and owner.last_activity_summary_sent_at >= week_ago
+                        )
+                        if already_sent_this_week:
+                            continue
+
+                        new_cust_result = await db.execute(
+                            select(Customer).where(and_(Customer.user_id == owner.id, Customer.created_at >= week_ago))
+                        )
+                        new_customers = len(new_cust_result.scalars().all())
+
+                        sales_result = await db.execute(
+                            select(Sale).where(and_(Sale.user_id == owner.id, Sale.date >= week_ago))
+                        )
+                        sales = sales_result.scalars().all()
+                        sales_count = len(sales)
+                        sales_total = sum(s.amount for s in sales)
+                        currency = sales[0].currency if sales else (owner.preferred_currency or "USD")
+
+                        followups_result = await db.execute(
+                            select(Customer).where(and_(Customer.user_id == owner.id, Customer.last_followed_up_at >= week_ago))
+                        )
+                        followups_completed = len(followups_result.scalars().all())
+
+                        birthdays_result = await db.execute(
+                            select(Customer).where(and_(Customer.user_id == owner.id, Customer.last_birthday_email_sent >= week_ago))
+                        )
+                        birthday_emails_sent = len(birthdays_result.scalars().all())
+
+                        if new_customers + sales_count + followups_completed + birthday_emails_sent > 0:
+                            success = email_service.send_activity_summary(
+                                owner.email,
+                                owner.full_name or "there",
+                                new_customers,
+                                sales_count,
+                                sales_total,
+                                currency,
+                                followups_completed,
+                                birthday_emails_sent
+                            )
+                            if success:
+                                owner.last_activity_summary_sent_at = today
+                                await db.commit()
+        except Exception as e:
+            print(f"ACTIVITY SUMMARY ERROR: {e}")
+        await asyncio.sleep(86400)
+
+@app.on_event("startup")
+async def start_activity_summary_checker():
+    asyncio.create_task(check_activity_summaries())

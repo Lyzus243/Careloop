@@ -6,6 +6,7 @@ from enum import Enum
 class CustomerType(str, Enum):
     active = "active"
     new = "new"
+    inactive = "inactive"
 
 class CustomerCreate(BaseModel):
     name: str
@@ -36,6 +37,7 @@ class CustomerResponse(BaseModel):
     has_purchased: bool = False
     last_contact: Optional[datetime] = None
     last_birthday_email_sent: Optional[datetime] = None
+    last_followed_up_at: Optional[datetime] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
     user_id: int

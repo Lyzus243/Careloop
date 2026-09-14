@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -977,7 +977,7 @@ body.dark-mode.eye-care {
   <span class="header-label" id="header-label">Dashboard</span>
   <div class="header-search">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-    <input type="text" placeholder="Search for Customers" id="global-search" oninput="handleGlobalSearch(this.value)">
+    <input type="text" placeholder="Search for Customers" id="global-search" name="cl-nosuggest-1" autocomplete="off" data-lpignore="true" data-form-type="other" oninput="handleGlobalSearch(this.value)">
   </div>
   <div class="header-right">
     <button id="darkModeToggle" class="mode-toggle" title="Toggle Dark Mode">
@@ -996,9 +996,21 @@ body.dark-mode.eye-care {
       <span class="bell-badge" id="bell-badge"></span>
     </button>
     <button class="avatar-btn" id="header-avatar" onclick="changeAvatar()"><img id="header-avatar-img" alt=""><span id="header-avatar-initials"></span></button>
-    <button class="avatar-chevron">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6,9 12,15 18,9"/></svg>
-    </button>
+    <div style="position:relative;">
+      <button class="avatar-chevron" onclick="toggleHeaderMenu(event)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6,9 12,15 18,9"/></svg>
+      </button>
+      <div id="header-dropdown-menu" style="display:none;position:absolute;top:calc(100% + 8px);right:0;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.12);min-width:180px;z-index:1000;overflow:hidden;">
+        <button onclick="showPage('account-settings');closeHeaderMenu();" style="width:100%;display:flex;align-items:center;gap:10px;padding:12px 16px;border:none;background:none;color:var(--text);font-size:14px;font-family:inherit;cursor:pointer;text-align:left;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+          Account Settings
+        </button>
+        <button onclick="logout()" style="width:100%;display:flex;align-items:center;gap:10px;padding:12px 16px;border:none;background:none;color:#A32D2D;font-size:14px;font-family:inherit;cursor:pointer;text-align:left;border-top:1px solid var(--border);">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Logout
+        </button>
+      </div>
+    </div>
   </div>
 </header>
 
@@ -1077,6 +1089,7 @@ body.dark-mode.eye-care {
       <button class="tab" onclick="switchTab('due',this)">Due today <span class="tab-badge" id="tab-due-badge">0</span></button>
       <button class="tab" onclick="switchTab('overdue',this)">Overdue <span class="tab-badge red-badge" id="tab-overdue-badge">0</span></button>
       <button class="tab" onclick="switchTab('pending',this)">Pending <span class="tab-badge" id="tab-pending-badge">0</span></button>
+      <button class="tab" onclick="switchTab('completed',this)">Completed <span class="tab-badge" id="tab-completed-badge">0</span></button>
       <div style="margin-left:auto;" class="filter-right">
         <button class="filter-btn" id="filter-btn" style="display:none;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
@@ -1098,6 +1111,109 @@ body.dark-mode.eye-care {
   </div>
 
   <!-- CUSTOMERS PAGE -->
+  <div class="page" id="page-account-settings">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+      <img src="/assets/primary_logo.jpg" alt="Careloop" style="height:24px;width:auto;">
+    </div>
+    <div class="page-top">
+      <div>
+        <h1 class="page-title">Account Settings</h1>
+        <p class="page-sub">Manage your reminder email preferences</p>
+      </div>
+    </div>
+
+    <div style="max-width:520px;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:24px;margin-top:16px;">
+      <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:4px;">Business logo</div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:16px;">Shown alongside the Careloop watermark in emails sent to your customers, such as birthday messages.</div>
+      <div style="display:flex;align-items:center;gap:16px;">
+        <div id="business-logo-preview" style="width:64px;height:64px;border-radius:10px;border:1.5px dashed var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;">
+          <img id="business-logo-img" src="" alt="" style="width:100%;height:100%;object-fit:contain;display:none;">
+          <span id="business-logo-placeholder" style="font-size:11px;color:var(--text2);text-align:center;">No logo</span>
+        </div>
+        <button onclick="changeBusinessLogo()" style="padding:10px 18px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;">Upload Logo</button>
+      </div>
+    </div>
+
+    <div style="max-width:520px;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:24px;margin-top:16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div style="padding-right:16px;">
+          <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:4px;">Reminder emails</div>
+          <div style="font-size:13px;color:var(--text2);line-height:1.5;">Receive birthday reminders, follow-up nudges, and weekly activity summaries by email.</div>
+        </div>
+        <button id="consent-toggle-btn" onclick="toggleAccountConsent()" style="flex-shrink:0;width:48px;height:28px;border-radius:20px;border:none;background:#d9dce3;position:relative;cursor:pointer;transition:background 0.2s;">
+          <span id="consent-toggle-knob" style="position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.2);transition:left 0.2s;"></span>
+        </button>
+      </div>
+    </div>
+
+    <div style="max-width:520px;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:24px;margin-top:16px;">
+      <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:14px;">Preferred currency</div>
+      <select id="settings-currency-select" class="field-input" style="width:100%;cursor:pointer;" onchange="saveCurrencyPreference(this.value)">
+        <option value="USD">USD - US Dollar</option>
+        <option value="NGN">NGN - Nigerian Naira</option>
+        <option value="EUR">EUR - Euro</option>
+        <option value="GBP">GBP - British Pound</option>
+      </select>
+    </div>
+
+    <div style="max-width:520px;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:24px;margin-top:16px;">
+      <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:14px;">Change password</div>
+      <label class="field-label">Current password</label>
+      <input type="password" class="field-input" id="settings-current-password" name="cl-nosuggest-3" autocomplete="off" data-lpignore="true" data-form-type="other" readonly onfocus="this.removeAttribute('readonly')" style="margin-bottom:14px;">
+      <label class="field-label">New password</label>
+      <input type="password" class="field-input" id="settings-new-password" style="margin-bottom:14px;">
+      <label class="field-label">Confirm new password</label>
+      <input type="password" class="field-input" id="settings-confirm-password" style="margin-bottom:18px;">
+      <button class="btn-primary" onclick="changeAccountPassword()" style="width:100%;justify-content:center;padding:12px;border-radius:10px;">Update Password</button>
+    </div>
+
+    <div style="max-width:520px;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:24px;margin-top:16px;">
+      <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:14px;">Follow-up messages</div>
+      <label class="field-label">New customer message</label>
+      <textarea id="settings-followup-new" class="field-input" rows="2" placeholder="Introduce and build relationship" style="margin-bottom:14px;resize:vertical;"></textarea>
+      <label class="field-label">Existing customer message</label>
+      <textarea id="settings-followup-existing" class="field-input" rows="2" placeholder="Check-in to encourage repeat purchase" style="margin-bottom:18px;resize:vertical;"></textarea>
+      <button class="btn-primary" onclick="saveMessageSettings()" style="width:100%;justify-content:center;padding:12px;border-radius:10px;">Save Messages</button>
+    </div>
+
+    <div style="max-width:520px;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:24px;margin-top:16px;">
+      <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:6px;">Birthday email message</div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:14px;">Replaces the default thank-you message in birthday emails. Leave blank to use the default.</div>
+      <textarea id="settings-birthday-message" class="field-input" rows="4" placeholder="On behalf of everyone at us, we'd like to take a moment to celebrate you..." style="margin-bottom:18px;resize:vertical;"></textarea>
+      <button class="btn-primary" onclick="saveMessageSettings()" style="width:100%;justify-content:center;padding:12px;border-radius:10px;">Save Message</button>
+    </div>
+
+    <div style="max-width:520px;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:24px;margin-top:16px;">
+      <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:14px;">Reminder timing</div>
+      <label class="field-label">Follow up with new customers after (days)</label>
+      <input type="number" id="settings-new-days" class="field-input" min="1" max="365" placeholder="14" style="margin-bottom:14px;">
+      <label class="field-label">Follow up with existing customers after (days)</label>
+      <input type="number" id="settings-existing-days" class="field-input" min="1" max="365" placeholder="7" style="margin-bottom:18px;">
+      <button class="btn-primary" onclick="saveMessageSettings()" style="width:100%;justify-content:center;padding:12px;border-radius:10px;">Save Timing</button>
+    </div>
+
+    <div style="max-width:520px;background:var(--bg);border:1px solid #FCA5A5;border-radius:12px;padding:24px;margin-top:16px;">
+      <div style="font-size:15px;font-weight:600;color:#B91C1C;margin-bottom:6px;">Danger zone</div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:16px;">Permanently delete your account and all associated data. This cannot be undone.</div>
+      <button onclick="openDeleteAccountModal()" style="padding:10px 18px;border-radius:8px;border:1px solid #FCA5A5;background:#FEF2F2;color:#B91C1C;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;">Delete Account</button>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="delete-account-modal">
+    <div class="modal-card" style="text-align:left;max-width:400px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <h3 style="font-size:1.1rem;font-weight:700;color:#B91C1C;margin:0;">Delete Account</h3>
+        <button onclick="closeModal('delete-account-modal')" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--text2);">&times;</button>
+      </div>
+      <p style="font-size:13.5px;color:#4b5563;line-height:1.6;margin:0 0 16px;">
+        This will permanently delete your account, all customers, and all sales data. This action cannot be undone.
+      </p>
+      <label class="field-label">Type your email address to confirm</label>
+      <input type="email" class="field-input" id="delete-confirm-email" autocomplete="off" placeholder="your@email.com" style="margin-bottom:16px;">
+      <button id="delete-account-confirm-btn" onclick="confirmDeleteAccount()" disabled style="width:100%;padding:13px;border-radius:10px;border:none;background:#d9dce3;color:#9ca3af;font-size:14px;font-weight:600;cursor:not-allowed;font-family:inherit;" oninput="">Permanently Delete Account</button>
+    </div>
+  </div>
+
   <div class="page" id="page-customers">
     <div class="page-top">
       <div>
@@ -1105,9 +1221,29 @@ body.dark-mode.eye-care {
         <p class="page-sub">Access all Customer information</p>
       </div>
     </div>
-    <div class="customers-search">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text3)"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input type="text" placeholder="Search for Customers" id="cust-search" oninput="renderCustomers()">
+    <div style="display:flex;gap:12px;align-items:center;">
+      <div class="customers-search" style="flex:1;margin-bottom:0;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text3)"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" placeholder="Search for Customers" id="cust-search" name="cl-nosuggest-2" autocomplete="off" data-lpignore="true" data-form-type="other" oninput="renderCustomers()">
+      </div>
+      <select id="cust-category-filter" onchange="renderCustomers()" style="padding:10px 16px;border-radius:50px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:.875rem;cursor:pointer;font-family:inherit;">
+        <option value="">All categories</option>
+        <option value="new">New</option>
+        <option value="active">Active/Existing</option>
+        <option value="inactive">Inactive</option>
+      </select>
+      <label style="display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:50px;border:1px solid var(--border);background:var(--bg2);cursor:pointer;white-space:nowrap;font-size:.875rem;color:var(--text);">
+        <input type="checkbox" id="cust-select-all" onchange="toggleSelectAllCustomers(this)">
+        Select all
+      </label>
+    </div>
+    <div style="height:24px;"></div>
+    <div style="display:flex;gap:12px;align-items:center;margin-bottom:20px;">
+      <button onclick="openBulkImportPicker()" style="padding:9px 16px;border-radius:50px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:.85rem;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Import from Excel
+      </button>
+      <a href="/assets/careloop_customer_import_template.xlsx" download style="font-size:.95rem;font-weight:600;color:var(--blue);text-decoration:underline;">Download template</a>
     </div>
     <div id="bulk-action-bar" style="display:none;align-items:center;gap:12px;padding:12px 16px;background:var(--blue);border-radius:var(--radius);margin-bottom:12px;">
       <span id="bulk-count" style="color:white;font-weight:600;font-size:.9rem;flex:1;"></span>
@@ -1117,6 +1253,12 @@ body.dark-mode.eye-care {
       <button onclick="openBulkEmailModal()" style="background:white;color:var(--blue);border:none;padding:8px 16px;border-radius:50px;font-weight:600;cursor:pointer;font-size:.85rem;">
         Email
       </button>
+      <select onchange="if(this.value){bulkCategorize(this.value);this.value='';}" style="background:white;color:var(--blue);border:none;padding:8px 16px;border-radius:50px;font-weight:600;cursor:pointer;font-size:.85rem;">
+        <option value="">Mark as...</option>
+        <option value="new">New</option>
+        <option value="active">Active/Existing</option>
+        <option value="inactive">Inactive</option>
+      </select>
       <button onclick="selectedCustomers.clear();renderCustomers();updateBulkBar();" style="background:transparent;color:white;border:1.5px solid white;padding:8px 16px;border-radius:50px;font-weight:600;cursor:pointer;font-size:.85rem;">
         Cancel
       </button>
@@ -1149,6 +1291,11 @@ body.dark-mode.eye-care {
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         Download CSV
       </button>
+      <button class="btn-outline" onclick="openBulkSalesImportPicker()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Import from Excel
+      </button>
+      <a href="/assets/careloop_sales_import_template.xlsx" download style="font-size:.85rem;font-weight:600;color:var(--blue);text-decoration:underline;align-self:center;">Download template</a>
     </div>
   </div>
 
@@ -1288,6 +1435,58 @@ body.dark-mode.eye-care {
   </div>
 </div>
 
+<!-- UNRESPONSIVE NUDGE MODAL -->
+<div class="modal-backdrop" id="unresponsive-modal">
+  <div class="modal-card" style="text-align:left;max-width:400px;">
+    <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:14px;">
+      <div style="width:38px;height:38px;border-radius:10px;background:#FEF3C7;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B45309" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+          <path d="M13.73 21a2 2 0 01-3.46 0"/>
+        </svg>
+      </div>
+      <div>
+        <p style="font-size:16px;font-weight:700;color:#111827;margin:0 0 2px;">Some customers have gone quiet</p>
+        <p style="font-size:13px;color:#9ca3af;margin:0;">Keep your list focused</p>
+      </div>
+    </div>
+    <p id="unresponsive-modal-body" style="font-size:13.5px;color:#4b5563;line-height:1.6;margin:0 0 16px;"></p>
+    <div id="unresponsive-modal-list" style="max-height:140px;overflow-y:auto;margin-bottom:18px;font-size:13px;color:#4b5563;"></div>
+    <button class="btn-primary" onclick="unsubscribeUnresponsive()" style="width:100%;justify-content:center;padding:13px;border-radius:10px;margin-bottom:10px;">Mark as Inactive</button>
+    <a onclick="dismissUnresponsiveNudge()" style="display:block;text-align:center;font-size:13px;color:#6b7280;text-decoration:none;cursor:pointer;">Not now</a>
+  </div>
+</div>
+
+<!-- CONSENT MODAL -->
+<div class="modal-backdrop" id="consent-modal">
+  <div class="modal-card" style="text-align:left;max-width:400px;padding:28px 28px 22px;">
+    <div style="display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
+      <img src="/assets/primary_logo.jpg" alt="Careloop" style="height:22px;width:auto;">
+    </div>
+    <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:14px;">
+      <div style="width:38px;height:38px;border-radius:10px;background:#EEF2FF;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+          <polyline points="22,6 12,13 2,6"/>
+        </svg>
+      </div>
+      <div>
+        <p style="font-size:16px;font-weight:700;color:#111827;margin:0 0 2px;">Stay in the loop</p>
+        <p style="font-size:13px;color:#9ca3af;margin:0;">Reminder emails from your account</p>
+      </div>
+    </div>
+    <p style="font-size:13.5px;color:#4b5563;line-height:1.6;margin:0 0 18px;">
+      Would you like us to send you helpful reminder emails on your behalf — like customer follow-up nudges, birthday reminders, and activity summaries? You can unsubscribe any time from your account settings.
+    </p>
+    <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:18px;">
+      <input type="checkbox" id="consent-check" onchange="toggleConsentAccept(this)" style="margin-top:2px;width:16px;height:16px;flex-shrink:0;accent-color:#4F46E5;cursor:pointer;">
+      <label for="consent-check" style="font-size:12.5px;color:#4b5563;line-height:1.5;cursor:pointer;">Yes, I agree to receive reminder and summary emails from this service. I understand I can opt out at any time.</label>
+    </div>
+    <button id="consent-accept-btn" onclick="acceptConsent()" disabled style="width:100%;padding:13px;border-radius:10px;border:none;background:#d9dce3;color:#9ca3af;font-size:14px;font-weight:600;cursor:not-allowed;margin-bottom:14px;transition:background 0.2s,color 0.2s;">Accept &amp; Continue</button>
+    <a onclick="skipConsent()" style="display:block;text-align:center;font-size:13px;color:#6b7280;text-decoration:none;cursor:pointer;">No thanks, skip for now</a>
+  </div>
+</div>
+
 <!-- BIRTHDAY MODAL -->
 <div class="modal-backdrop" id="birthday-modal">
   <div class="modal-card">
@@ -1404,16 +1603,17 @@ function fmtAgo(d){
 function showPage(page){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-  const labels={dashboard:'Dashboard',customers:'Customers','add-customer':'Add Customer',notifications:'Notifications',sales:'Sales'};
+  const labels={dashboard:'Dashboard',customers:'Customers','add-customer':'Add Customer',notifications:'Notifications',sales:'Sales','account-settings':'Account Settings'};
   document.getElementById('header-label').textContent=labels[page]||'Careloop';
   document.getElementById('page-'+page).classList.add('active');
   const navMap={dashboard:'nav-dashboard',customers:'nav-customers','add-customer':'nav-add',sales:'nav-sales'};
   if(navMap[page]) document.getElementById(navMap[page]).classList.add('active');
   if(page==='add-customer') renderAddStep();
-  if(page==='notifications') renderNotifPage();
+  if(page==='notifications'){ renderNotifPage(); markAllRead(); }
   if(page==='customers'){loadCustomers().then(()=>renderCustomers());}
   if(page==='dashboard') renderDashboard();
   if(page==='sales') renderSalesPage();
+  if(page==='account-settings') renderAccountSettings();
 }
 
 // ─── AUTH & USER ───
@@ -1427,6 +1627,9 @@ async function init(){
     currentUser.name=u.full_name||u.fullName||u.name||'User';
     currentUser.business=u.business_name||u.businessName||'';
     currentUser.avatar=u.avatar||null;
+    currentUser.email=u.email||'';
+    currentUser.followupMessageNew=u.followup_message_new||'';
+    currentUser.followupMessageExisting=u.followup_message_existing||'';
     
   }catch(e){
     const saved=localStorage.getItem('cl_user');
@@ -1448,9 +1651,12 @@ updateUserUI();
   await loadSales();
   await loadCustomers();
   try{
-    const cfgR=await fetch(`${API_URL}/api/config`);
+    const token=localStorage.getItem('authToken');
+    const cfgR=await fetch(`${API_URL}/api/config`,{headers:{'Authorization':'Bearer '+token}});
     if(cfgR.ok) followupConfig=await cfgR.json();
   }catch(e){}
+  checkConsentPrompt();
+  checkUnresponsiveNudge();
 
   buildFollowups();
   buildNotifications();
@@ -1497,20 +1703,6 @@ updateUserUI();
 //     document.getElementById('bell-badge').style.display = 'block';
 // }
 
-async function markAllRead() {
-    const token = localStorage.getItem('authToken');
-    try {
-        await fetch(`${API_URL}/api/notifications/mark-all-read`, {
-            method: 'PUT',
-            headers: { 'Authorization': 'Bearer ' + token }
-        });
-    } catch (e) {}
-    notifications = [];
-    document.getElementById('bell-badge').style.display = 'none';
-    renderDashNotifs();
-    renderNotifPage();
-}
-
 function updateUserUI(){
   const firstName=currentUser.name.split(' ')[0];
   document.getElementById('sidebar-name').textContent=currentUser.name;
@@ -1545,6 +1737,37 @@ function changeAvatar(){
   inp.click();
 }
 
+function changeBusinessLogo(){
+  const inp=document.createElement('input');inp.type='file';inp.accept='image/*';
+  inp.onchange=async e=>{
+    const f=e.target.files[0]; if(!f) return;
+    const r=new FileReader();
+    r.onload=async ev=>{
+      const b64=ev.target.result;
+      const token=localStorage.getItem('authToken');
+      try{
+        await fetch(`${API_URL}/api/user/business-logo`,{method:'PUT',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({business_logo:b64})});
+        updateBusinessLogoPreview(b64);
+        clAlert("Business logo updated!","success");
+      }catch(e){console.error('LOGO UPLOAD ERROR:', e); clAlert('Failed to upload logo: ' + e.message, 'error');}
+    };
+    r.readAsDataURL(f);
+  };
+  inp.click();
+}
+function updateBusinessLogoPreview(logoUrl){
+  const img = document.getElementById("business-logo-img");
+  const placeholder = document.getElementById("business-logo-placeholder");
+  if(logoUrl){
+    img.src = logoUrl;
+    img.style.display = "block";
+    placeholder.style.display = "none";
+  } else {
+    img.style.display = "none";
+    placeholder.style.display = "block";
+  }
+}
+
 
 // --- LOAD SALES ---
 async function loadSales(){
@@ -1573,6 +1796,316 @@ async function loadPreferences(){
   }catch(e){}
 }
 
+// --- ACCOUNT SETTINGS ---
+async function saveMessageSettings(){
+  const token = localStorage.getItem("authToken");
+  const payload = {
+    followup_message_new: document.getElementById("settings-followup-new").value.trim(),
+    followup_message_existing: document.getElementById("settings-followup-existing").value.trim(),
+    birthday_message: document.getElementById("settings-birthday-message").value.trim(),
+    custom_new_customer_days: document.getElementById("settings-new-days").value,
+    custom_existing_customer_days: document.getElementById("settings-existing-days").value
+  };
+  try{
+    const r = await fetch(`${API_URL}/api/user/settings`,{
+      method:"PUT",
+      headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},
+      body:JSON.stringify(payload)
+    });
+    if(r.ok){
+      clAlert("Settings saved!","success");
+      try{
+        const cfgR=await fetch(`${API_URL}/api/config`,{headers:{'Authorization':'Bearer '+token}});
+        if(cfgR.ok) followupConfig=await cfgR.json();
+      }catch(e){}
+    } else {
+      clAlert("Failed to save settings.","warning");
+    }
+  }catch(e){
+    clAlert("Network error. Please try again.","warning");
+  }
+}
+
+let accountConsentState = false;
+async function renderAccountSettings(){
+  const token = localStorage.getItem("authToken");
+  if(!token) return;
+  try{
+    const r = await fetch(`${API_URL}/api/user/profile`,{headers:{"Authorization":"Bearer "+token}});
+    if(r.ok){
+      const u = await r.json();
+      accountConsentState = u.email_reminders_consent === true;
+      updateConsentToggleUI();
+      const currencySelect = document.getElementById("settings-currency-select");
+      if(currencySelect) currencySelect.value = u.preferred_currency || "USD";
+      updateBusinessLogoPreview(u.business_logo || null);
+      const fNew = document.getElementById("settings-followup-new");
+      const fExisting = document.getElementById("settings-followup-existing");
+      const bMsg = document.getElementById("settings-birthday-message");
+      const nDays = document.getElementById("settings-new-days");
+      const eDays = document.getElementById("settings-existing-days");
+      if(fNew) fNew.value = u.followup_message_new || "";
+      if(fExisting) fExisting.value = u.followup_message_existing || "";
+      if(bMsg) bMsg.value = u.birthday_message || "";
+      if(nDays) nDays.value = u.custom_new_customer_days || "";
+      if(eDays) eDays.value = u.custom_existing_customer_days || "";
+    }
+  }catch(e){}
+}
+function updateConsentToggleUI(){
+  const btn = document.getElementById("consent-toggle-btn");
+  const knob = document.getElementById("consent-toggle-knob");
+  if(!btn || !knob) return;
+  if(accountConsentState){
+    btn.style.background = "#4F46E5";
+    knob.style.left = "23px";
+  } else {
+    btn.style.background = "#d9dce3";
+    knob.style.left = "3px";
+  }
+}
+async function toggleAccountConsent(){
+  accountConsentState = !accountConsentState;
+  updateConsentToggleUI();
+  const token = localStorage.getItem("authToken");
+  try{
+    const r = await fetch(`${API_URL}/api/user/consent/set`,{
+      method:"PUT",
+      headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},
+      body:JSON.stringify({accepted: accountConsentState})
+    });
+    if(r.ok){
+      clAlert(accountConsentState ? "Reminder emails turned on." : "Reminder emails turned off.","success");
+    } else {
+      accountConsentState = !accountConsentState;
+      updateConsentToggleUI();
+      clAlert("Failed to update preference.","warning");
+    }
+  }catch(e){
+    accountConsentState = !accountConsentState;
+    updateConsentToggleUI();
+    clAlert("Network error. Please try again.","warning");
+  }
+}
+async function changeAccountPassword(){
+  const current = document.getElementById("settings-current-password").value;
+  const next = document.getElementById("settings-new-password").value;
+  const confirm = document.getElementById("settings-confirm-password").value;
+  if(!current || !next || !confirm){
+    clAlert("Please fill in all password fields.","warning");
+    return;
+  }
+  if(next !== confirm){
+    clAlert("New passwords do not match.","warning");
+    return;
+  }
+  if(next.length < 8){
+    clAlert("New password must be at least 8 characters.","warning");
+    return;
+  }
+  const token = localStorage.getItem("authToken");
+  try{
+    const r = await fetch(`${API_URL}/api/auth/change-password`,{
+      method:"POST",
+      headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},
+      body:JSON.stringify({current_password: current, new_password: next})
+    });
+    if(r.ok){
+      clAlert("Password updated successfully!","success");
+      document.getElementById("settings-current-password").value = "";
+      document.getElementById("settings-new-password").value = "";
+      document.getElementById("settings-confirm-password").value = "";
+    } else {
+      const err = await r.json().catch(()=>({}));
+      clAlert(err.detail || "Failed to update password. Check your current password.","warning");
+    }
+  }catch(e){
+    clAlert("Network error. Please try again.","warning");
+  }
+}
+
+// --- DELETE ACCOUNT ---
+function openDeleteAccountModal(){
+  document.getElementById("delete-confirm-email").value = "";
+  const btn = document.getElementById("delete-account-confirm-btn");
+  btn.disabled = true;
+  btn.style.background = "#d9dce3";
+  btn.style.color = "#9ca3af";
+  btn.style.cursor = "not-allowed";
+  openModal("delete-account-modal");
+  document.getElementById("delete-confirm-email").addEventListener("input", checkDeleteEmailMatch);
+}
+function checkDeleteEmailMatch(){
+  const typed = document.getElementById("delete-confirm-email").value.trim().toLowerCase();
+  const real = (currentUser.email || "").trim().toLowerCase();
+  const btn = document.getElementById("delete-account-confirm-btn");
+  const matches = typed.length > 0 && typed === real;
+  btn.disabled = !matches;
+  if(matches){
+    btn.style.background = "#DC2626";
+    btn.style.color = "#ffffff";
+    btn.style.cursor = "pointer";
+  } else {
+    btn.style.background = "#d9dce3";
+    btn.style.color = "#9ca3af";
+    btn.style.cursor = "not-allowed";
+  }
+}
+async function confirmDeleteAccount(){
+  const typed = document.getElementById("delete-confirm-email").value.trim();
+  const token = localStorage.getItem("authToken");
+  const btn = document.getElementById("delete-account-confirm-btn");
+  btn.textContent = "Deleting...";
+  btn.disabled = true;
+  try{
+    const r = await fetch(`${API_URL}/api/user/account`,{
+      method:"DELETE",
+      headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},
+      body:JSON.stringify({confirm_email: typed})
+    });
+    if(r.ok){
+      localStorage.removeItem("authToken");
+      window.location.href = "careloop-login.html";
+    } else {
+      const err = await r.json().catch(()=>({}));
+      clAlert(err.detail || "Failed to delete account.","warning");
+      btn.textContent = "Permanently Delete Account";
+      checkDeleteEmailMatch();
+    }
+  }catch(e){
+    clAlert("Network error. Please try again.","warning");
+    btn.textContent = "Permanently Delete Account";
+    checkDeleteEmailMatch();
+  }
+}
+
+let unresponsiveCandidateIds = [];
+async function checkUnresponsiveNudge(){
+  const token = localStorage.getItem("authToken");
+  if(!token) return;
+  try{
+    const r = await fetch(`${API_URL}/api/user/profile`,{headers:{"Authorization":"Bearer "+token}});
+    if(!r.ok) return;
+    const u = await r.json();
+    const lastPrompted = u.last_unresponsive_prompt_at;
+    let shouldShow = false;
+    if(!lastPrompted){
+      shouldShow = true;
+    } else {
+      const daysSince = Math.floor((Date.now() - new Date(lastPrompted)) / 86400000);
+      shouldShow = daysSince >= 7;
+    }
+    if(!shouldShow) return;
+
+    const candidates = customers.filter(c=>{
+      if(c.customer_type === "inactive") return false;
+      if(c.has_purchased) return false;
+      const lastContact = c.last_contact || c.created_at;
+      if(!lastContact) return false;
+      const daysSince = Math.floor((Date.now() - new Date(lastContact)) / 86400000);
+      return daysSince >= 30;
+    });
+
+    if(!candidates.length) return;
+
+    unresponsiveCandidateIds = candidates.map(c=>c.id);
+    const names = candidates.slice(0,5).map(c=>c.name);
+    const extra = candidates.length > 5 ? ` and ${candidates.length - 5} more` : "";
+    document.getElementById("unresponsive-modal-body").textContent =
+      `${candidates.length} customer${candidates.length!==1?'s':''} haven't purchased or been contacted in over 30 days:`;
+    document.getElementById("unresponsive-modal-list").innerHTML =
+      names.map(n=>`&bull; ${esc(n)}`).join("<br>") + (extra ? `<br><em>${extra}</em>` : "");
+    openModal("unresponsive-modal");
+
+    fetch(`${API_URL}/api/user/unresponsive-prompt`,{
+      method:"PUT",
+      headers:{"Authorization":"Bearer "+token}
+    }).catch(()=>{});
+  }catch(e){}
+}
+async function unsubscribeUnresponsive(){
+  if(!unresponsiveCandidateIds.length) return;
+  const token = localStorage.getItem("authToken");
+  try{
+    const r = await fetch(`${API_URL}/api/customers/bulk-categorize`,{
+      method:"PUT",
+      headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},
+      body:JSON.stringify({customer_ids: unresponsiveCandidateIds, customer_type: "inactive"})
+    });
+    if(r.ok){
+      unresponsiveCandidateIds.forEach(id=>{
+        const c = customers.find(x=>x.id===id);
+        if(c) c.customer_type = "inactive";
+      });
+      clAlert("Those customers have been marked inactive.","success");
+      renderDashboard();
+    } else {
+      clAlert("Failed to update customers.","warning");
+    }
+  }catch(e){
+    clAlert("Network error. Please try again.","warning");
+  }
+  closeModal("unresponsive-modal");
+}
+function dismissUnresponsiveNudge(){
+  closeModal("unresponsive-modal");
+}
+
+// --- CONSENT MODAL ---
+async function checkConsentPrompt(){
+  const token = localStorage.getItem("authToken");
+  if(!token) return;
+  try{
+    const r = await fetch(`${API_URL}/api/user/profile`,{headers:{"Authorization":"Bearer "+token}});
+    if(!r.ok) return;
+    const u = await r.json();
+    if(u.email_reminders_consent === true) return;
+    const lastPrompted = u.last_consent_prompted_at;
+    let shouldShow = false;
+    if(!lastPrompted){
+      shouldShow = true;
+    } else {
+      const daysSince = Math.floor((Date.now() - new Date(lastPrompted)) / 86400000);
+      shouldShow = daysSince >= 7;
+    }
+    if(shouldShow){
+      openModal("consent-modal");
+      fetch(`${API_URL}/api/user/consent/prompt`,{
+        method:"PUT",
+        headers:{"Authorization":"Bearer "+token}
+      }).catch(()=>{});
+    }
+  }catch(e){}
+}
+function toggleConsentAccept(checkbox){
+  const btn = document.getElementById("consent-accept-btn");
+  if(checkbox.checked){
+    btn.disabled = false;
+    btn.style.background = "#4F46E5";
+    btn.style.color = "#ffffff";
+    btn.style.cursor = "pointer";
+  } else {
+    btn.disabled = true;
+    btn.style.background = "#d9dce3";
+    btn.style.color = "#9ca3af";
+    btn.style.cursor = "not-allowed";
+  }
+}
+async function acceptConsent(){
+  const token = localStorage.getItem("authToken");
+  try{
+    await fetch(`${API_URL}/api/user/consent/accept`,{
+      method:"PUT",
+      headers:{"Authorization":"Bearer "+token}
+    });
+  }catch(e){}
+  closeModal("consent-modal");
+  clAlert("Thanks! You're all set to receive reminder emails.","success");
+}
+function skipConsent(){
+  closeModal("consent-modal");
+}
+
 // --- SAVE CURRENCY PREFERENCE ---
 async function saveCurrencyPreference(currency){
   preferredCurrency=currency;
@@ -1585,6 +2118,81 @@ async function saveCurrencyPreference(currency){
       body:JSON.stringify({preferred_currency:currency})
     });
   }catch(e){}
+}
+
+// --- BULK IMPORT ---
+function openBulkImportPicker(){
+  const inp = document.createElement("input");
+  inp.type = "file";
+  inp.accept = ".xlsx,.xls";
+  inp.onchange = async e => {
+    const f = e.target.files[0];
+    if(!f) return;
+    const token = localStorage.getItem("authToken");
+    const formData = new FormData();
+    formData.append("file", f);
+    clAlert("Importing customers, please wait...", "success");
+    try{
+      const r = await fetch(`${API_URL}/api/customers/bulk-import`, {
+        method: "POST",
+        headers: { "Authorization": "Bearer " + token },
+        body: formData
+      });
+      const d = await r.json();
+      if(r.ok){
+        clAlert(`Import complete: ${d.created} created, ${d.updated} updated, ${d.skipped} unchanged.`, "success");
+        await loadCustomers();
+        renderCustomers();
+      } else {
+        const detail = d.detail;
+        if(detail && typeof detail === "object" && detail.errors){
+          clAlert(`Import rejected: ${detail.errors.slice(0,3).join("; ")}${detail.errors.length > 3 ? "..." : ""}`, "warning");
+        } else {
+          clAlert(detail || "Import failed.", "warning");
+        }
+      }
+    }catch(err){
+      clAlert("Network error during import. Please try again.", "warning");
+    }
+  };
+  inp.click();
+}
+
+function openBulkSalesImportPicker(){
+  const inp = document.createElement("input");
+  inp.type = "file";
+  inp.accept = ".xlsx,.xls";
+  inp.onchange = async e => {
+    const f = e.target.files[0];
+    if(!f) return;
+    const token = localStorage.getItem("authToken");
+    const formData = new FormData();
+    formData.append("file", f);
+    clAlert("Importing sales, please wait...", "success");
+    try{
+      const r = await fetch(`${API_URL}/api/sales/bulk-import`, {
+        method: "POST",
+        headers: { "Authorization": "Bearer " + token },
+        body: formData
+      });
+      const d = await r.json();
+      if(r.ok){
+        clAlert(`Import complete: ${d.created} sale(s) added.`, "success");
+        await loadSales();
+        renderSalesPage();
+      } else {
+        const detail = d.detail;
+        if(detail && typeof detail === "object" && detail.errors){
+          clAlert(`Import rejected: ${detail.errors.slice(0,3).join("; ")}${detail.errors.length > 3 ? "..." : ""}`, "warning");
+        } else {
+          clAlert(detail || "Import failed.", "warning");
+        }
+      }
+    }catch(err){
+      clAlert("Network error during import. Please try again.", "warning");
+    }
+  };
+  inp.click();
 }
 
 // ─── LOAD CUSTOMERS ───
@@ -1603,14 +2211,17 @@ async function loadCustomers(){
 
 // ─── FOLLOWUPS ───
 function buildFollowups(){
-  followups=customers.map(c=>{
-    const lastContact=c.lastContact||c.created_at;
+  const todayKey=new Date().toISOString().slice(0,10);
+  followups=customers.filter(c=>c.customer_type!=='inactive').map(c=>{
+    const lastContact=c.last_contact||c.created_at;
     const daysSince=lastContact?Math.floor((Date.now()-new Date(lastContact))/86400000):999;
     const isExisting=c.customer_type==='active'||c.has_purchased;
     const followupDays=isExisting?followupConfig.existing_customer_followup_days:followupConfig.new_customer_followup_days;
     let status='pending';
     if(daysSince>=followupDays+followupConfig.overdue_grace_days) status='overdue';
     else if(daysSince>=followupDays) status='due';
+    const completedToday=c.last_followed_up_at && new Date(c.last_followed_up_at).toISOString().slice(0,10)===todayKey;
+    if(completedToday) status='completed';
     return{...c,daysSince,status,isExisting,followupDays};
   });
 }
@@ -1621,16 +2232,17 @@ function renderDashboard(){
   const due=followups.filter(f=>f.status==='due');
   const overdue=followups.filter(f=>f.status==='overdue');
   const pending=followups.filter(f=>f.status==='pending');
-  const done=followups.filter(f=>f.status==='done');
-  const total=followups.length;
-  const completion=total?Math.round(done.length/total*100):0;
+  const completed=followups.filter(f=>f.status==='completed');
+  const completionDenominator=due.length+overdue.length+completed.length;
+  const completion=completionDenominator?Math.round(completed.length/completionDenominator*100):100;
 
-  document.getElementById('stat-today').textContent=due.length;
+  document.getElementById('stat-today').textContent=completionDenominator;
   document.getElementById('stat-overdue').textContent=overdue.length;
   document.getElementById('stat-completion').textContent=completion+'%';
   document.getElementById('tab-due-badge').textContent=due.length;
   document.getElementById('tab-overdue-badge').textContent=overdue.length;
   document.getElementById('tab-pending-badge').textContent=pending.length;
+  document.getElementById('tab-completed-badge').textContent=completed.length;
 
   if(overdue.length===0 && due.length===0){
     document.getElementById('dash-sub').textContent="You're all caught up!";
@@ -1657,6 +2269,7 @@ function renderTabContent(tab){
   const due=followups.filter(f=>f.status==='due');
   const overdue=followups.filter(f=>f.status==='overdue');
   const pending=followups.filter(f=>f.status==='pending');
+  const completed=followups.filter(f=>f.status==='completed');
   const container=document.getElementById('followup-content');
 
   if(!followups.length){
@@ -1674,12 +2287,15 @@ function renderTabContent(tab){
     if(due.length) html+=buildSection('Due today','Follow-ups that are pending today',due,'blue',true);
     if(overdue.length) html+=buildSection('Overdue','Follow-ups that are pending today',overdue,'red',false,true);
     if(pending.length) html+=buildSection('Pending','Follow-ups that are not due yet',pending,'gray',false,false,true);
+    if(completed.length) html+=buildSection('Completed','Follow-ups you have handled today',completed,'green',false,false,true);
   } else if(tab==='due'){
     html=due.length?buildSection('Due today','',due,'blue',true):`<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-title">No follow-ups right now.</div><div class="empty-sub">You are all caught up.</div></div>`;
   } else if(tab==='overdue'){
     html=overdue.length?buildSection('Overdue','',overdue,'red',false,true):`<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-title">No follow-ups right now.</div><div class="empty-sub">You are all caught up.</div></div>`;
   } else if(tab==='pending'){
     html=pending.length?buildSection('Pending','',pending,'gray'):`<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-title">No follow-ups right now.</div><div class="empty-sub">You are all caught up.</div></div>`;
+  } else if(tab==='completed'){
+    html=completed.length?buildSection('Completed','',completed,'green'):`<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-title">Nothing completed yet today.</div><div class="empty-sub">Follow-ups you finish will show up here.</div></div>`;
   }
   container.innerHTML=html;
 }
@@ -1710,13 +2326,16 @@ function expandSection(btn,ids){
 }
 
 function buildRow(c){
-  const reason=c.isExisting?'Check-in to encourage repeat purchase':'Introduce and build relationship';
+  const reason=c.isExisting?(currentUser.followupMessageExisting||'Check-in to encourage repeat purchase'):(currentUser.followupMessageNew||'Introduce and build relationship');
+  const hideDoneAction = c.status === 'pending' || c.status === 'completed';
+  const checkboxHtml = hideDoneAction ? '<span style="width:18px;display:inline-block;"></span>' : `<input type="checkbox" class="row-check" onchange="markDone(${c.id},this)">`;
+  const doneBtnHtml = hideDoneAction ? '' : `<button class="btn-done" onclick="markDoneBtn(${c.id})">Mark as Done</button>`;
   return `<div class="followup-row" id="row-${c.id}">
-    <input type="checkbox" class="row-check" onchange="markDone(${c.id},this)">
+    ${checkboxHtml}
     ${avatar(c.name)}
     <div class="row-info">
       <div class="row-name">${esc(c.name)}</div>
-      <div class="row-meta">Last Purchase: ${c.lastContact?fmtDate(c.lastContact):'None'}</div>
+      <div class="row-meta">Last Purchase: ${c.last_contact?fmtDate(c.last_contact):'None'}</div>
     </div>
     <div class="row-reason">${reason}</div>
     <div class="row-actions">
@@ -1729,7 +2348,7 @@ function buildRow(c){
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         Snooze
       </button>
-      <button class="btn-done" onclick="markDoneBtn(${c.id})">Mark as Done</button>
+      ${doneBtnHtml}
     </div>
   </div>`;
 }
@@ -1737,17 +2356,52 @@ function buildRow(c){
 function markDone(id,checkbox){
   if(checkbox.checked) markDoneBtn(id);
 }
-function markDoneBtn(id){
-  const idx=followups.findIndex(f=>f.id===id);
-  if(idx>-1){
-    followups[idx].status='done';
-    addNotification({type:'check',title:'You marked a follow-up as done',names:followups[idx].name});
+async function markDoneBtn(id){
+  const token = localStorage.getItem("authToken");
+  try{
+    const r = await fetch(`${API_URL}/api/customers/${id}/mark-followed-up`,{
+      method:"PUT",
+      headers:{"Authorization":"Bearer "+token}
+    });
+    if(r.ok){
+      const d = await r.json();
+      const c = customers.find(x=>x.id===id);
+      if(c){
+        c.last_contact = d.last_followed_up_at;
+        c.last_followed_up_at = d.last_followed_up_at;
+      }
+      const f = followups.find(x=>x.id===id);
+      addNotification({type:'check',title:'You marked a follow-up as done',names:f?f.name:''});
+      clAlert((f?f.name:'Customer')+" marked as followed up!","success");
+    } else {
+      clAlert("Failed to mark as done.","warning");
+    }
+  }catch(e){
+    clAlert("Network error. Please try again.","warning");
   }
   renderDashboard();
 }
-function markAllDone(){
-  followups.filter(f=>f.status==='due').forEach(f=>{f.status='done';});
-  addNotification({type:'check',title:'You marked multiple follow-ups as done',names:followups.filter(f=>f.status==='done').slice(0,4).map(f=>f.name).join(', ')+'...'});
+async function markAllDone(){
+  const targets = followups.filter(f=>f.status==='due');
+  const token = localStorage.getItem("authToken");
+  for(const f of targets){
+    try{
+      const r = await fetch(`${API_URL}/api/customers/${f.id}/mark-followed-up`,{
+        method:"PUT",
+        headers:{"Authorization":"Bearer "+token}
+      });
+      if(r.ok){
+        const d = await r.json();
+        const c = customers.find(x=>x.id===f.id);
+        if(c){
+          c.last_contact = d.last_followed_up_at;
+          c.last_followed_up_at = d.last_followed_up_at;
+        }
+      }
+    }catch(e){}
+  }
+  addNotification({type:'check',title:'You marked multiple follow-ups as done',names:targets.slice(0,4).map(f=>f.name).join(', ')+(targets.length>4?'...':'')});
+  clAlert(targets.length+" follow-up"+(targets.length!==1?'s':'')+" marked as done!","success");
   renderDashboard();
 }
 
@@ -1783,7 +2437,7 @@ async function confirmSnooze(){
   const c=customers.find(x=>x.id===snoozeCustomerId);
   if(c){
     const newDate=new Date(Date.now()+days*86400000);
-    c.lastContact=newDate.toISOString();
+    c.last_contact=newDate.toISOString();
     const token=localStorage.getItem("authToken");
     try{
       await fetch(`${API_URL}/api/customers/${c.id}/snooze?days=${days}`,{
@@ -1829,7 +2483,7 @@ function sendWhatsApp(){
   const msg=document.getElementById('msg-textarea').value.trim(); if(!msg) return;
   const phone=c.phone_number.replace(/\D/g,'');
   window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(msg),'_blank');
-  if(c){c.lastContact=new Date().toISOString();buildFollowups();renderDashboard();}
+  if(c){c.last_contact=new Date().toISOString();buildFollowups();renderDashboard();}
   closeModal('message-modal');
 }
 
@@ -1870,13 +2524,19 @@ async function submitSale(){
 // ─── CUSTOMERS PAGE ───
 function renderCustomers(){
   const q=(document.getElementById('cust-search')||{}).value?.toLowerCase()||'';
+  const catFilter=(document.getElementById('cust-category-filter')||{}).value||'';
   const filtered=customers.filter(c=>
-    c.name.toLowerCase().includes(q)||
+    (c.name.toLowerCase().includes(q)||
     (c.phone_number||'').includes(q)||
-    (c.email||'').toLowerCase().includes(q)
+    (c.email||'').toLowerCase().includes(q))
+    && (!catFilter || c.customer_type===catFilter)
   );
   const shown=filtered.slice(0,custShowing);
   const container=document.getElementById('customer-list-table');
+  const selectAllBox = document.getElementById('cust-select-all');
+  if(selectAllBox){
+    selectAllBox.checked = filtered.length > 0 && filtered.every(c=>selectedCustomers.has(c.id));
+  }
   if(!filtered.length){
     container.innerHTML='<div style="padding:40px;text-align:center;color:var(--text2);">No customers found.</div>';
     document.getElementById('cust-view-more').style.display='none';
@@ -1888,7 +2548,7 @@ function renderCustomers(){
       ${avatar(c.name,44)}
       <div class="cust-info">
         <div class="cust-name">${esc(c.name)}</div>
-        <div class="cust-meta">Last Purchase: ${c.lastContact?fmtDate(c.lastContact):'None'}</div>
+        <div class="cust-meta">Last Purchase: ${c.last_contact?fmtDate(c.last_contact):'None'}</div>
       </div>
       <div class="cust-type">${c.customer_type==='active'?'Existing Customer':'New Customer'}</div>
       <div class="cust-actions">
@@ -1912,6 +2572,35 @@ function toggleCustomerSelect(id, checkbox){
   if(checkbox.checked) selectedCustomers.add(id);
   else selectedCustomers.delete(id);
   updateBulkBar();
+  const selectAllBox = document.getElementById('cust-select-all');
+  if(selectAllBox){
+    const q=(document.getElementById('cust-search')||{}).value?.toLowerCase()||'';
+    const catFilter=(document.getElementById('cust-category-filter')||{}).value||'';
+    const filtered=customers.filter(c=>
+      (c.name.toLowerCase().includes(q)||
+      (c.phone_number||'').includes(q)||
+      (c.email||'').toLowerCase().includes(q))
+      && (!catFilter || c.customer_type===catFilter)
+    );
+    selectAllBox.checked = filtered.length > 0 && filtered.every(c=>selectedCustomers.has(c.id));
+  }
+}
+function toggleSelectAllCustomers(checkbox){
+  const q=(document.getElementById('cust-search')||{}).value?.toLowerCase()||'';
+  const catFilter=(document.getElementById('cust-category-filter')||{}).value||'';
+  const filtered=customers.filter(c=>
+    (c.name.toLowerCase().includes(q)||
+    (c.phone_number||'').includes(q)||
+    (c.email||'').toLowerCase().includes(q))
+    && (!catFilter || c.customer_type===catFilter)
+  );
+  if(checkbox.checked){
+    filtered.forEach(c=>selectedCustomers.add(c.id));
+  } else {
+    filtered.forEach(c=>selectedCustomers.delete(c.id));
+  }
+  renderCustomers();
+  updateBulkBar();
 }
 function updateBulkBar(){
   const bar=document.getElementById("bulk-action-bar");
@@ -1923,6 +2612,34 @@ function updateBulkBar(){
     if(waBtn) waBtn.style.display = selectedCustomers.size===1 ? "" : "none";
   } else {
     bar.style.display="none";
+  }
+}
+async function bulkCategorize(newType){
+  const selected = Array.from(selectedCustomers);
+  if(!selected.length) return;
+  const labels = {new: "New", active: "Active/Existing", inactive: "Inactive"};
+  const token = localStorage.getItem("authToken");
+  try{
+    const r = await fetch(`${API_URL}/api/customers/bulk-categorize`,{
+      method:"PUT",
+      headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},
+      body:JSON.stringify({customer_ids: selected, customer_type: newType})
+    });
+    if(r.ok){
+      const d = await r.json();
+      selected.forEach(id=>{
+        const c = customers.find(x=>x.id===id);
+        if(c) c.customer_type = newType;
+      });
+      clAlert(`${d.updated} customer${d.updated!==1?'s':''} marked as ${labels[newType]}.`,"success");
+      selectedCustomers.clear();
+      renderCustomers();
+      updateBulkBar();
+    } else {
+      clAlert("Failed to update customers.","warning");
+    }
+  }catch(e){
+    clAlert("Network error. Please try again.","warning");
   }
 }
 function bulkWhatsApp(){
@@ -1997,12 +2714,12 @@ async function sendBulkEmail(){
 // ─── VIEW PANEL ───
 function openViewPanel(id){
   const c=customers.find(x=>x.id===id); if(!c) return;
-  const daysSince=c.lastContact?Math.floor((Date.now()-new Date(c.lastContact))/86400000):null;
+  const daysSince=c.last_contact?Math.floor((Date.now()-new Date(c.last_contact))/86400000):null;
   const nextFollowup=daysSince!==null?Math.max(0,7-daysSince)+' days':'N/A';
   document.getElementById('panel-content').innerHTML=`
     <div class="panel-avatar ${getAvColor(c.name)}" style="font-size:1.4rem;">${initials(c.name)}</div>
     <div class="panel-name">${esc(c.name)}</div>
-    <div class="panel-sub">${c.lastContact?'Last Purchase: '+fmtDate(c.lastContact):'No purchases yet'}</div>
+    <div class="panel-sub">${c.last_contact?'Last Purchase: '+fmtDate(c.last_contact):'No purchases yet'}</div>
     <div class="panel-divider"></div>
     <div class="panel-field"><span class="panel-field-label">Status</span><span class="panel-field-value">${c.customer_type==='active'?'Existing Customer':'New Customer'}</span></div>
     <div class="panel-field"><span class="panel-field-label">Relationship Status</span><span class="panel-field-value">Active</span></div>
@@ -2361,10 +3078,7 @@ async function markAllRead(){
       headers:{'Authorization':'Bearer '+token}
     });
   }catch(e){}
-  notifications=[];
   document.getElementById('bell-badge').style.display='none';
-  renderDashNotifs();
-  renderNotifPage();
 }
 
 
@@ -2777,6 +3491,21 @@ if (document.readyState === 'loading') {
 } else {
   fixModalPosition();
 }
+function toggleHeaderMenu(e){
+  e.stopPropagation();
+  const menu = document.getElementById("header-dropdown-menu");
+  const isOpen = menu.style.display === "block";
+  menu.style.display = isOpen ? "none" : "block";
+}
+function closeHeaderMenu(){
+  document.getElementById("header-dropdown-menu").style.display = "none";
+}
+document.addEventListener("click", function(e){
+  const menu = document.getElementById("header-dropdown-menu");
+  if(menu && menu.style.display === "block" && !menu.contains(e.target)){
+    menu.style.display = "none";
+  }
+});
 async function logout(){
   const token=localStorage.getItem('authToken');
   try{
