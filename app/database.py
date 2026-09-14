@@ -1,20 +1,32 @@
+import os
+from dotenv import load_dotenv
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import event
 from sqlalchemy.engine import Engine
 
-DATABASE_URL = "sqlite+aiosqlite:///careloop.db"
+load_dotenv()
 
-engine = create_async_engine(DATABASE_URL, echo=True)
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///careloop.db")
 
-@event.listens_for(Engine, "connect")
-def set_sqlite_pragma(dbapi_connection, connection_record):
-    cursor = dbapi_connection.cursor()
-    cursor.execute("PRAGMA foreign_keys=ON")
-    cursor.execute("PRAGMA journal_mode=WAL")
-    cursor.execute("PRAGMA synchronous=NORMAL")
-    cursor.close()
+# Strip sslmode from the URL (asyncpg/SQLAlchemy needs it passed differently)
+connect_args = {}
+if DATABASE_URL.startswith("postgresql"):
+    DATABASE_URL = DATABASE_URL.replace("?sslmode=require", "").replace("&sslmode=require", "")
+    connect_args = {"ssl": "require"}
+
+engine = create_async_engine(DATABASE_URL, echo=True, connect_args=connect_args)
+
+# This pragma listener only applies when actually using SQLite (e.g. local fallback)
+if DATABASE_URL.startswith("sqlite"):
+    @event.listens_for(Engine, "connect")
+    def set_sqlite_pragma(dbapi_connection, connection_record):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.execute("PRAGMA journal_mode=WAL")
+        cursor.execute("PRAGMA synchronous=NORMAL")
+        cursor.close()
 
 AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
