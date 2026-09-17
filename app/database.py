@@ -26,7 +26,13 @@ if DATABASE_URL.startswith("postgresql"):
     ))
     connect_args = {"ssl": "require"}
 
-engine = create_async_engine(DATABASE_URL, echo=True, connect_args=connect_args)
+engine = create_async_engine(
+    DATABASE_URL,
+    echo=True,
+    connect_args=connect_args,
+    pool_pre_ping=True,   # test each connection before using it; reconnects if Neon closed it
+    pool_recycle=300,     # recycle connections every 5 minutes so they never go stale
+)
 
 # This pragma listener only applies when actually using SQLite (e.g. local fallback)
 if DATABASE_URL.startswith("sqlite"):
