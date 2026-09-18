@@ -426,7 +426,7 @@ async def check_followup_nudges():
                         elif days_since >= followup_days:
                             due_count += 1
                     if due_count + overdue_count > 0:
-                        await email_service.send_followup_nudge(
+                        email_service.send_followup_nudge(
                             owner.email,
                             owner.full_name or "there",
                             due_count,
