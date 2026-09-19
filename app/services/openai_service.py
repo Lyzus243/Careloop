@@ -13,9 +13,10 @@ class OpenAIService:
         self.api_key = os.getenv("OPENAI_API_KEY")
 
         if not self.api_key:
-            raise ValueError("OpenAI API key not found in environment variables")
-
-        self.client = AsyncOpenAI(api_key=self.api_key)
+            print("WARNING: OPENAI_API_KEY not found. AI-generated messages will use fallback text.")
+            self.client = None
+        else:
+            self.client = AsyncOpenAI(api_key=self.api_key)
 
     async def generate_follow_up_message(
         self,
