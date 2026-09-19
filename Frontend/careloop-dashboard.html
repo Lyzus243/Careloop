@@ -2115,6 +2115,8 @@ async function saveCurrencyPreference(currency){
       body:JSON.stringify({preferred_currency:currency})
     });
   }catch(e){}
+  await loadSales();
+  renderSalesPage();
 }
 
 // --- BULK IMPORT ---
