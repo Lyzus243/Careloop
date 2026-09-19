@@ -11,7 +11,7 @@ asyncpg
 passlib[bcrypt]
 PyJWT
 python-jose[cryptography]
-bcrypt
+bcrypt==4.0.1
 
 # Validation / schemas
 pydantic
@@ -23,6 +23,7 @@ limits
 
 # Email service (you are using SendGrid)
 sendgrid
+resend
 
 # External APIs
 openai
@@ -30,3 +31,7 @@ openai
 # Utilities
 python-multipart
 requests
+
+# Excel import/export
+pandas
+openpyxl
