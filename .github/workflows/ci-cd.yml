@@ -30,6 +30,8 @@ jobs:
           fi
 
       - name: Check FastAPI Import
+        env:
+          SECRET_KEY: dummy-ci-secret-key-for-import-check
         run: |
           python -c "from app.main import app"
 
