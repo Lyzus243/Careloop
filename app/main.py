@@ -410,6 +410,11 @@ async def check_followup_nudges():
                 for owner in users:
                     if not owner.email:
                         continue
+                    rules = dict(FOLLOWUP_RULES)
+                    if owner.custom_new_customer_days is not None:
+                        rules["new_customer_followup_days"] = owner.custom_new_customer_days
+                    if owner.custom_existing_customer_days is not None:
+                        rules["existing_customer_followup_days"] = owner.custom_existing_customer_days
                     cust_result = await db.execute(select(Customer).where(Customer.user_id == owner.id))
                     customers = cust_result.scalars().all()
                     due_count = 0
@@ -420,18 +425,20 @@ async def check_followup_nudges():
                             continue
                         days_since = (today - last_contact).days
                         is_existing = c.customer_type == 'active' or c.has_purchased
-                        followup_days = FOLLOWUP_RULES['existing_customer_followup_days'] if is_existing else FOLLOWUP_RULES['new_customer_followup_days']
-                        if days_since >= followup_days + FOLLOWUP_RULES['overdue_grace_days']:
+                        followup_days = rules['existing_customer_followup_days'] if is_existing else rules['new_customer_followup_days']
+                        if days_since >= followup_days + rules['overdue_grace_days']:
                             overdue_count += 1
                         elif days_since >= followup_days:
                             due_count += 1
                     if due_count + overdue_count > 0:
-                        email_service.send_followup_nudge(
+                        nudge_sent = email_service.send_followup_nudge(
                             owner.email,
                             owner.full_name or "there",
                             due_count,
                             overdue_count
                         )
+                        if not nudge_sent:
+                            print(f"FOLLOWUP NUDGE FAILED to send to {owner.email} (due={due_count}, overdue={overdue_count})")
         except Exception as e:
             print(f"FOLLOWUP NUDGE ERROR: {e}")
         await asyncio.sleep(86400)

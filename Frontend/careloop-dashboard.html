@@ -2324,6 +2324,17 @@ function expandSection(btn,ids){
   list.innerHTML=allItems.map(c=>buildRow(c)).join('');
 }
 
+function lastActivityText(c){
+  const custSales = (typeof sales !== "undefined" ? sales : []).filter(s=>s.customerId===c.id);
+  if(custSales.length){
+    const latest = custSales.reduce((a,b)=> new Date(a.date) > new Date(b.date) ? a : b);
+    return "Last Purchase: " + fmtDate(latest.date);
+  }
+  if(c.last_contact){
+    return "Last Contact: " + fmtDate(c.last_contact);
+  }
+  return "No activity yet";
+}
 function buildRow(c){
   const reason=c.isExisting?(currentUser.followupMessageExisting||'Check-in to encourage repeat purchase'):(currentUser.followupMessageNew||'Introduce and build relationship');
   const hideDoneAction = c.status === 'pending' || c.status === 'completed';
@@ -2334,7 +2345,7 @@ function buildRow(c){
     ${avatar(c.name)}
     <div class="row-info">
       <div class="row-name">${esc(c.name)}</div>
-      <div class="row-meta">Last Purchase: ${c.last_contact?fmtDate(c.last_contact):'None'}</div>
+      <div class="row-meta">${lastActivityText(c)}</div>
     </div>
     <div class="row-reason">${reason}</div>
     <div class="row-actions">
@@ -2547,7 +2558,7 @@ function renderCustomers(){
       ${avatar(c.name,44)}
       <div class="cust-info">
         <div class="cust-name">${esc(c.name)}</div>
-        <div class="cust-meta">Last Purchase: ${c.last_contact?fmtDate(c.last_contact):'None'}</div>
+        <div class="cust-meta">${lastActivityText(c)}</div>
       </div>
       <div class="cust-type">${c.customer_type==='active'?'Existing Customer':'New Customer'}</div>
       <div class="cust-actions">
@@ -2718,7 +2729,7 @@ function openViewPanel(id){
   document.getElementById('panel-content').innerHTML=`
     <div class="panel-avatar ${getAvColor(c.name)}" style="font-size:1.4rem;">${initials(c.name)}</div>
     <div class="panel-name">${esc(c.name)}</div>
-    <div class="panel-sub">${c.last_contact?'Last Purchase: '+fmtDate(c.last_contact):'No purchases yet'}</div>
+    <div class="panel-sub">${lastActivityText(c)}</div>
     <div class="panel-divider"></div>
     <div class="panel-field"><span class="panel-field-label">Status</span><span class="panel-field-value">${c.customer_type==='active'?'Existing Customer':'New Customer'}</span></div>
     <div class="panel-field"><span class="panel-field-label">Relationship Status</span><span class="panel-field-value">Active</span></div>
