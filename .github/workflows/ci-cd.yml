@@ -33,6 +33,7 @@ jobs:
         env:
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          SECRET_KEY: dummy-ci-secret-key-for-import-check
         run: |
           python -c "from app.main import app"
 

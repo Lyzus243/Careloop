@@ -22,6 +22,7 @@ slowapi
 limits
 
 # Email service (you are using SendGrid)
+sendgrid
 resend
 
 # External APIs
@@ -30,5 +31,7 @@ openai
 # Utilities
 python-multipart
 requests
-#TotalCompleterequirements
-#TestingDatabase
+
+# Excel import/export
+pandas
+openpyxl

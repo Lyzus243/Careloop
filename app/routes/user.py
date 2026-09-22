@@ -52,6 +52,8 @@ async def delete_account(
     from app.models.user import User
     from app.models.customer import Customer
     from app.models.sale import Sale
+    from app.models.notification import Notification
+    from app.models.audit_log import AuditLog
 
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
@@ -62,6 +64,8 @@ async def delete_account(
     if confirm_email.strip().lower() != user.email.strip().lower():
         raise HTTPException(status_code=400, detail="Email confirmation does not match")
 
+    await db.execute(delete(Notification).where(Notification.user_id == user_id))
+    await db.execute(delete(AuditLog).where(AuditLog.user_id == user_id))
     await db.execute(delete(Sale).where(Sale.user_id == user_id))
     await db.execute(delete(Customer).where(Customer.user_id == user_id))
     await db.execute(delete(User).where(User.id == user_id))

@@ -99,7 +99,7 @@ async def send_bulk_email(
                 """
                 text = f"Hi {customer.name},\n\n{body.message}\n\nThanks,\n{user.full_name or user.business_name or 'Careloop'}"
 
-                success = email_service._send(customer.email, body.subject, html, text)
+                success = email_service._send(customer.email, body.subject, html)
                 if success:
                     sent += 1
                 else:
