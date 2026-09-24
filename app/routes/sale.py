@@ -38,6 +38,7 @@ async def delete_sale(
 
 @router.post("/bulk-import")
 async def bulk_import_sales(
+    request: Request,
     file: UploadFile = File(...),
     user_id: int = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db)
@@ -57,7 +58,7 @@ async def bulk_import_sales(
     df.columns = [str(c).strip() for c in df.columns]
     missing_cols = [c for c in expected_cols if c not in df.columns]
     if missing_cols:
-        raise HTTPException(status_code=400, detail=f"Missing required columns: {", ".join(missing_cols)}. Please use the provided template.")
+        raise HTTPException(status_code=400, detail=f"Missing required columns: {', '.join(missing_cols)}. Please use the provided template.")
 
     customers_result = await db.execute(select(Customer).where(Customer.user_id == user_id))
     customers_by_email = {c.email.strip().lower(): c for c in customers_result.scalars().all() if c.email}

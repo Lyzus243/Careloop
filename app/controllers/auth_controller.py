@@ -19,6 +19,20 @@ from app.schemas.user import (
 from app.services.auth_service import TokenService, PasswordService, TokenGeneratorService
 from app.services.email_service import email_service
 
+def _expired(deadline) -> bool:
+    """True if the deadline has passed.
+
+    Postgres returns timestamptz columns as aware datetimes while SQLite
+    returns them naive, so the stored value is normalised to UTC before it is
+    compared. Without this, every token check raised TypeError on SQLite.
+    """
+    if deadline is None:
+        return False
+    if deadline.tzinfo is None:
+        deadline = deadline.replace(tzinfo=timezone.utc)
+    return deadline < datetime.now(timezone.utc)
+
+
 MAX_LOGIN_ATTEMPTS = 5
 LOCKOUT_MINUTES = 15
 
@@ -190,7 +204,7 @@ class AuthController:
                 detail="Invalid or expired verification token"
             )
 
-        if user.email_verification_expires_at and user.email_verification_expires_at < datetime.now(timezone.utc):
+        if _expired(user.email_verification_expires_at):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Verification token has expired"
@@ -241,7 +255,7 @@ class AuthController:
                 detail="Invalid or expired reset token"
             )
 
-        if user.password_reset_expires_at and user.password_reset_expires_at < datetime.now(timezone.utc):
+        if _expired(user.password_reset_expires_at):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Reset token has expired"
@@ -285,7 +299,7 @@ class AuthController:
         if not user:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired verification token")
 
-        if user.email_verification_expires_at and user.email_verification_expires_at < datetime.now(timezone.utc):
+        if _expired(user.email_verification_expires_at):
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Verification token has expired")
 
         if not PasswordService.validate_password_strength(password):

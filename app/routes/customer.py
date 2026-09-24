@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status, Request, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -54,6 +55,7 @@ async def get_customers(
 
 @router.put("/bulk-categorize")
 async def bulk_categorize_customers(
+    request: Request,
     data: dict,
     user_id: int = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db)
@@ -136,13 +138,13 @@ async def delete_customer(
 
 @router.put("/{customer_id}/snooze")
 async def snooze_customer(
+    request: Request,
     customer_id: int,
     days: int,
     user_id: int = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db)
 ):
     """Snooze a customer follow-up by updating last_contact"""
-    from datetime import timedelta
     customer = await CustomerController.get_customer_by_id(db, customer_id, user_id)
     customer.last_contact = datetime.utcnow() + timedelta(days=days)
     customer.updated_at = datetime.utcnow()
@@ -152,12 +154,12 @@ async def snooze_customer(
 
 @router.put("/{customer_id}/mark-followed-up")
 async def mark_followed_up(
+    request: Request,
     customer_id: int,
     user_id: int = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db)
 ):
     """Mark a customer as followed up today - resets both last_contact and last_followed_up_at."""
-    from datetime import datetime
     customer = await CustomerController.get_customer_by_id(db, customer_id, user_id)
     now = datetime.utcnow()
     customer.last_contact = now
@@ -169,6 +171,7 @@ async def mark_followed_up(
 
 @router.post("/bulk-import")
 async def bulk_import_customers(
+    request: Request,
     file: UploadFile = File(...),
     user_id: int = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db)

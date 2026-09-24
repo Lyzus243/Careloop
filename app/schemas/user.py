@@ -21,6 +21,8 @@ class UserLogin(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+    expires_in: Optional[int] = None
+    user: Optional["UserResponse"] = None
 
 class UserResponse(BaseModel):
     preferred_currency: Optional[str] = "USD"
@@ -76,3 +78,7 @@ class SetInitialPasswordRequest(BaseModel):
     token: str
     password: str
 
+
+
+# Token.user is a forward reference to UserResponse, declared below it.
+Token.model_rebuild()
