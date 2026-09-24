@@ -11,7 +11,7 @@ from app.database import get_db, AsyncSessionLocal
 from app.models import Customer, User
 from app.routes import auth, user, customer, message, notification, sale
 from fastapi import APIRouter
-from app.schemas.user import ResetPasswordRequest, SetInitialPasswordRequest
+from app.schemas.user import ResetPasswordRequest
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.controllers.auth_controller import AuthController
@@ -20,13 +20,14 @@ from app.dependencies import get_current_user_id
 
 from app.rate_limit import limiter, RateLimitedRouter, add_rate_limit_exception_handler
 
-logging.basicConfig(level=logging.DEBUG)
-
 import os
 
-print("=== ENV CHECK ===")
-print("GMAIL_USER:", os.getenv("GMAIL_USER"))
-print("ALL KEYS:", list(os.environ.keys())[:20])
+logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO").upper())
+
+# SQLAlchemy logs every statement, with bound parameters, whenever its logger
+# is enabled for INFO - independently of the engine's echo flag.
+if os.getenv("SQL_ECHO", "false").lower() not in ("1", "true", "yes"):
+    logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
 
 app = FastAPI(
     redirect_slashes=False,
@@ -59,9 +60,19 @@ async def root():
     except FileNotFoundError:
         return {"status": "ok", "message": "Careloop backend is live"}
     
+# The frontend calls the API on its own origin, so only the deployed hosts
+# (and local dev) need to be allowed. Override with a comma-separated list.
+ALLOWED_ORIGINS = [
+    o.strip() for o in os.getenv(
+        "ALLOWED_ORIGINS",
+        "https://mycareloop.com.ng,https://www.mycareloop.com.ng,"
+        "http://localhost:8001,http://127.0.0.1:8001",
+    ).split(",") if o.strip()
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -77,11 +88,6 @@ async def init_db():
 
 app.state.limiter = limiter
 add_rate_limit_exception_handler(app)
-
-@app.get("/api/auth/verify-email")
-async def verify_email(token: str, db: AsyncSession = Depends(get_db)):
-    result = await AuthController.verify_email(db, token)
-    return result
 
 main_router = APIRouter()
 
@@ -182,10 +188,14 @@ async def reset_password_page():
         return HTMLResponse(content="<h1>Reset password page not found</h1>", status_code=404)
 
 @app.post("/reset-password")
-async def reset_password_submit(request: ResetPasswordRequest, db: AsyncSession = Depends(get_db)):
-    from app.schemas.user import ResetPasswordRequest
-    from app.controllers.auth_controller import AuthController
-    return await AuthController.reset_password(db, request)
+@limiter.limit("5/minute")
+async def reset_password_submit(
+    request: Request,
+    body: ResetPasswordRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    """Kept at the root path because reset-password.html posts here."""
+    return await AuthController.reset_password(db, body)
 
 @app.get("/signup-success", response_class=HTMLResponse)
 async def serve_signup_success_page():
@@ -194,12 +204,6 @@ async def serve_signup_success_page():
             return HTMLResponse(content=f.read())
     except FileNotFoundError:
         return HTMLResponse(content="<h1>Page not found</h1>", status_code=404)
-
-@app.post("/set-initial-password")
-async def set_initial_password_submit(request: SetInitialPasswordRequest, db: AsyncSession = Depends(get_db)):
-    from app.schemas.user import SetInitialPasswordRequest
-    from app.controllers.auth_controller import AuthController
-    return await AuthController.set_initial_password(db, request.token, request.password)
 
 app.include_router(user.router, prefix="/api")
 app.include_router(customer.router)
@@ -287,40 +291,6 @@ async def api_root():
         "docs": "/docs"
     }
 
-@app.get("/test-db")
-async def test_database():
-    try:
-        async for db in get_db():
-            result = await db.execute(select(Customer).limit(1))
-            customers = result.scalars().all()
-            result = await db.execute(select(User).limit(1))
-            users = result.scalars().all()
-            return {
-                "status": "connected", 
-                "customer_count": len(customers),
-                "user_count": len(users),
-                "message": "Database connection successful!"
-            }
-    except Exception as e:
-        return {
-            "status": "error", 
-            "error": str(e),
-            "message": "Database connection failed"
-        }
-
-
-    except Exception as e:
-        return {"error": str(e)}
-
-@app.get("/users")
-async def get_users():
-    try:
-        async for db in get_db():
-            result = await db.execute(select(User))
-            users = result.scalars().all()
-            return {"users": [{"id": u.id, "email": u.email, "is_verified": u.is_email_verified} for u in users]}
-    except Exception as e:
-        return {"error": str(e)}
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8001)
@@ -350,15 +320,6 @@ async def cleanup_unverified_users():
 @app.on_event("startup")
 async def start_cleanup():
     asyncio.create_task(cleanup_unverified_users())
-
-@app.get("/debug-env")
-async def debug_env():
-    import os
-    return {
-        "gmail_user": os.getenv("GMAIL_USER"),
-        "gmail_password_set": bool(os.getenv("GMAIL_APP_PASSWORD")),
-        "mail_from_name": os.getenv("MAIL_FROM_NAME")
-    }
 
 async def check_birthdays():
     while True:
