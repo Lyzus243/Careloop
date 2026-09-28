@@ -7,9 +7,10 @@ load_dotenv()
 
 async def create_tables():
     try:
-        conn = await asyncpg.connect(
-            os.getenv("DATABASE_URL").replace("postgresql+asyncpg://", "postgresql://")
-        )
+        db_url = os.getenv("DATABASE_URL").replace("postgresql+asyncpg://", "postgresql://")
+        db_url = db_url.replace("?sslmode=require", "").replace("&sslmode=require", "")
+
+        conn = await asyncpg.connect(db_url, ssl="require")
         
         print("Connected to database successfully!")
         

@@ -1,7 +1,9 @@
 import os
 from dotenv import load_dotenv
-if os.path.exists(".env"):
-    load_dotenv(dotenv_path=".env", override=True)
+
+# No override: a real environment variable (what Render and Railway set) must
+# win over a local .env file, and tests need to be able to unset the API key.
+load_dotenv()
 import logging
 import resend
 

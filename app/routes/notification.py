@@ -84,6 +84,7 @@ class BirthdayEmailRequest(BaseModel):
 
 @router.post("/bulk-email")
 async def send_bulk_email(
+    request: Request,
     data: BulkEmailRequest,
     user_id: int = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db)
@@ -117,6 +118,7 @@ async def send_bulk_email(
 
 @router.post("/birthday-email")
 async def send_birthday_email(
+    request: Request,
     data: BirthdayEmailRequest,
     user_id: int = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db)
@@ -149,6 +151,7 @@ async def send_birthday_email(
 
 @router.get("/birthday-email/preview")
 async def preview_birthday_email(
+    request: Request,
     customer_id: int,
     user_id: int = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db)
@@ -175,6 +178,7 @@ async def preview_birthday_email(
 
 @router.get("/birthday-reminder/preview")
 async def preview_birthday_reminder(
+    request: Request,
     customer_id: int,
     user_id: int = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db)

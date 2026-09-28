@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import HTTPException, status, Request
@@ -18,6 +18,20 @@ from app.schemas.user import (
 )
 from app.services.auth_service import TokenService, PasswordService, TokenGeneratorService
 from app.services.email_service import email_service
+
+def _expired(deadline) -> bool:
+    """True if the deadline has passed.
+
+    Postgres returns timestamptz columns as aware datetimes while SQLite
+    returns them naive, so the stored value is normalised to UTC before it is
+    compared. Without this, every token check raised TypeError on SQLite.
+    """
+    if deadline is None:
+        return False
+    if deadline.tzinfo is None:
+        deadline = deadline.replace(tzinfo=timezone.utc)
+    return deadline < datetime.now(timezone.utc)
+
 
 MAX_LOGIN_ATTEMPTS = 5
 LOCKOUT_MINUTES = 15
@@ -67,7 +81,7 @@ class AuthController:
             await db.refresh(db_user)
 
             verification_token = TokenGeneratorService.generate_verification_token()
-            verification_expires = datetime.utcnow() + timedelta(hours=24)
+            verification_expires = datetime.now(timezone.utc) + timedelta(hours=24)
 
             db_user.email_verification_token = verification_token
             db_user.email_verification_expires_at = verification_expires
@@ -108,7 +122,7 @@ class AuthController:
         login_data: UserLogin,
         ip_address: Optional[str] = None
     ) -> Token:
-        lockout_window = datetime.utcnow() - timedelta(minutes=LOCKOUT_MINUTES)
+        lockout_window = datetime.now(timezone.utc) - timedelta(minutes=LOCKOUT_MINUTES)
         recent_attempts = await db.execute(
             select(LoginAttempt).where(
                 LoginAttempt.email == login_data.email,
@@ -151,7 +165,7 @@ class AuthController:
 
         await record_attempt(True)
 
-        user.last_login_at = datetime.utcnow()
+        user.last_login_at = datetime.now(timezone.utc)
         await db.commit()
         await db.refresh(user)
 
@@ -190,7 +204,7 @@ class AuthController:
                 detail="Invalid or expired verification token"
             )
 
-        if user.email_verification_expires_at and user.email_verification_expires_at < datetime.utcnow():
+        if _expired(user.email_verification_expires_at):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Verification token has expired"
@@ -215,7 +229,7 @@ class AuthController:
             )
 
         reset_token = TokenGeneratorService.generate_password_reset_token()
-        reset_expires = datetime.utcnow() + timedelta(hours=1)
+        reset_expires = datetime.now(timezone.utc) + timedelta(hours=1)
 
         user.password_reset_token = reset_token
         user.password_reset_expires_at = reset_expires
@@ -241,7 +255,7 @@ class AuthController:
                 detail="Invalid or expired reset token"
             )
 
-        if user.password_reset_expires_at and user.password_reset_expires_at < datetime.utcnow():
+        if _expired(user.password_reset_expires_at):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Reset token has expired"
@@ -285,7 +299,7 @@ class AuthController:
         if not user:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired verification token")
 
-        if user.email_verification_expires_at and user.email_verification_expires_at < datetime.utcnow():
+        if _expired(user.email_verification_expires_at):
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Verification token has expired")
 
         if not PasswordService.validate_password_strength(password):
@@ -341,7 +355,7 @@ class AuthController:
         if user_data.business_name is not None:
             user.business_name = user_data.business_name
 
-        user.updated_at = datetime.utcnow()
+        user.updated_at = datetime.now(timezone.utc)
         await db.commit()
         await db.refresh(user)
 
@@ -364,7 +378,7 @@ class AuthController:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
         user.avatar = avatar_url
-        user.updated_at = datetime.utcnow()
+        user.updated_at = datetime.now(timezone.utc)
         await db.commit()
         return {"message": "Avatar updated successfully", "avatar": avatar_url}
 
@@ -375,7 +389,7 @@ class AuthController:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
         user.business_logo = logo_url
-        user.updated_at = datetime.utcnow()
+        user.updated_at = datetime.now(timezone.utc)
         await db.commit()
         return {"message": "Business logo updated successfully", "business_logo": logo_url}
 

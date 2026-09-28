@@ -43,6 +43,7 @@ async def update_user_avatar(
 
 @router.delete("/account")
 async def delete_account(
+    request: Request,
     data: dict,
     user_id: int = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db)
@@ -90,6 +91,7 @@ async def update_business_logo(
 
 @router.put("/settings")
 async def update_user_settings(
+    request: Request,
     data: dict,
     user_id: int = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db)
@@ -120,6 +122,7 @@ async def update_user_settings(
 
 @router.put("/unresponsive-prompt")
 async def mark_unresponsive_prompted(
+    request: Request,
     user_id: int = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db)
 ):
@@ -137,6 +140,7 @@ async def mark_unresponsive_prompted(
 
 @router.put("/consent/prompt")
 async def mark_consent_prompted(
+    request: Request,
     user_id: int = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db)
 ):
@@ -154,6 +158,7 @@ async def mark_consent_prompted(
 
 @router.put("/consent/set")
 async def set_email_reminders_consent(
+    request: Request,
     data: dict,
     user_id: int = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db)
@@ -172,6 +177,7 @@ async def set_email_reminders_consent(
 
 @router.put("/consent/accept")
 async def accept_email_reminders_consent(
+    request: Request,
     user_id: int = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db)
 ):

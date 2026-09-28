@@ -3,14 +3,17 @@ uvicorn[standard]
 python-dotenv
 
 # Database
-sqlalchemy
+# [asyncio] pulls in greenlet, which the async engine needs at runtime
+sqlalchemy[asyncio]
 aiosqlite
 asyncpg
+# Alembic runs synchronously, so it needs a sync driver alongside asyncpg
+psycopg2-binary
+alembic
 
 # Auth / Security
 passlib[bcrypt]
 PyJWT
-python-jose[cryptography]
 bcrypt==4.0.1
 
 # Validation / schemas
@@ -21,8 +24,7 @@ email-validator
 slowapi
 limits
 
-# Email service (you are using SendGrid)
-sendgrid
+# Email service
 resend
 
 # External APIs

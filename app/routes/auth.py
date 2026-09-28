@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, status, Request
 from fastapi.responses import HTMLResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.rate_limit import RateLimitedRouter, limiter
+from app.rate_limit import RateLimitedRouter, rate_limit
 from app.database import get_db
 from app.controllers.auth_controller import AuthController
 from app.services.auth_service import TokenService
@@ -18,8 +18,8 @@ from app.dependencies import get_current_user_id
 router = RateLimitedRouter(prefix="/auth", tags=["authentication"], limit="20/minute")
 security = HTTPBearer()
 
-@limiter.limit("10/minute")
 @router.post("/signup", response_model=UserCreateResponse, status_code=status.HTTP_201_CREATED)
+@rate_limit("10/minute")
 async def signup(
     request: Request,
     user_data: UserCreate,
@@ -28,8 +28,8 @@ async def signup(
     base_url = str(request.base_url).rstrip("/")
     return await AuthController.create_user(db, user_data, base_url)
 
-@limiter.limit("10/minute")
 @router.post("/login", response_model=Token)
+@rate_limit("10/minute")
 async def login(
     request: Request,
     login_data: UserLogin,
@@ -56,8 +56,8 @@ async def verify_email(
             status_code=200
         )
 
-@limiter.limit("5/minute")
 @router.post("/forgot-password", response_model=ForgotPasswordResponse)
+@rate_limit("5/minute")
 async def forgot_password(
     request: Request,
     body: ForgotPasswordRequest,
@@ -66,8 +66,8 @@ async def forgot_password(
     base_url = str(request.base_url).rstrip("/")
     return await AuthController.forgot_password(db, body, base_url)
 
-@limiter.limit("5/minute")
 @router.post("/reset-password", response_model=ResetPasswordResponse)
+@rate_limit("5/minute")
 async def reset_password(
     request: Request,
     body: ResetPasswordRequest,
@@ -76,6 +76,7 @@ async def reset_password(
     return await AuthController.reset_password(db, body)
 
 @router.post("/change-password", response_model=ChangePasswordResponse)
+@rate_limit("5/minute")
 async def change_password(
     request: Request,
     body: ChangePasswordRequest,
@@ -112,6 +113,7 @@ async def logout(
     return {"message": "Successfully logged out"}
 
 @router.post("/set-initial-password")
+@rate_limit("5/minute")
 async def set_initial_password(
     request: Request,
     body: SetInitialPasswordRequest,
