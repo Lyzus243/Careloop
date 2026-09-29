@@ -3,7 +3,7 @@ uvicorn[standard]
 python-dotenv
 
 # Database
-sqlalchemy
+sqlalchemy[asyncio]
 aiosqlite
 asyncpg
 
