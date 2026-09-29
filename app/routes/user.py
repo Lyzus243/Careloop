@@ -116,6 +116,10 @@ async def update_user_settings(
     if "custom_existing_customer_days" in data:
         val = data["custom_existing_customer_days"]
         user.custom_existing_customer_days = int(val) if val not in (None, "") else None
+    if "use_default_message" in data:
+        user.use_default_message = bool(data["use_default_message"])
+    if "default_message" in data:
+        user.default_message = data["default_message"] or None
 
     await db.commit()
     return {"success": True}

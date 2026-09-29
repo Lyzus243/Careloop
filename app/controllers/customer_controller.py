@@ -156,9 +156,13 @@ class CustomerController:
     
     @staticmethod
     async def delete_customer(db: AsyncSession, customer_id: int, user_id: int) -> bool:
-        """Delete a customer for the authenticated user"""
+        """Delete a customer and their related sales records for the authenticated user"""
+        from sqlalchemy import delete
+        from app.models.sale import Sale
+
         customer = await CustomerController.get_customer_by_id(db, customer_id, user_id)
-        
+
+        await db.execute(delete(Sale).where(Sale.customer_id == customer_id))
         await db.delete(customer)
         await db.commit()
         return True

@@ -43,6 +43,8 @@ class UserResponse(BaseModel):
     custom_existing_customer_days: Optional[int] = None
     last_unresponsive_prompt_at: Optional[datetime] = None
     created_at: Optional[datetime] = None
+    use_default_message: Optional[bool] = False
+    default_message: Optional[str] = None
 
 class UserUpdate(BaseModel):
     full_name: Optional[str] = None

@@ -45,7 +45,9 @@ async def generate_message(
         user_name = user.full_name or user.email.split("@")[0]
         user_business = user.business_name or "Your Business"
 
-        if body.message_type == "sales" and body.product:
+        if user.use_default_message and user.default_message:
+            message = user.default_message
+        elif body.message_type == "sales" and body.product:
             message = await openai_service.generate_sales_message(
                 customer=customer_dict, product=body.product,
                 user_name=user_name, user_business=user_business

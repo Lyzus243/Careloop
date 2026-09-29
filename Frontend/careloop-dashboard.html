@@ -1031,7 +1031,12 @@ body.dark-mode.eye-care {
   <button class="nav-item" id="nav-add" onclick="showPage('add-customer')">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
     Add Customer
-  </button>  <div class="sidebar-bottom">
+  </button>
+  <div class="sidebar-bottom">
+    <button class="nav-item" id="nav-account-settings" onclick="showPage('account-settings')" style="margin-bottom:14px;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      Account Settings
+    </button>
     <div class="sidebar-user">
       <button class="avatar-btn" id="sidebar-avatar" onclick="changeAvatar()"><img id="sidebar-avatar-img" alt=""><span id="sidebar-avatar-initials"></span></button>
       <div class="sidebar-user-info">
@@ -1171,6 +1176,18 @@ body.dark-mode.eye-care {
       <label class="field-label">Existing customer message</label>
       <textarea id="settings-followup-existing" class="field-input" rows="2" placeholder="Check-in to encourage repeat purchase" style="margin-bottom:18px;resize:vertical;"></textarea>
       <button class="btn-primary" onclick="saveMessageSettings()" style="width:100%;justify-content:center;padding:12px;border-radius:10px;">Save Messages</button>
+    </div>
+
+    <div style="max-width:520px;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:24px;margin-top:16px;">
+      <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:6px;">WhatsApp AI message</div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:14px;">By default, a new AI-generated message is created every time you open a customer to message them on WhatsApp. Turn this on to reuse one saved message instead.</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+        <input type="checkbox" id="settings-use-default-message" onchange="saveAIMessageDefault(false)" style="width:15px;height:15px;cursor:pointer;accent-color:#4F46E5;">
+        <label for="settings-use-default-message" style="font-size:13px;color:var(--text);cursor:pointer;">Always use my saved message instead of generating a new one</label>
+      </div>
+      <label class="field-label">Saved message</label>
+      <textarea id="settings-default-message" class="field-input" rows="3" placeholder="Type or save a message from the WhatsApp send screen" style="margin-bottom:14px;resize:vertical;"></textarea>
+      <button class="btn-primary" onclick="saveAIMessageDefault()" style="width:100%;justify-content:center;padding:12px;border-radius:10px;">Save</button>
     </div>
 
     <div style="max-width:520px;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:24px;margin-top:16px;">
@@ -1410,6 +1427,10 @@ body.dark-mode.eye-care {
     </div>
     <textarea class="message-textarea" id="msg-textarea" placeholder="Generating message..."></textarea>
     <span class="add-msg-link" onclick="document.getElementById('msg-textarea').focus()">✏️ Add message</span>
+    <div style="display:flex;align-items:center;gap:8px;margin:10px 0 14px;">
+      <input type="checkbox" id="msg-save-default-check" style="width:15px;height:15px;cursor:pointer;accent-color:#4F46E5;">
+      <label for="msg-save-default-check" style="font-size:12.5px;color:#4b5563;cursor:pointer;">Save this as my default message (stop auto-generating new ones)</label>
+    </div>
     <button class="btn-primary" id="msg-send-btn" style="width:100%;justify-content:center;padding:14px;border-radius:50px;" onclick="sendWhatsApp()">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12.032 2.001a9.995 9.995 0 0 0-9.032 13.776l-1.998 5.233a1 1 0 0 0 1.257 1.23l5.047-1.68A9.991 9.991 0 0 0 12.032 22.002c5.517 0 10-4.483 10-10s-4.483-10-10-10zm0 18.5a8.462 8.462 0 0 1-4.064-1.035l-.285-.155-3.35 1.115 1.118-3.267-.147-.296A8.466 8.466 0 1 1 12.032 20.5z"/></svg>
       Send to Whatsapp
@@ -1794,6 +1815,32 @@ async function loadPreferences(){
 }
 
 // --- ACCOUNT SETTINGS ---
+async function saveAIMessageDefault(clearText){
+  const token = localStorage.getItem("authToken");
+  const useDefaultCheck = document.getElementById("settings-use-default-message");
+  const textBox = document.getElementById("settings-default-message");
+  const payload = {
+    use_default_message: useDefaultCheck ? useDefaultCheck.checked : false
+  };
+  if(clearText !== false){
+    payload.default_message = textBox.value.trim();
+  }
+  try{
+    const r = await fetch(`${API_URL}/api/user/settings`,{
+      method:"PUT",
+      headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},
+      body:JSON.stringify(payload)
+    });
+    if(r.ok){
+      clAlert("AI message setting saved!","success");
+    } else {
+      clAlert("Failed to save setting.","warning");
+    }
+  }catch(e){
+    clAlert("Network error. Please try again.","warning");
+  }
+}
+
 async function saveMessageSettings(){
   const token = localStorage.getItem("authToken");
   const payload = {
@@ -1846,6 +1893,10 @@ async function renderAccountSettings(){
       if(bMsg) bMsg.value = u.birthday_message || "";
       if(nDays) nDays.value = u.custom_new_customer_days || "";
       if(eDays) eDays.value = u.custom_existing_customer_days || "";
+      const useDefaultCheck = document.getElementById("settings-use-default-message");
+      if(useDefaultCheck) useDefaultCheck.checked = u.use_default_message === true;
+      const defaultMsgBox = document.getElementById("settings-default-message");
+      if(defaultMsgBox) defaultMsgBox.value = u.default_message || "";
     }
   }catch(e){}
 }
@@ -2331,7 +2382,7 @@ function lastActivityText(c){
     return "Last Purchase: " + fmtDate(latest.date);
   }
   if(c.last_contact){
-    return "Last Contact: " + fmtDate(c.last_contact);
+    return "Last Contacted: " + fmtDate(c.last_contact);
   }
   return "No activity yet";
 }
@@ -2469,6 +2520,8 @@ async function openMessageModal(id){
   document.getElementById('msg-cust-badge').textContent=c.customer_type==='active'?'Existing':'New';
   const ta=document.getElementById('msg-textarea');
   ta.value='';
+  const saveDefaultCheck=document.getElementById('msg-save-default-check');
+  if(saveDefaultCheck) saveDefaultCheck.checked=false;
   document.getElementById('message-modal').classList.add('open');
   const btn=document.getElementById('msg-send-btn');
   btn.innerHTML='<div class="dot-spinner"><span></span><span></span><span></span></div>';
@@ -2488,9 +2541,20 @@ async function openMessageModal(id){
   btn.innerHTML=`<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12.032 2.001a9.995 9.995 0 0 0-9.032 13.776l-1.998 5.233a1 1 0 0 0 1.257 1.23l5.047-1.68A9.991 9.991 0 0 0 12.032 22.002c5.517 0 10-4.483 10-10s-4.483-10-10-10z"/></svg> Send to Whatsapp`;
   btn.disabled=false;
 }
-function sendWhatsApp(){
+async function sendWhatsApp(){
   const c=customers.find(x=>x.id===msgCustomerId); if(!c) return;
   const msg=document.getElementById('msg-textarea').value.trim(); if(!msg) return;
+  const saveDefaultCheck=document.getElementById('msg-save-default-check');
+  if(saveDefaultCheck && saveDefaultCheck.checked){
+    const token=localStorage.getItem('authToken');
+    try{
+      await fetch(`${API_URL}/api/user/settings`,{
+        method:'PUT',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+        body:JSON.stringify({use_default_message:true,default_message:msg})
+      });
+    }catch(e){}
+  }
   const phone=c.phone_number.replace(/\D/g,'');
   window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(msg),'_blank');
   if(c){c.last_contact=new Date().toISOString();buildFollowups();renderDashboard();}
@@ -2737,6 +2801,7 @@ function openViewPanel(id){
     <div class="panel-field" style="flex-direction:column;align-items:flex-start;gap:6px;"><span class="panel-field-label">Email</span><input type="email" id="panel-email" value="" placeholder="customer@example.com" style="border:1.5px solid var(--border);border-radius:var(--radius);padding:8px 12px;font-size:.875rem;color:var(--text);background:var(--bg);width:100%;margin-top:6px;"></div>
     <button class="btn-save-cust" id="dob-save-btn">Save Changes</button>
     <button class="btn-save-cust" onclick="closePanel()">Save Customer</button>
+    <button class="btn-save-cust" onclick="deleteCustomerFromPanel(${c.id})" style="background:#FEF2F2;color:#B91C1C;border:1px solid #FCA5A5;margin-top:8px;">Delete Customer</button>
   `;
   document.getElementById('panel-dob').value = c.date_of_birth ? c.date_of_birth.split('T')[0] : '';
   document.getElementById('panel-email').value = c.email || '';
@@ -2777,6 +2842,34 @@ async function saveCustomerDOB(customerId){
 function closePanel(){
   document.getElementById('view-panel').classList.remove('open');
   document.getElementById('panel-backdrop').classList.remove('open');
+}
+
+async function deleteCustomerFromPanel(customerId){
+  const c = customers.find(x=>x.id===customerId);
+  if(!c) return;
+  const confirmed = confirm(`Delete ${c.name}? This will also remove their sales history. This cannot be undone.`);
+  if(!confirmed) return;
+
+  const token = localStorage.getItem('authToken');
+  try{
+    const r = await fetch(`${API_URL}/api/customers/${customerId}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if(r.ok || r.status===204){
+      const idx = customers.findIndex(x=>x.id===customerId);
+      if(idx!==-1) customers.splice(idx,1);
+      closePanel();
+      renderCustomers();
+      buildFollowups();
+      renderDashboard();
+      clAlert('Customer deleted.','success');
+    } else {
+      clAlert('Failed to delete customer.','error');
+    }
+  } catch(e){
+    clAlert('Error: ' + e.message,'error');
+  }
 }
 
 // ─── ADD CUSTOMER FLOW ───
