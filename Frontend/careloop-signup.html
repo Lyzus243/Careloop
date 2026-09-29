@@ -8,6 +8,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16.png">
     <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+    <script src="/assets/cl-dialog.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
 
@@ -679,28 +680,28 @@ const API_URL = window.location.origin;
             const phone = document.getElementById('phone').value.trim();
             
             if (!fullName) {
-                alert('Full name is required');
+                clAlert('Full name is required', 'warning');
                 return false;
             }
             
             if (!businessName) {
-                alert('Business name is required');
+                clAlert('Business name is required', 'warning');
                 return false;
             }
             
             if (!email) {
-                alert('Email address is required');
+                clAlert('Email address is required', 'warning');
                 return false;
             }
             
             // Basic email validation
             if (!email.includes('@') || !email.includes('.')) {
-                alert('Please enter a valid email address');
+                clAlert('Please enter a valid email address', 'warning');
                 return false;
             }
             
             if (!phone) {
-                alert('Phone number is required');
+                clAlert('Phone number is required', 'warning');
                 return false;
             }
             
@@ -785,7 +786,7 @@ const API_URL = window.location.origin;
                 }
             } catch (error) {
                 console.error('Signup error:', error);
-                alert(error.message || 'Registration failed. Please try again.');
+                clAlert(error.message || 'Registration failed. Please try again.', 'error', 'Sign up failed');
                 
                 // Reset button state
                 document.getElementById('btn-inactive').style.display = 'none';

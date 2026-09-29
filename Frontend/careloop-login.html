@@ -8,6 +8,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16.png">
     <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+    <script src="/assets/cl-dialog.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
 
@@ -474,10 +475,10 @@ const API_URL = window.location.origin;
         const password = passwordInput.value.trim();
 
         if (!email || !email.includes('@')) {
-            alert('Please enter a valid email address.'); return;
+            clAlert('Please enter a valid email address.', 'warning'); return;
         }
         if (!password) {
-            alert('Please enter your password.'); return;
+            clAlert('Please enter your password.', 'warning'); return;
         }
 
         setBtn('loading');
@@ -506,7 +507,7 @@ const API_URL = window.location.origin;
                 throw new Error(data.detail || 'Login failed');
             }
         } catch (error) {
-            alert(error.message || 'Login failed. Please check your credentials and try again.');
+            clAlert(error.message || 'Login failed. Please check your credentials and try again.', 'error', 'Login failed');
             setBtn('active');
         }
     });

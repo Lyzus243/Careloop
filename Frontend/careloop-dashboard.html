@@ -9,6 +9,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16.png">
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <script src="/assets/cl-dialog.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>if (window.Chart) { Chart.defaults.font.family = "'Inter', system-ui, -apple-system, sans-serif"; }</script>
@@ -2251,126 +2252,6 @@
     }
 
     /* ── CUSTOM DIALOG ── */
-    .cl-dialog-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.5);
-      z-index: 9999;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      opacity: 0;
-      visibility: hidden;
-      transition: all .2s;
-    }
-
-    .cl-dialog-backdrop.open {
-      opacity: 1;
-      visibility: visible;
-    }
-
-    .cl-dialog {
-      box-sizing: border-box;
-      background: var(--bg);
-      border-radius: var(--radius-xl);
-      padding: 28px 28px 20px;
-      width: 90%;
-      max-width: 400px;
-      box-shadow: var(--shadow-lg);
-      transform: translateY(8px);
-      transition: transform .2s;
-    }
-
-    .cl-dialog-backdrop.open .cl-dialog {
-      transform: translateY(0);
-    }
-
-    .cl-dialog-icon {
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 16px;
-    }
-
-    .cl-dialog-icon.success {
-      background: #dcfce7;
-      color: var(--green);
-    }
-
-    .cl-dialog-icon.error {
-      background: #fee2e2;
-      color: var(--red);
-    }
-
-    .cl-dialog-icon.info {
-      background: var(--blue-light);
-      color: var(--blue);
-    }
-
-    .cl-dialog-icon.warning {
-      background: #fef9c3;
-      color: var(--yellow);
-    }
-
-    .cl-dialog-title {
-      font-size: 1.1rem;
-      font-weight: 700;
-      color: var(--text);
-      text-align: center;
-      margin-bottom: 8px;
-    }
-
-    .cl-dialog-msg {
-      font-size: .875rem;
-      color: var(--text2);
-      text-align: center;
-      line-height: 1.6;
-      margin-bottom: 20px;
-    }
-
-    .cl-dialog-btns {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-    }
-
-    .cl-dialog-btn {
-      padding: 10px 24px;
-      border-radius: 50px;
-      font-size: .875rem;
-      font-weight: 600;
-      cursor: pointer;
-      font-family: 'Inter', system-ui, -apple-system, sans-serif;
-      border: none;
-      transition: all .15s;
-    }
-
-    .cl-dialog-btn.primary {
-      background: var(--blue);
-      color: #fff;
-    }
-
-    .cl-dialog-btn.primary:hover {
-      background: var(--blue-mid);
-    }
-
-    .cl-dialog-btn.secondary {
-      background: var(--bg2);
-      color: var(--text);
-      border: 1.5px solid var(--border);
-    }
-
-    .cl-dialog-btn.secondary:hover {
-      border-color: var(--text2);
-    }
-
-    .cl-dialog-btn.danger {
-      background: var(--red);
-      color: #fff;
-    }
 
 
     /* ─── CUSTOMER IMPORT MODAL ─── */
@@ -5051,11 +4932,11 @@
         clAlert("Network error. Please try again.", "warning");
       }
     }
-    function bulkWhatsApp() {
+    async function bulkWhatsApp() {
       const selected = customers.filter(c => selectedCustomers.has(c.id));
       if (!selected.length) return;
       const noPhone = selected.filter(c => !c.phone_number).length;
-      if (selected.length > 3 && !confirm(`This opens ${selected.length} WhatsApp tabs (one per customer). Continue?`)) return;
+      if (selected.length > 3 && !(await clConfirm(`This opens ${selected.length} WhatsApp tabs, one per customer. Continue?`, 'Open WhatsApp', { type: 'info', confirmText: 'Open', cancelText: 'Cancel' }))) return;
       selected.forEach((c, i) => {
         if (!c.phone_number) return;
         setTimeout(() => {
@@ -5064,7 +4945,7 @@
           window.open("https://wa.me/" + phone + "?text=" + encodeURIComponent(msg), "_blank");
         }, i * 400);
       });
-      if (noPhone) alert(`${noPhone} customer(s) skipped, no phone number on file.`);
+      if (noPhone) clAlert(`${noPhone} customer(s) skipped, no phone number on file.`, 'info', 'Some customers skipped');
       selectedCustomers.clear();
       renderCustomers();
       updateBulkBar();
@@ -5084,9 +4965,9 @@
     async function sendBulkEmail() {
       const subject = document.getElementById("bulk-email-subject").value.trim();
       const body = document.getElementById("bulk-email-body").value.trim();
-      if (!subject || !body) { alert("Please enter a subject and message."); return; }
+      if (!subject || !body) { clAlert("Please enter a subject and message.", "warning"); return; }
       const selected = customers.filter(c => selectedCustomers.has(c.id) && c.email);
-      if (!selected.length) { alert("No selected customers have an email on file."); return; }
+      if (!selected.length) { clAlert("No selected customers have an email on file.", "warning", "No email addresses"); return; }
       const token = localStorage.getItem("authToken");
       const btn = document.getElementById("bulk-email-send-btn");
       const orig = btn.textContent;
@@ -5105,13 +4986,13 @@
           selectedCustomers.clear();
           renderCustomers();
           updateBulkBar();
-          alert(`Email sent to ${result.sent} of ${result.total} customer(s).`);
+          clAlert(`Email sent to ${result.sent} of ${result.total} customer(s).`, "success", "Emails sent");
         } else {
           const err = await r.json().catch(() => ({}));
-          alert("Failed to send bulk email: " + (err.detail || r.status));
+          clAlert("Failed to send bulk email: " + (typeof err.detail === "string" ? err.detail : r.status), "error");
         }
       } catch (e) {
-        alert("Error sending bulk email: " + e.message);
+        clAlert("Error sending bulk email: " + e.message, "error");
       }
       btn.textContent = orig;
       btn.disabled = false;
@@ -5952,42 +5833,6 @@
     }
 
 
-    // ── CUSTOM DIALOG ──
-    function clDialog(msg, type = 'info', title = '', onConfirm = null, confirmText = 'OK', cancelText = null) {
-      const icons = {
-        success: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>',
-        error: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
-        warning: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
-        info: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
-      };
-      const defaultTitles = { success: 'Success', error: 'Error', warning: 'Warning', info: 'Info' };
-      document.getElementById('cl-dialog-icon').className = 'cl-dialog-icon ' + type;
-      document.getElementById('cl-dialog-icon').innerHTML = icons[type] || icons.info;
-      document.getElementById('cl-dialog-title').textContent = title || defaultTitles[type] || '';
-      document.getElementById('cl-dialog-msg').textContent = msg;
-      const btns = document.getElementById('cl-dialog-btns');
-      btns.innerHTML = '';
-      if (cancelText) {
-        const cancel = document.createElement('button');
-        cancel.className = 'cl-dialog-btn secondary';
-        cancel.textContent = cancelText;
-        cancel.onclick = () => { document.getElementById('cl-dialog').classList.remove('open'); };
-        btns.appendChild(cancel);
-      }
-      const ok = document.createElement('button');
-      ok.className = 'cl-dialog-btn ' + (type === 'error' ? 'danger' : 'primary');
-      ok.textContent = confirmText;
-      ok.onclick = () => {
-        document.getElementById('cl-dialog').classList.remove('open');
-        if (onConfirm) onConfirm();
-      };
-      btns.appendChild(ok);
-      document.getElementById('cl-dialog').classList.add('open');
-    }
-
-    // Shorthand helpers
-    function clAlert(msg, type = 'info', title = '') { return new Promise(r => clDialog(msg, type, title, r)); }
-    function clConfirm(msg, title = '') { return new Promise(r => clDialog(msg, 'warning', title, () => r(true), 'Yes', 'No')); }
 
 
     async function goToDashboardViaLogo() {
@@ -6004,22 +5849,6 @@
     window.addEventListener('DOMContentLoaded', init);
   </script>
 
-  <!-- CUSTOM DIALOG -->
-  <div class="cl-dialog-backdrop" id="cl-dialog">
-    <div class="cl-dialog">
-
-      <div class="cl-dialog-icon info" id="cl-dialog-icon">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <circle cx="12" cy="12" r="10" />
-          <line x1="12" y1="8" x2="12" y2="12" />
-          <line x1="12" y1="16" x2="12.01" y2="16" />
-        </svg>
-      </div>
-      <div class="cl-dialog-title" id="cl-dialog-title"></div>
-      <div class="cl-dialog-msg" id="cl-dialog-msg"></div>
-      <div class="cl-dialog-btns" id="cl-dialog-btns"></div>
-    </div>
-  </div>
 
 </body>
 
