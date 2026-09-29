@@ -252,12 +252,13 @@
             .dash-tabs { overflow-x: auto; white-space: nowrap; flex-wrap: nowrap; }
             .dash-tab { flex-shrink: 0; }
         }
-    </style>
+            html.dark .nav-logo img { content: url('/assets/primary_logo_dark.png'); }
+</style>
 </head>
 <body>
 
 <nav>
-    <div class="nav-logo"><img src="assets/primary_logo.jpg" alt="Careloop"></div>
+    <div class="nav-logo"><img src="assets/primary_logo.png" alt="Careloop"></div>
     <div id="mobile-controls" style="display:none;align-items:center;gap:8px;margin-left:auto;">
         <button onclick="document.getElementById('darkModeToggle').click()" class="mode-toggle" title="Toggle Dark Mode">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>

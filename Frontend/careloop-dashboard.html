@@ -2651,7 +2651,9 @@
         min-width: 40%;
       }
     }
-  </style>
+      /* Transparent logo; lighter version on dark backgrounds (Chrome/Safari; Firefox keeps the normal one) */
+    body.dark-mode .brand-logo { content: url('/assets/primary_logo_dark.png'); }
+</style>
 </head>
 
 <body>
@@ -2715,7 +2717,7 @@
   <!-- SIDEBAR -->
   <aside class="sidebar">
     <div style="padding:20px 16px 16px;border-bottom:1px solid var(--border);margin-bottom:8px;">
-      <img src="/assets/primary_logo.jpg" alt="Careloop" style="height:32px;object-fit:contain;cursor:pointer;"
+      <img class="brand-logo" src="/assets/primary_logo.png" alt="Careloop" style="height:32px;object-fit:contain;cursor:pointer;"
         onclick="goToDashboardViaLogo()">
     </div>
     <button class="nav-item active" id="nav-dashboard" onclick="showPage('dashboard')">
@@ -2843,7 +2845,7 @@
     <!-- CUSTOMERS PAGE -->
     <div class="page" id="page-account-settings">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
-        <img src="/assets/primary_logo.jpg" alt="Careloop" style="height:24px;width:auto;">
+        <img class="brand-logo" src="/assets/primary_logo.png" alt="Careloop" style="height:24px;width:auto;">
       </div>
       <div class="page-top">
         <div>
@@ -3431,7 +3433,7 @@
   <div class="modal-backdrop" id="consent-modal">
     <div class="modal-card" style="text-align:left;max-width:400px;padding:28px 28px 22px;">
       <div style="display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
-        <img src="/assets/primary_logo.jpg" alt="Careloop" style="height:22px;width:auto;">
+        <img class="brand-logo" src="/assets/primary_logo.png" alt="Careloop" style="height:22px;width:auto;">
       </div>
       <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:14px;">
         <div
