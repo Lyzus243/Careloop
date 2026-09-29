@@ -985,6 +985,16 @@ body.dark-mode.eye-care {
 .imp-country select{padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-family:inherit;font-size:.85rem;}
 .imp-textarea{width:100%;min-height:150px;padding:12px;border:1.5px solid var(--border);border-radius:var(--radius);font-family:inherit;font-size:.9rem;resize:vertical;background:var(--bg);color:var(--text);box-sizing:border-box;}
 .imp-hint{font-size:.8rem;color:var(--text3);margin:8px 0 14px;line-height:1.5;}
+.imp-guide-title{font-size:.85rem;font-weight:700;color:var(--text);margin:14px 0 8px;}
+.imp-guide{border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px;background:var(--bg);}
+.imp-guide summary{cursor:pointer;padding:12px 14px;font-weight:600;font-size:.88rem;color:var(--text);list-style:none;display:flex;justify-content:space-between;align-items:center;}
+.imp-guide summary::-webkit-details-marker{display:none;}
+.imp-guide summary::after{content:"+";font-size:1.1rem;color:var(--text2);}
+.imp-guide[open] summary::after{content:"–";}
+.imp-guide ol{margin:0;padding:0 14px 4px 34px;font-size:.85rem;color:var(--text2);line-height:1.6;}
+.imp-guide li{margin-bottom:4px;}
+.imp-guide li b{color:var(--text);}
+.imp-guide-note{font-size:.78rem;color:var(--text3);padding:4px 14px 12px;margin:0;line-height:1.5;}
 .imp-drop{border:1.5px dashed var(--border);border-radius:var(--radius);padding:24px 16px;text-align:center;background:var(--bg2);margin-bottom:10px;}
 .imp-drop p{font-size:.85rem;color:var(--text2);margin:8px 0 12px;}
 .imp-btn-sec{padding:9px 16px;border-radius:50px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:.85rem;font-weight:600;cursor:pointer;font-family:inherit;}
@@ -1451,7 +1461,29 @@ body.dark-mode.eye-care {
           <button class="imp-btn-sec" onclick="document.getElementById('imp-vcf-input').click()">Choose .vcf file</button>
           <input type="file" id="imp-vcf-input" accept=".vcf,text/vcard,text/x-vcard" style="display:none;" onchange="previewVcfFile(this)">
         </div>
-        <p class="imp-hint"><b>iPhone:</b> open Contacts, tap Lists, long-press a list, then Export. <b>Android:</b> open Contacts, then Settings or Fix &amp; manage, then Export to file.</p>
+        <p class="imp-guide-title">How to get your contacts file</p>
+        <details class="imp-guide" id="imp-guide-ios">
+          <summary>On iPhone</summary>
+          <ol>
+            <li>Open the <b>Contacts</b> app.</li>
+            <li>Tap <b>Lists</b> at the top left.</li>
+            <li>Touch and hold <b>All Contacts</b>, or a list with just your customers, then tap <b>Export</b>.</li>
+            <li>Tap <b>Done</b>, then <b>Save to Files</b>, and save it.</li>
+            <li>Come back here, tap <b>Choose .vcf file</b>, and pick the file you saved.</li>
+          </ol>
+          <p class="imp-guide-note">No Export option? Your iPhone needs iOS 16 or later. You can also sign in at icloud.com on a computer, open Contacts, select everyone and choose Export vCard.</p>
+        </details>
+        <details class="imp-guide" id="imp-guide-android">
+          <summary>On Android</summary>
+          <ol>
+            <li>Open the <b>Contacts</b> app.</li>
+            <li>Tap <b>Fix &amp; manage</b> at the bottom, then <b>Export to file</b>.</li>
+            <li>Choose the account your contacts are saved in, then tap <b>Save</b>. The file goes to your Downloads folder.</li>
+            <li>Come back here, tap <b>Choose .vcf file</b>, and pick the file from Downloads.</li>
+          </ol>
+          <p class="imp-guide-note">On Samsung phones, open Contacts, tap the menu, then <b>Manage contacts</b>, <b>Import or export contacts</b> and <b>Export</b>.</p>
+        </details>
+        <p class="imp-hint">Only names, phone numbers, emails and birthdays are read. You check the list before anything is saved.</p>
       </div>
       <div class="imp-pane" id="imp-pane-excel">
         <div class="imp-drop">
@@ -2284,6 +2316,12 @@ function openImportModal(){
   resetImportModal();
   const picker=document.getElementById("imp-picker");
   picker.style.display=("contacts" in navigator && "ContactsManager" in window)?"flex":"none";
+  // Open the export guide for the owner's own phone; on a computer, open both.
+  const ua=navigator.userAgent||"";
+  const isIOS=/iPhone|iPad|iPod/.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1);
+  const isAndroid=/Android/.test(ua);
+  document.getElementById("imp-guide-ios").open=isIOS||!isAndroid;
+  document.getElementById("imp-guide-android").open=isAndroid||!isIOS;
   openModal("import-modal");
 }
 function resetImportModal(){
