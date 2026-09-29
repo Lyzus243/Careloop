@@ -1028,6 +1028,10 @@ body.dark-mode.eye-care {
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
     Sales
   </button>
+  <button class="nav-item" id="nav-campaigns" onclick="showPage('whatsapp-campaigns')" style="display:none;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+    Campaigns
+  </button>
   <button class="nav-item" id="nav-add" onclick="showPage('add-customer')">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
     Add Customer
@@ -1143,6 +1147,14 @@ body.dark-mode.eye-care {
       </div>
     </div>
 
+    <div id="wa-card" style="display:none;max-width:520px;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:24px;margin-top:16px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+        <div style="font-size:15px;font-weight:600;color:var(--text);">WhatsApp Business</div>
+      </div>
+      <div id="wa-card-body"></div>
+    </div>
+
     <div style="max-width:520px;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:24px;margin-top:16px;">
       <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:14px;">Preferred currency</div>
       <select id="settings-currency-select" class="field-input" style="width:100%;cursor:pointer;" onchange="saveCurrencyPreference(this.value)">
@@ -1241,6 +1253,10 @@ body.dark-mode.eye-care {
         Import from Excel
       </button>
       <a href="/assets/careloop_customer_import_template.xlsx" download style="font-size:.95rem;font-weight:600;color:var(--blue);text-decoration:underline;">Download template</a>
+      <button id="wa-all-btn" onclick="openBulkWhatsAppModal('all')" style="display:none;padding:9px 16px;border-radius:50px;border:1px solid var(--border);background:var(--bg);color:#25D366;font-size:.85rem;font-weight:600;cursor:pointer;font-family:inherit;align-items:center;gap:6px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+        WhatsApp all customers
+      </button>
     </div>
     <div id="bulk-action-bar" style="display:none;align-items:center;gap:12px;padding:12px 16px;background:var(--blue);border-radius:var(--radius);margin-bottom:12px;">
       <span id="bulk-count" style="color:white;font-weight:600;font-size:.9rem;flex:1;"></span>
@@ -1347,6 +1363,16 @@ body.dark-mode.eye-care {
 </div>
 
   <!-- NOTIFICATIONS PAGE -->
+  <div class="page" id="page-whatsapp-campaigns">
+    <div class="page-top">
+      <div>
+        <h1 class="page-title">WhatsApp Campaigns</h1>
+        <p class="page-sub">Bulk messages you have sent from your WhatsApp Business number</p>
+      </div>
+    </div>
+    <div id="wa-campaigns-body" style="margin-top:16px;"></div>
+  </div>
+
   <div class="page" id="page-notifications">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
       <h1 class="page-title">Notifications</h1>
@@ -1357,6 +1383,65 @@ body.dark-mode.eye-care {
 </main>
 
 <!-- BULK EMAIL MODAL -->
+<div class="modal-backdrop" id="bulk-whatsapp-modal">
+  <div class="modal-card" style="text-align:left;max-width:560px;max-height:88vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h3 style="font-size:1.1rem;font-weight:700;">Send WhatsApp message</h3>
+      <button onclick="closeModal('bulk-whatsapp-modal')" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--text2);">&times;</button>
+    </div>
+
+    <div style="display:flex;gap:16px;margin-bottom:14px;font-size:.85rem;">
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+        <input type="radio" name="wa-audience" value="selected" checked onchange="onWaComposeChange()">
+        <span id="wa-audience-selected-label">Selected customers</span>
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+        <input type="radio" name="wa-audience" value="all" onchange="onWaComposeChange()">
+        All customers
+      </label>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-bottom:16px;">
+      <button class="tab active" id="wa-tab-custom" onclick="setWaMode('custom')" style="cursor:pointer;">Custom message</button>
+      <button class="tab" id="wa-tab-template" onclick="setWaMode('template')" style="cursor:pointer;">Template</button>
+    </div>
+
+    <div id="wa-pane-custom">
+      <label class="field-label">Your message</label>
+      <textarea id="wa-custom-body" maxlength="4096" oninput="onWaComposeChange()" style="width:100%;min-height:110px;padding:12px;border:1.5px solid var(--border);border-radius:var(--radius);font-family:inherit;font-size:.9rem;resize:vertical;background:var(--bg);color:var(--text);" placeholder="Write anything you want to tell your customers..."></textarea>
+      <div id="wa-opener-note" style="margin-top:10px;padding:12px;border-radius:10px;background:#FFF8E6;border:1px solid #F0DCA8;font-size:.78rem;line-height:1.55;color:#6B5418;"></div>
+    </div>
+
+    <div id="wa-pane-template" style="display:none;">
+      <label class="field-label">Template</label>
+      <select class="field-input" id="wa-template-select" style="width:100%;cursor:pointer;" onchange="onWaTemplateChange()"></select>
+      <div id="wa-template-preview" style="margin-top:10px;padding:12px;border-radius:10px;background:var(--bg2);font-size:.82rem;line-height:1.55;color:var(--text2);white-space:pre-wrap;"></div>
+      <div id="wa-template-params" style="margin-top:12px;"></div>
+      <div style="margin-top:10px;">
+        <button onclick="refreshWaTemplates()" style="background:none;border:none;color:var(--blue);font-size:.8rem;font-weight:600;cursor:pointer;padding:0;text-decoration:underline;font-family:inherit;">Refresh templates from WhatsApp</button>
+      </div>
+    </div>
+
+    <div id="wa-recipients" style="font-size:.8rem;color:var(--text2);margin-top:16px;line-height:1.6;"></div>
+    <div id="wa-tier-warning" style="display:none;margin-top:10px;padding:10px 12px;border-radius:10px;background:#FCEBEB;border:1px solid #F0C2C2;font-size:.78rem;line-height:1.5;color:#8A2B2B;"></div>
+
+    <div style="display:flex;gap:10px;align-items:center;margin-top:18px;">
+      <button class="btn-primary" id="wa-send-btn" style="flex:1;justify-content:center;padding:14px;border-radius:50px;" onclick="sendWhatsAppCampaign()">Send</button>
+      <button onclick="sendWhatsAppTest()" style="padding:14px 18px;border-radius:50px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:.85rem;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;">Test on my number</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="wa-campaign-modal">
+  <div class="modal-card" style="text-align:left;max-width:640px;max-height:88vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h3 style="font-size:1.1rem;font-weight:700;">Campaign details</h3>
+      <button onclick="closeModal('wa-campaign-modal')" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--text2);">&times;</button>
+    </div>
+    <div id="wa-campaign-detail"></div>
+  </div>
+</div>
+
 <div class="modal-backdrop" id="bulk-email-modal">
   <div class="modal-card" style="text-align:left;max-width:480px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
@@ -1600,10 +1685,10 @@ function fmtAgo(d){
 function showPage(page){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-  const labels={dashboard:'Dashboard',customers:'Customers','add-customer':'Add Customer',notifications:'Notifications',sales:'Sales','account-settings':'Account Settings'};
+  const labels={dashboard:'Dashboard',customers:'Customers','add-customer':'Add Customer',notifications:'Notifications',sales:'Sales','account-settings':'Account Settings','whatsapp-campaigns':'WhatsApp Campaigns'};
   document.getElementById('header-label').textContent=labels[page]||'Careloop';
   document.getElementById('page-'+page).classList.add('active');
-  const navMap={dashboard:'nav-dashboard',customers:'nav-customers','add-customer':'nav-add',sales:'nav-sales'};
+  const navMap={dashboard:'nav-dashboard',customers:'nav-customers','add-customer':'nav-add',sales:'nav-sales','whatsapp-campaigns':'nav-campaigns'};
   if(navMap[page]) document.getElementById(navMap[page]).classList.add('active');
   if(page==='add-customer') renderAddStep();
   if(page==='notifications'){ renderNotifPage(); markAllRead(); }
@@ -1611,6 +1696,7 @@ function showPage(page){
   if(page==='dashboard') renderDashboard();
   if(page==='sales') renderSalesPage();
   if(page==='account-settings') renderAccountSettings();
+  if(page==='whatsapp-campaigns') renderWhatsAppCampaigns();
 }
 
 // ─── AUTH & USER ───
@@ -1652,6 +1738,7 @@ updateUserUI();
     const cfgR=await fetch(`${API_URL}/api/config`,{headers:{'Authorization':'Bearer '+token}});
     if(cfgR.ok) followupConfig=await cfgR.json();
   }catch(e){}
+  await initWhatsApp();
   checkConsentPrompt();
   checkUnresponsiveNudge();
 
@@ -1848,6 +1935,8 @@ async function renderAccountSettings(){
       if(eDays) eDays.value = u.custom_existing_customer_days || "";
     }
   }catch(e){}
+  await refreshWaStatus();
+  renderWhatsAppCard();
 }
 function updateConsentToggleUI(){
   const btn = document.getElementById("consent-toggle-btn");
@@ -2488,13 +2577,38 @@ async function openMessageModal(id){
   btn.innerHTML=`<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12.032 2.001a9.995 9.995 0 0 0-9.032 13.776l-1.998 5.233a1 1 0 0 0 1.257 1.23l5.047-1.68A9.991 9.991 0 0 0 12.032 22.002c5.517 0 10-4.483 10-10s-4.483-10-10-10z"/></svg> Send to Whatsapp`;
   btn.disabled=false;
 }
-function sendWhatsApp(){
+async function sendWhatsApp(){
   const c=customers.find(x=>x.id===msgCustomerId); if(!c) return;
   const msg=document.getElementById('msg-textarea').value.trim(); if(!msg) return;
-  const phone=c.phone_number.replace(/\D/g,'');
-  window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(msg),'_blank');
+
+  // When the business has connected WhatsApp, send from their own number.
+  if(waStatus && waStatus.connected){
+    const btn=document.getElementById('msg-send-btn');
+    const orig=btn?btn.textContent:'';
+    if(btn){btn.disabled=true;btn.textContent='Sending...';}
+    try{
+      const res=await waFetch('/send',{method:'POST',body:JSON.stringify({customer_id:c.id,text_body:msg})});
+      c.last_contact=new Date().toISOString();
+      buildFollowups();renderDashboard();
+      closeModal('message-modal');
+      clAlert(res.message||'Message sent.','success');
+      if(btn){btn.disabled=false;btn.textContent=orig;}
+      return;
+    }catch(e){
+      if(btn){btn.disabled=false;btn.textContent=orig;}
+      const fallback=await clConfirm(e.message+'\n\nOpen this in WhatsApp instead?','Could not send');
+      if(!fallback) return;
+    }
+  }
+
+  openWaLink(c,msg);
   if(c){c.last_contact=new Date().toISOString();buildFollowups();renderDashboard();}
   closeModal('message-modal');
+}
+
+function openWaLink(c,msg){
+  const phone=(c.phone_number||'').replace(/\D/g,'');
+  window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(msg),'_blank');
 }
 
 // ─── RECORD SALE ───
@@ -2619,7 +2733,9 @@ function updateBulkBar(){
   if(selectedCustomers.size>0){
     bar.style.display="flex";
     count.textContent=`${selectedCustomers.size} customer${selectedCustomers.size!==1?"s":""} selected`;
-    if(waBtn) waBtn.style.display = selectedCustomers.size===1 ? "" : "none";
+    // Bulk WhatsApp works for any number of customers once the business has
+    // connected its own WhatsApp Business number.
+    if(waBtn) waBtn.style.display = (waStatus && waStatus.connected) || selectedCustomers.size===1 ? "" : "none";
   } else {
     bar.style.display="none";
   }
@@ -2655,6 +2771,12 @@ async function bulkCategorize(newType){
 function bulkWhatsApp(){
   const selected=customers.filter(c=>selectedCustomers.has(c.id));
   if(!selected.length) return;
+  // Connected businesses send from their own number through the Cloud API.
+  if(waStatus && waStatus.connected){ openBulkWhatsAppModal('selected'); return; }
+  if(selected.length>1){
+    clAlert("Connect WhatsApp Business in Account Settings to message several customers at once.","warning");
+    return;
+  }
   const noPhone=selected.filter(c=>!c.phone_number).length;
   if(selected.length>3 && !confirm(`This opens ${selected.length} WhatsApp tabs (one per customer). Continue?`)) return;
   selected.forEach((c,i)=>{
@@ -3593,6 +3715,613 @@ async function goToDashboardViaLogo(){
 
 // --- START ---
 window.addEventListener('DOMContentLoaded',init);
+
+// ─── WHATSAPP BUSINESS ───────────────────────────────────────────────
+let waConfig = {enabled:false};
+let waStatus = {enabled:false, connected:false};
+let waTemplates = [];
+let waMode = 'custom';
+let waAudience = 'selected';
+let waSignup = {};
+let waPreviewTimer = null;
+let waLastPreview = null;
+let waCampaignPoll = null;
+
+async function waFetch(path, options){
+  const token = localStorage.getItem('authToken');
+  const opts = options || {};
+  opts.headers = Object.assign({'Authorization':'Bearer '+token}, opts.headers||{});
+  if(opts.body && !opts.headers['Content-Type']) opts.headers['Content-Type']='application/json';
+  const r = await fetch(`${API_URL}/api/whatsapp${path}`, opts);
+  let data = null;
+  try{ data = await r.json(); }catch(e){}
+  if(!r.ok){
+    const err = new Error((data && data.detail) || ('Request failed ('+r.status+')'));
+    err.status = r.status;
+    throw err;
+  }
+  return data;
+}
+
+async function initWhatsApp(){
+  waConfig = (followupConfig && followupConfig.whatsapp) || {enabled:false};
+  if(!waConfig.enabled) return;
+  if(waConfig.signup_enabled) loadFacebookSdk();
+  await refreshWaStatus();
+}
+
+function loadFacebookSdk(){
+  if(document.getElementById('facebook-jssdk')) return;
+  window.fbAsyncInit = function(){
+    try{
+      FB.init({appId: waConfig.app_id, autoLogAppEvents:true, xfbml:false, version: waConfig.graph_version || 'v21.0'});
+    }catch(e){}
+  };
+  const js = document.createElement('script');
+  js.id = 'facebook-jssdk';
+  js.src = 'https://connect.facebook.net/en_US/sdk.js';
+  js.async = true; js.defer = true; js.crossOrigin = 'anonymous';
+  document.head.appendChild(js);
+}
+
+// Meta's Embedded Signup posts the WABA and phone ids back through postMessage,
+// while FB.login returns the auth code separately. Either can arrive first.
+window.addEventListener('message', function(ev){
+  let host = '';
+  try{ host = new URL(ev.origin).hostname; }catch(e){ return; }
+  if(!/(^|\.)facebook\.com$/.test(host)) return;
+  let d;
+  try{ d = typeof ev.data === 'string' ? JSON.parse(ev.data) : ev.data; }catch(e){ return; }
+  if(!d || d.type !== 'WA_EMBEDDED_SIGNUP') return;
+  if(d.event === 'FINISH' || d.event === 'FINISH_ONLY_WABA'){
+    waSignup.waba_id = d.data && d.data.waba_id;
+    waSignup.phone_number_id = d.data && d.data.phone_number_id;
+    tryFinishWhatsAppConnect();
+  } else if(d.event === 'CANCEL' || d.event === 'ERROR'){
+    waSignup = {};
+    resetWaConnectButton();
+    clAlert('WhatsApp setup was not completed.','warning');
+  }
+});
+
+function resetWaConnectButton(){
+  const btn = document.getElementById('wa-connect-btn');
+  if(btn){ btn.disabled=false; btn.textContent='Connect WhatsApp'; }
+}
+
+function connectWhatsApp(){
+  if(typeof FB === 'undefined'){
+    clAlert('WhatsApp setup is still loading. Try again in a moment.','warning');
+    return;
+  }
+  waSignup = {};
+  const btn = document.getElementById('wa-connect-btn');
+  if(btn){ btn.disabled=true; btn.textContent='Connecting...'; }
+  FB.login(function(res){
+    if(res && res.authResponse && res.authResponse.code){
+      waSignup.code = res.authResponse.code;
+      tryFinishWhatsAppConnect();
+    } else {
+      resetWaConnectButton();
+    }
+  }, {
+    config_id: waConfig.config_id,
+    response_type: 'code',
+    override_default_response_type: true,
+    extras: {setup:{}, featureType:'', sessionInfoVersion:'3'}
+  });
+}
+
+async function tryFinishWhatsAppConnect(){
+  if(!waSignup.code || !waSignup.waba_id || !waSignup.phone_number_id) return;
+  const payload = {code: waSignup.code, waba_id: waSignup.waba_id, phone_number_id: waSignup.phone_number_id};
+  waSignup = {};
+  try{
+    waStatus = await waFetch('/connect', {method:'POST', body: JSON.stringify(payload)});
+    renderWhatsAppCard();
+    updateWaVisibility();
+    clAlert('WhatsApp Business connected.','success');
+  }catch(e){
+    resetWaConnectButton();
+    clAlert(e.message || 'Could not connect WhatsApp.','warning');
+  }
+}
+
+async function refreshWaStatus(){
+  if(!waConfig.enabled) return;
+  try{
+    waStatus = await waFetch('/status');
+  }catch(e){
+    waStatus = {enabled:false, connected:false};
+  }
+  updateWaVisibility();
+}
+
+function updateWaVisibility(){
+  const connected = waConfig.enabled && waStatus.connected;
+  const nav = document.getElementById('nav-campaigns');
+  if(nav) nav.style.display = connected ? '' : 'none';
+  const allBtn = document.getElementById('wa-all-btn');
+  if(allBtn) allBtn.style.display = connected ? 'inline-flex' : 'none';
+  if(typeof updateBulkBar === 'function' && selectedCustomers.size) updateBulkBar();
+}
+
+function renderWhatsAppCard(){
+  const card = document.getElementById('wa-card');
+  const body = document.getElementById('wa-card-body');
+  if(!card || !body) return;
+  if(!waConfig.enabled){ card.style.display='none'; return; }
+  card.style.display='';
+
+  if(!waStatus.connected){
+    const intro = '<div style="font-size:13px;color:var(--text2);line-height:1.5;margin:8px 0 16px;">Connect your WhatsApp Business number to send messages to many customers at once. Messages come from your own number and show your business name.</div>';
+    if(waConfig.signup_enabled === false){
+      body.innerHTML = intro +
+        '<div style="padding:10px 12px;border-radius:10px;background:var(--bg2);font-size:12px;color:var(--text2);line-height:1.5;">WhatsApp sign-up is not available yet on this server. It becomes available once Meta approves the Careloop integration.</div>'
+        + (waConfig.manual_connect ? waDevConnectForm() : '');
+      return;
+    }
+    body.innerHTML = intro +
+      '<button class="btn-primary" id="wa-connect-btn" style="padding:11px 20px;border-radius:50px;" onclick="connectWhatsApp()">Connect WhatsApp</button>';
+    return;
+  }
+
+  const quality = (waStatus.quality_rating||'').toUpperCase();
+  const qualityColor = quality==='GREEN' ? 'var(--green)' : (quality==='YELLOW' ? 'var(--yellow)' : (quality==='RED' ? 'var(--red)' : 'var(--text2)'));
+  const opener = (waStatus.opener_template_status||'').toUpperCase();
+  let openerLine = '';
+  if(opener === 'APPROVED'){
+    openerLine = '<div style="font-size:12px;color:var(--green);margin-top:8px;">Custom messages are ready to use.</div>';
+  } else if(opener === 'REJECTED'){
+    openerLine = '<div style="font-size:12px;color:var(--red);margin-top:8px;">WhatsApp rejected the intro message. <button onclick="ensureWaOpener()" style="background:none;border:none;color:var(--blue);font-weight:600;cursor:pointer;padding:0;text-decoration:underline;font-family:inherit;font-size:12px;">Try again</button></div>';
+  } else {
+    openerLine = '<div style="font-size:12px;color:var(--text2);margin-top:8px;">WhatsApp is approving your intro message, usually within minutes. <button onclick="ensureWaOpener()" style="background:none;border:none;color:var(--blue);font-weight:600;cursor:pointer;padding:0;text-decoration:underline;font-family:inherit;font-size:12px;">Check again</button></div>';
+  }
+
+  const errorLine = (waStatus.status === 'error')
+    ? '<div style="margin-top:12px;padding:10px 12px;border-radius:10px;background:#FCEBEB;border:1px solid #F0C2C2;font-size:12px;color:#8A2B2B;line-height:1.5;">'+esc(waStatus.last_error||'WhatsApp connection needs attention.')+'</div>'
+    : '';
+
+  body.innerHTML =
+    '<div style="font-size:13px;color:var(--text2);line-height:1.6;margin:8px 0 12px;">' +
+      '<div><strong style="color:var(--text);">'+esc(waStatus.verified_name||'Connected')+'</strong></div>' +
+      '<div>'+esc(waStatus.display_phone_number||'')+'</div>' +
+      (quality ? '<div style="margin-top:6px;">Quality: <span style="color:'+qualityColor+';font-weight:600;">'+esc(quality)+'</span></div>' : '') +
+    '</div>' +
+    openerLine + errorLine +
+    '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;">' +
+      (waStatus.status === 'error'
+        ? '<button class="btn-primary" id="wa-connect-btn" style="padding:10px 18px;border-radius:50px;" onclick="connectWhatsApp()">Reconnect</button>'
+        : '') +
+      '<button onclick="refreshWaTemplates(true)" style="padding:10px 16px;border-radius:50px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">Refresh templates</button>' +
+      '<button onclick="showPage(\'whatsapp-campaigns\')" style="padding:10px 16px;border-radius:50px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">View campaigns</button>' +
+      '<button onclick="disconnectWhatsApp()" style="padding:10px 16px;border-radius:50px;border:1px solid var(--border);background:var(--bg);color:var(--red);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">Disconnect</button>' +
+    '</div>';
+}
+
+// Developer-only connect form, shown when WHATSAPP_ALLOW_MANUAL_CONNECT is on.
+// Lets you attach a Meta test number from the browser while Embedded Signup is
+// still waiting on Tech Provider approval. Never rendered in production.
+function waDevRemembered(key){
+  try{ return localStorage.getItem('wa_dev_'+key) || ''; }catch(e){ return ''; }
+}
+function waDevRemember(phone, waba){
+  // Identifiers only. The access token is never persisted.
+  try{
+    localStorage.setItem('wa_dev_phone', phone);
+    localStorage.setItem('wa_dev_waba', waba);
+  }catch(e){}
+}
+function waDevConnectForm(){
+  return '' +
+   '<details style="margin-top:14px;">' +
+     '<summary style="cursor:pointer;font-size:12px;font-weight:600;color:var(--text2);">Developer: connect a test number</summary>' +
+     '<div style="margin-top:12px;">' +
+       '<label class="field-label">Access token</label>' +
+       '<input class="field-input" id="wa-dev-token" placeholder="EAAxxxxx..." style="margin-bottom:10px;">' +
+       '<label class="field-label">Phone number ID</label>' +
+       '<input class="field-input" id="wa-dev-phone" value="' + esc(waDevRemembered('phone')) + '" placeholder="e.g. 1397153286808572" style="margin-bottom:10px;">' +
+       '<label class="field-label">WhatsApp Business account ID</label>' +
+       '<input class="field-input" id="wa-dev-waba" value="' + esc(waDevRemembered('waba')) + '" placeholder="e.g. 4146427932314056" style="margin-bottom:12px;">' +
+       '<button class="btn-primary" id="wa-dev-btn" style="padding:10px 18px;border-radius:50px;" onclick="devConnectWhatsApp()">Connect test number</button>' +
+       '<div style="margin-top:8px;font-size:11px;color:var(--text2);line-height:1.5;">From the Meta app dashboard under WhatsApp, API Setup. Test tokens expire after 24 hours, but the two IDs are remembered so you only paste a new token.</div>' +
+     '</div>' +
+   '</details>';
+}
+
+async function devConnectWhatsApp(){
+  const token = document.getElementById('wa-dev-token').value.trim();
+  const phone = document.getElementById('wa-dev-phone').value.trim();
+  const waba  = document.getElementById('wa-dev-waba').value.trim();
+  if(!token || !phone || !waba){
+    clAlert('Fill in the token and both IDs.','warning');
+    return;
+  }
+  const btn = document.getElementById('wa-dev-btn');
+  const orig = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Connecting...';
+  try{
+    waStatus = await waFetch('/connect/manual', {method:'POST', body: JSON.stringify({
+      access_token: token, waba_id: waba, phone_number_id: phone
+    })});
+    waDevRemember(phone, waba);
+    renderWhatsAppCard();
+    updateWaVisibility();
+    clAlert('WhatsApp connected.','success');
+  }catch(e){
+    clAlert(e.message || 'Could not connect.','warning');
+    btn.disabled = false; btn.textContent = orig;
+  }
+}
+
+async function ensureWaOpener(){
+  try{
+    await waFetch('/opener-template/ensure',{method:'POST'});
+    await refreshWaStatus();
+    renderWhatsAppCard();
+  }catch(e){ clAlert(e.message,'warning'); }
+}
+
+async function disconnectWhatsApp(){
+  const ok = await clConfirm('Your customers will no longer receive bulk WhatsApp messages from Careloop. Anything still sending will be cancelled.','Disconnect WhatsApp?');
+  if(!ok) return;
+  try{
+    await waFetch('/disconnect',{method:'DELETE'});
+    await refreshWaStatus();
+    renderWhatsAppCard();
+    clAlert('WhatsApp disconnected.','success');
+  }catch(e){ clAlert(e.message,'warning'); }
+}
+
+// ─── COMPOSE ────────────────────────────────────────────────────────
+function openBulkWhatsAppModal(audience){
+  if(!waStatus.connected){
+    clAlert('Connect WhatsApp Business in Account Settings to message customers from your own number.','warning');
+    return;
+  }
+  waAudience = audience || 'selected';
+  waMode = 'custom';
+  document.querySelectorAll('input[name="wa-audience"]').forEach(function(el){ el.checked = (el.value===waAudience); });
+  const selLabel = document.getElementById('wa-audience-selected-label');
+  if(selLabel) selLabel.textContent = 'Selected customers ('+selectedCustomers.size+')';
+  document.getElementById('wa-custom-body').value='';
+  document.getElementById('wa-recipients').textContent='';
+  document.getElementById('wa-tier-warning').style.display='none';
+  setWaMode('custom');
+  loadWaTemplates();
+  openModal('bulk-whatsapp-modal');
+  onWaComposeChange();
+}
+
+function setWaMode(mode){
+  waMode = mode;
+  document.getElementById('wa-pane-custom').style.display = mode==='custom' ? '' : 'none';
+  document.getElementById('wa-pane-template').style.display = mode==='template' ? '' : 'none';
+  document.getElementById('wa-tab-custom').classList.toggle('active', mode==='custom');
+  document.getElementById('wa-tab-template').classList.toggle('active', mode==='template');
+  renderWaOpenerNote();
+  onWaComposeChange();
+}
+
+function renderWaOpenerNote(){
+  const note = document.getElementById('wa-opener-note');
+  if(!note) return;
+  const approved = (waStatus.opener_template_status||'').toUpperCase()==='APPROVED';
+  const business = esc(currentUser.business || 'your business');
+  if(!approved){
+    note.innerHTML = 'WhatsApp is still approving the short intro message Careloop sends on your behalf. Until that is done you can only send approved templates. <button onclick="ensureWaOpener()" style="background:none;border:none;color:var(--blue);font-weight:600;cursor:pointer;padding:0;text-decoration:underline;font-family:inherit;font-size:.78rem;">Check again</button>';
+  } else {
+    note.innerHTML = 'Customers who messaged you in the last 24 hours receive this straight away. For everyone else WhatsApp requires an intro first, so they get <em>"Hi [name], '+business+' has a message for you. Reply YES to see it."</em> and your message is delivered the moment they reply. Unanswered intros expire after 7 days.';
+  }
+}
+
+async function loadWaTemplates(force){
+  try{
+    waTemplates = await waFetch('/templates'+(force?'?refresh=true':''));
+  }catch(e){
+    waTemplates = [];
+  }
+  renderWaTemplateSelect();
+}
+
+async function refreshWaTemplates(fromSettings){
+  try{
+    waTemplates = await waFetch('/templates?refresh=true');
+    renderWaTemplateSelect();
+    if(fromSettings) clAlert('Templates refreshed ('+waTemplates.length+' found).','success');
+  }catch(e){ clAlert(e.message,'warning'); }
+}
+
+function approvedTemplates(){
+  // Only templates Careloop can fill completely. Ones needing an image, a header
+  // variable or a dynamic button are rejected by WhatsApp on send, so they are
+  // listed as unavailable rather than offered.
+  return (waTemplates||[]).filter(function(t){
+    return (t.status||'').toUpperCase()==='APPROVED' && t.supported !== false;
+  });
+}
+function unsupportedTemplates(){
+  return (waTemplates||[]).filter(function(t){
+    return (t.status||'').toUpperCase()==='APPROVED' && t.supported === false;
+  });
+}
+
+function renderWaTemplateSelect(){
+  const sel = document.getElementById('wa-template-select');
+  if(!sel) return;
+  const list = approvedTemplates();
+  const blocked = unsupportedTemplates();
+  const note = blocked.length
+    ? '<div style="margin-top:8px;font-size:.75rem;color:var(--text2);line-height:1.5;">'
+      + blocked.length + ' template' + (blocked.length===1?'':'s') + ' not available here: '
+      + blocked.map(function(t){ return esc(t.name)+' ('+esc(t.unsupported_reason||'unsupported')+')'; }).join(', ')
+      + '.</div>'
+    : '';
+  if(!list.length){
+    sel.innerHTML = '<option value="">No usable templates</option>';
+    document.getElementById('wa-template-preview').innerHTML =
+      'Create a text-only template in WhatsApp Manager, then refresh. Or use the Custom message tab instead.' + note;
+    document.getElementById('wa-template-params').innerHTML='';
+    return;
+  }
+  sel.innerHTML = list.map(function(t,i){
+    return '<option value="'+i+'">'+esc(t.name)+' ('+esc(t.language)+')</option>';
+  }).join('');
+  onWaTemplateChange();
+  if(note){
+    const prev = document.getElementById('wa-template-preview');
+    if(prev) prev.insertAdjacentHTML('beforeend', note);
+  }
+}
+
+function currentWaTemplate(){
+  const sel = document.getElementById('wa-template-select');
+  const list = approvedTemplates();
+  if(!sel || !list.length) return null;
+  return list[parseInt(sel.value,10)] || list[0];
+}
+
+function onWaTemplateChange(){
+  const t = currentWaTemplate();
+  const preview = document.getElementById('wa-template-preview');
+  const params = document.getElementById('wa-template-params');
+  if(!t){ if(preview) preview.textContent=''; if(params) params.innerHTML=''; return; }
+  preview.textContent = t.body_text || '(no body text)';
+  if(t.header_type === 'TEXT') preview.textContent = preview.textContent;
+  let html = '';
+  for(let i=0;i<(t.body_param_count||0);i++){
+    const label = (t.body_param_names && t.body_param_names[i]) ? t.body_param_names[i] : ('{{'+(i+1)+'}}');
+    html += '<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">' +
+      '<span style="font-size:.78rem;color:var(--text2);min-width:70px;">'+esc(label)+'</span>' +
+      '<select class="field-input wa-param-source" style="flex:0 0 140px;cursor:pointer;" onchange="onWaParamSourceChange(this)">' +
+        '<option value="customer_name">Customer name</option>' +
+        '<option value="static">Custom text</option>' +
+      '</select>' +
+      '<input class="field-input wa-param-value" style="flex:1;display:none;" placeholder="Enter text" oninput="onWaComposeChange()">' +
+      '</div>';
+  }
+  params.innerHTML = html;
+  onWaComposeChange();
+}
+
+function onWaParamSourceChange(sel){
+  const input = sel.parentElement.querySelector('.wa-param-value');
+  if(input) input.style.display = sel.value==='static' ? '' : 'none';
+  onWaComposeChange();
+}
+
+function collectWaParams(){
+  const sources = document.querySelectorAll('.wa-param-source');
+  const values = document.querySelectorAll('.wa-param-value');
+  const out = [];
+  for(let i=0;i<sources.length;i++){
+    out.push({source: sources[i].value, value: sources[i].value==='static' ? (values[i] ? values[i].value : '') : null});
+  }
+  return out;
+}
+
+function onWaComposeChange(){
+  const checked = document.querySelector('input[name="wa-audience"]:checked');
+  if(checked) waAudience = checked.value;
+  clearTimeout(waPreviewTimer);
+  waPreviewTimer = setTimeout(runWaPreview, 250);
+}
+
+async function runWaPreview(){
+  const box = document.getElementById('wa-recipients');
+  const warn = document.getElementById('wa-tier-warning');
+  if(!box) return;
+  const body = {kind: waMode==='custom' ? 'custom' : 'template', audience: waAudience};
+  if(waAudience==='selected') body.customer_ids = Array.from(selectedCustomers);
+  if(waAudience==='selected' && !body.customer_ids.length){
+    box.textContent = 'No customers selected.';
+    return;
+  }
+  box.textContent = 'Checking recipients...';
+  try{
+    const p = await waFetch('/campaigns/preview',{method:'POST', body: JSON.stringify(body)});
+    waLastPreview = p;
+    const skipParts = [];
+    if(p.skipped.no_phone) skipParts.push(p.skipped.no_phone+' without a phone number');
+    if(p.skipped.invalid_phone) skipParts.push(p.skipped.invalid_phone+' without a full international number');
+    if(p.skipped.opted_out) skipParts.push(p.skipped.opted_out+' opted out');
+
+    let main = '<strong style="color:var(--text);">'+p.eligible+' recipient'+(p.eligible===1?'':'s')+'</strong>';
+    if(waMode==='custom' && p.needs_opener){
+      main += ' &middot; '+p.in_window+' receive it now, '+p.needs_opener+' get an intro first';
+    }
+    box.innerHTML = main + (skipParts.length ? '<br><span style="color:var(--red);">Skipped: '+skipParts.join(', ')+'.</span>' : '');
+
+    if(p.eligible > 250){
+      warn.style.display='';
+      warn.textContent = 'WhatsApp limits new business accounts to 250 new conversations per day. Messages beyond that may fail until your limit increases.';
+    } else {
+      warn.style.display='none';
+    }
+    const btn = document.getElementById('wa-send-btn');
+    if(btn) btn.textContent = p.eligible ? ('Send to '+p.eligible+' customer'+(p.eligible===1?'':'s')) : 'Send';
+  }catch(e){
+    box.innerHTML = '<span style="color:var(--red);">'+esc(e.message)+'</span>';
+  }
+}
+
+async function sendWhatsAppCampaign(){
+  const btn = document.getElementById('wa-send-btn');
+  const body = {kind: waMode==='custom' ? 'custom' : 'template', audience: waAudience};
+  if(waAudience==='selected') body.customer_ids = Array.from(selectedCustomers);
+
+  if(waMode==='custom'){
+    const text = document.getElementById('wa-custom-body').value.trim();
+    if(!text){ clAlert('Write a message to send.','warning'); return; }
+    body.custom_body = text;
+  } else {
+    const t = currentWaTemplate();
+    if(!t){ clAlert('Choose an approved template, or use the Custom message tab.','warning'); return; }
+    body.template_name = t.name;
+    body.template_language = t.language;
+    body.params = collectWaParams();
+  }
+
+  const orig = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Sending...';
+  try{
+    const c = await waFetch('/campaigns',{method:'POST', body: JSON.stringify(body)});
+    closeModal('bulk-whatsapp-modal');
+    selectedCustomers.clear();
+    renderCustomers();
+    updateBulkBar();
+    let msg = 'Sending to '+c.total_recipients+' customer'+(c.total_recipients===1?'':'s')+'.';
+    if(c.opener_count) msg += ' '+c.opener_count+' will receive your message once they reply to the intro.';
+    clAlert(msg,'success');
+    showPage('whatsapp-campaigns');
+  }catch(e){
+    clAlert(e.message,'warning');
+  }
+  btn.disabled = false; btn.textContent = orig;
+}
+
+async function sendWhatsAppTest(){
+  const body = {kind: waMode==='custom' ? 'custom' : 'template'};
+  if(waMode==='custom'){
+    body.text_body = document.getElementById('wa-custom-body').value.trim() || 'Test message from Careloop';
+  } else {
+    const t = currentWaTemplate();
+    if(!t){ clAlert('Choose a template first.','warning'); return; }
+    body.template_name = t.name;
+    body.template_language = t.language;
+    body.params = collectWaParams();
+  }
+  try{
+    await waFetch('/send-test',{method:'POST', body: JSON.stringify(body)});
+    clAlert('Test sent to your number.','success');
+  }catch(e){ clAlert(e.message,'warning'); }
+}
+
+// ─── CAMPAIGNS PAGE ─────────────────────────────────────────────────
+const WA_STATUS_LABELS = {
+  queued:'Queued', sending:'Sending', sent:'Sent', delivered:'Delivered', read:'Read',
+  awaiting_reply:'Waiting for reply', replied:'Delivered after reply',
+  failed:'Failed', cancelled:'Cancelled', expired:'Expired, no reply'
+};
+
+async function renderWhatsAppCampaigns(){
+  const box = document.getElementById('wa-campaigns-body');
+  if(!box) return;
+  if(!waStatus.connected){
+    box.innerHTML = '<div class="empty-state">Connect WhatsApp Business in Account Settings to start sending campaigns.</div>';
+    return;
+  }
+  box.innerHTML = '<div style="color:var(--text2);font-size:.9rem;">Loading...</div>';
+  try{
+    const data = await waFetch('/campaigns?per_page=30');
+    if(!data.items.length){
+      box.innerHTML = '<div class="empty-state">No campaigns yet. Select customers and choose WhatsApp to send your first one.</div>';
+      return;
+    }
+    let html = '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:.85rem;">' +
+      '<thead><tr style="text-align:left;color:var(--text2);border-bottom:1px solid var(--border);">' +
+      '<th style="padding:10px 8px;font-weight:600;">Sent</th>' +
+      '<th style="padding:10px 8px;font-weight:600;">Message</th>' +
+      '<th style="padding:10px 8px;font-weight:600;">Recipients</th>' +
+      '<th style="padding:10px 8px;font-weight:600;">Delivered</th>' +
+      '<th style="padding:10px 8px;font-weight:600;">Awaiting reply</th>' +
+      '<th style="padding:10px 8px;font-weight:600;">Failed</th>' +
+      '<th style="padding:10px 8px;font-weight:600;">Status</th>' +
+      '</tr></thead><tbody>';
+    data.items.forEach(function(c){
+      const label = c.kind==='template'
+        ? ('Template: '+esc(c.template_name||''))
+        : esc((c.custom_body||'').slice(0,60) + ((c.custom_body||'').length>60?'...':''));
+      html += '<tr onclick="openWaCampaign('+c.id+')" style="cursor:pointer;border-bottom:1px solid var(--border);">' +
+        '<td style="padding:12px 8px;">'+esc(new Date(c.created_at).toLocaleDateString())+'</td>' +
+        '<td style="padding:12px 8px;">'+label+'</td>' +
+        '<td style="padding:12px 8px;">'+c.total_recipients+'</td>' +
+        '<td style="padding:12px 8px;color:var(--green);">'+c.delivered_count+'</td>' +
+        '<td style="padding:12px 8px;">'+c.awaiting_count+'</td>' +
+        '<td style="padding:12px 8px;color:'+(c.failed_count?'var(--red)':'var(--text2)')+';">'+c.failed_count+'</td>' +
+        '<td style="padding:12px 8px;">'+esc(c.status)+'</td>' +
+        '</tr>';
+    });
+    html += '</tbody></table></div>';
+    box.innerHTML = html;
+
+    // Only poll while messages are actually going out. Parked messages can sit
+    // for days waiting on a reply, so awaiting_count must not keep the timer on.
+    const active = data.items.some(function(c){
+      return c.status==='queued' || c.status==='sending';
+    });
+    clearTimeout(waCampaignPoll);
+    if(active && document.getElementById('page-whatsapp-campaigns').classList.contains('active')){
+      waCampaignPoll = setTimeout(renderWhatsAppCampaigns, 5000);
+    }
+  }catch(e){
+    box.innerHTML = '<div class="empty-state">'+esc(e.message)+'</div>';
+  }
+}
+
+async function openWaCampaign(id){
+  const box = document.getElementById('wa-campaign-detail');
+  box.innerHTML = '<div style="color:var(--text2);font-size:.9rem;">Loading...</div>';
+  openModal('wa-campaign-modal');
+  try{
+    const d = await waFetch('/campaigns/'+id);
+    const c = d.campaign;
+    let html = '<div style="font-size:.85rem;color:var(--text2);line-height:1.7;margin-bottom:14px;">' +
+      '<div><strong style="color:var(--text);">'+(c.kind==='template' ? ('Template: '+esc(c.template_name||'')) : 'Custom message')+'</strong></div>' +
+      (c.custom_body ? '<div style="margin-top:6px;padding:10px;background:var(--bg2);border-radius:8px;white-space:pre-wrap;">'+esc(c.custom_body)+'</div>' : '') +
+      '<div style="margin-top:8px;">'+c.total_recipients+' recipients &middot; '+c.delivered_count+' delivered &middot; '+c.read_count+' read &middot; '+c.awaiting_count+' awaiting reply &middot; '+c.failed_count+' failed &middot; '+c.expired_count+' expired</div>' +
+      '</div>';
+    if(c.status==='queued' || c.status==='sending'){
+      html += '<button onclick="cancelWaCampaign('+c.id+')" style="margin-bottom:14px;padding:9px 16px;border-radius:50px;border:1px solid var(--border);background:var(--bg);color:var(--red);font-size:.82rem;font-weight:600;cursor:pointer;font-family:inherit;">Cancel remaining</button>';
+    }
+    html += '<div style="max-height:44vh;overflow-y:auto;"><table style="width:100%;border-collapse:collapse;font-size:.82rem;">';
+    d.messages.forEach(function(m){
+      const label = WA_STATUS_LABELS[m.status] || m.status;
+      const color = (m.status==='failed'||m.status==='expired') ? 'var(--red)'
+                  : (m.status==='delivered'||m.status==='read'||m.status==='replied') ? 'var(--green)' : 'var(--text2)';
+      html += '<tr style="border-bottom:1px solid var(--border);">' +
+        '<td style="padding:9px 6px;">'+esc(m.customer_name||m.to_phone)+'</td>' +
+        '<td style="padding:9px 6px;color:'+color+';">'+esc(label)+'</td>' +
+        '<td style="padding:9px 6px;color:var(--text2);font-size:.76rem;">'+esc(m.error_message||'')+'</td>' +
+        '</tr>';
+    });
+    html += '</table></div>';
+    box.innerHTML = html;
+  }catch(e){
+    box.innerHTML = '<div style="color:var(--red);font-size:.9rem;">'+esc(e.message)+'</div>';
+  }
+}
+
+async function cancelWaCampaign(id){
+  const ok = await clConfirm('Messages that have not gone out yet will be cancelled.','Cancel remaining sends?');
+  if(!ok) return;
+  try{
+    await waFetch('/campaigns/'+id+'/cancel',{method:'POST'});
+    closeModal('wa-campaign-modal');
+    renderWhatsAppCampaigns();
+  }catch(e){ clAlert(e.message,'warning'); }
+}
+
 </script>
 
 <!-- CUSTOM DIALOG -->

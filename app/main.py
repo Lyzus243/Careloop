@@ -9,7 +9,7 @@ from pydantic import ValidationError
 load_dotenv()
 from app.database import get_db, AsyncSessionLocal
 from app.models import Customer, User
-from app.routes import auth, user, customer, message, notification, sale
+from app.routes import auth, user, customer, message, notification, sale, whatsapp
 from fastapi import APIRouter
 from app.schemas.user import ResetPasswordRequest, SetInitialPasswordRequest
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -24,9 +24,6 @@ logging.basicConfig(level=logging.DEBUG)
 
 import os
 
-print("=== ENV CHECK ===")
-print("GMAIL_USER:", os.getenv("GMAIL_USER"))
-print("ALL KEYS:", list(os.environ.keys())[:20])
 
 app = FastAPI(
     redirect_slashes=False,
@@ -206,6 +203,7 @@ app.include_router(customer.router)
 app.include_router(message.router)
 app.include_router(notification.router)
 app.include_router(sale.router)
+app.include_router(whatsapp.router)
 
 @app.get("/careloop-signup.html", response_class=HTMLResponse)
 async def serve_signup_page():
@@ -277,6 +275,17 @@ async def get_config(user_id: int = Depends(get_current_user_id), db: AsyncSessi
             rules["new_customer_followup_days"] = user.custom_new_customer_days
         if user.custom_existing_customer_days is not None:
             rules["existing_customer_followup_days"] = user.custom_existing_customer_days
+
+    # Public-only values the dashboard needs to launch Meta's Embedded Signup.
+    from app.services.whatsapp_service import whatsapp_service
+    rules["whatsapp"] = {
+        "enabled": whatsapp_service.enabled,
+        "signup_enabled": whatsapp_service.signup_enabled,
+        "manual_connect": whatsapp_service.allow_manual_connect,
+        "app_id": whatsapp_service.app_id,
+        "config_id": whatsapp_service.config_id,
+        "graph_version": whatsapp_service.graph_version,
+    }
     return rules
 
 @app.get("/api")
@@ -287,40 +296,6 @@ async def api_root():
         "docs": "/docs"
     }
 
-@app.get("/test-db")
-async def test_database():
-    try:
-        async for db in get_db():
-            result = await db.execute(select(Customer).limit(1))
-            customers = result.scalars().all()
-            result = await db.execute(select(User).limit(1))
-            users = result.scalars().all()
-            return {
-                "status": "connected", 
-                "customer_count": len(customers),
-                "user_count": len(users),
-                "message": "Database connection successful!"
-            }
-    except Exception as e:
-        return {
-            "status": "error", 
-            "error": str(e),
-            "message": "Database connection failed"
-        }
-
-
-    except Exception as e:
-        return {"error": str(e)}
-
-@app.get("/users")
-async def get_users():
-    try:
-        async for db in get_db():
-            result = await db.execute(select(User))
-            users = result.scalars().all()
-            return {"users": [{"id": u.id, "email": u.email, "is_verified": u.is_email_verified} for u in users]}
-    except Exception as e:
-        return {"error": str(e)}
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8001)
@@ -351,14 +326,14 @@ async def cleanup_unverified_users():
 async def start_cleanup():
     asyncio.create_task(cleanup_unverified_users())
 
-@app.get("/debug-env")
-async def debug_env():
-    import os
-    return {
-        "gmail_user": os.getenv("GMAIL_USER"),
-        "gmail_password_set": bool(os.getenv("GMAIL_APP_PASSWORD")),
-        "mail_from_name": os.getenv("MAIL_FROM_NAME")
-    }
+@app.on_event("startup")
+async def start_whatsapp_worker():
+    from app.services.whatsapp_service import whatsapp_service
+    if whatsapp_service.enabled:
+        from app.services.whatsapp_worker import whatsapp_send_loop
+        asyncio.create_task(whatsapp_send_loop())
+    else:
+        print("WhatsApp send worker not started (integration disabled)")
 
 async def check_birthdays():
     while True:

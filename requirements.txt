@@ -35,3 +35,13 @@ requests
 # Excel import/export
 pandas
 openpyxl
+
+# WhatsApp Business (Meta Cloud API)
+httpx
+cryptography
+phonenumbers
+
+# Tests (dev)
+pytest
+pytest-asyncio
+respx

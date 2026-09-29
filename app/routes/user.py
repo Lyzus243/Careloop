@@ -54,6 +54,11 @@ async def delete_account(
     from app.models.sale import Sale
     from app.models.notification import Notification
     from app.models.audit_log import AuditLog
+    from app.models.whatsapp_message import WhatsAppMessage
+    from app.models.whatsapp_campaign import WhatsAppCampaign
+    from app.models.whatsapp_template import WhatsAppTemplate
+    from app.models.whatsapp_contact import WhatsAppContact
+    from app.models.whatsapp_account import WhatsAppAccount
 
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
@@ -66,6 +71,12 @@ async def delete_account(
 
     await db.execute(delete(Notification).where(Notification.user_id == user_id))
     await db.execute(delete(AuditLog).where(AuditLog.user_id == user_id))
+    # WhatsApp rows reference customers, so they must go before the customers.
+    await db.execute(delete(WhatsAppMessage).where(WhatsAppMessage.user_id == user_id))
+    await db.execute(delete(WhatsAppCampaign).where(WhatsAppCampaign.user_id == user_id))
+    await db.execute(delete(WhatsAppTemplate).where(WhatsAppTemplate.user_id == user_id))
+    await db.execute(delete(WhatsAppContact).where(WhatsAppContact.user_id == user_id))
+    await db.execute(delete(WhatsAppAccount).where(WhatsAppAccount.user_id == user_id))
     await db.execute(delete(Sale).where(Sale.user_id == user_id))
     await db.execute(delete(Customer).where(Customer.user_id == user_id))
     await db.execute(delete(User).where(User.id == user_id))

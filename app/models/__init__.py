@@ -5,6 +5,11 @@ from .revoked_token import RevokedToken
 from .login_attempt import LoginAttempt
 from .audit_log import AuditLog
 from .sale import Sale
+from .whatsapp_account import WhatsAppAccount
+from .whatsapp_template import WhatsAppTemplate
+from .whatsapp_campaign import WhatsAppCampaign
+from .whatsapp_message import WhatsAppMessage
+from .whatsapp_contact import WhatsAppContact
 
 try:
     from .user import User
@@ -25,7 +30,11 @@ except ImportError:
         created_at = Column(DateTime(timezone=True), server_default=func.now())
         updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-__all__ = ["Customer", "User", "Base", "Notification", "RevokedToken", "AuditLog", "Sale"]
+__all__ = [
+    "Customer", "User", "Base", "Notification", "RevokedToken", "AuditLog", "Sale",
+    "WhatsAppAccount", "WhatsAppTemplate", "WhatsAppCampaign", "WhatsAppMessage",
+    "WhatsAppContact",
+]
 
 
 
