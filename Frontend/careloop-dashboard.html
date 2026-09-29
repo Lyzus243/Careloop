@@ -969,6 +969,50 @@ body.dark-mode.eye-care {
 .cl-dialog-btn.secondary:hover{border-color:var(--text2);}
 .cl-dialog-btn.danger{background:var(--red);color:#fff;}
 
+
+/* ─── CUSTOMER IMPORT MODAL ─── */
+.imp-card{text-align:left;max-width:640px;max-height:90vh;overflow-y:auto;}
+.imp-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.imp-head h3{font-size:1.1rem;font-weight:700;}
+.imp-close{background:none;border:none;font-size:22px;cursor:pointer;color:var(--text2);}
+.imp-sub{font-size:.85rem;color:var(--text2);margin-bottom:16px;}
+.imp-tabs{display:flex;gap:6px;background:var(--bg2);border:1px solid var(--border);border-radius:50px;padding:4px;margin-bottom:16px;}
+.imp-tab{flex:1;padding:8px 10px;border:none;border-radius:50px;background:transparent;color:var(--text2);font-weight:600;font-size:.82rem;cursor:pointer;font-family:inherit;}
+.imp-tab.active{background:var(--bg);color:var(--text);box-shadow:var(--shadow);}
+.imp-pane{display:none;}
+.imp-pane.active{display:block;}
+.imp-country{display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--text2);margin-bottom:14px;flex-wrap:wrap;}
+.imp-country select{padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-family:inherit;font-size:.85rem;}
+.imp-textarea{width:100%;min-height:150px;padding:12px;border:1.5px solid var(--border);border-radius:var(--radius);font-family:inherit;font-size:.9rem;resize:vertical;background:var(--bg);color:var(--text);box-sizing:border-box;}
+.imp-hint{font-size:.8rem;color:var(--text3);margin:8px 0 14px;line-height:1.5;}
+.imp-drop{border:1.5px dashed var(--border);border-radius:var(--radius);padding:24px 16px;text-align:center;background:var(--bg2);margin-bottom:10px;}
+.imp-drop p{font-size:.85rem;color:var(--text2);margin:8px 0 12px;}
+.imp-btn-sec{padding:9px 16px;border-radius:50px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:.85rem;font-weight:600;cursor:pointer;font-family:inherit;}
+.imp-picker{display:flex;align-items:center;gap:10px;padding:12px 14px;border:1px solid var(--border);border-radius:var(--radius);margin-bottom:14px;background:var(--bg2);}
+.imp-picker span{flex:1;font-size:.85rem;color:var(--text2);}
+.imp-summary{font-size:.85rem;color:var(--text2);margin-bottom:10px;}
+.imp-table-wrap{max-height:42vh;overflow:auto;border:1px solid var(--border);border-radius:var(--radius);margin-bottom:14px;}
+.imp-table{width:100%;border-collapse:collapse;font-size:.85rem;}
+.imp-table th{position:sticky;top:0;background:var(--bg2);text-align:left;padding:8px;font-weight:600;color:var(--text2);border-bottom:1px solid var(--border);}
+.imp-table td{padding:6px 8px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.imp-table tr:last-child td{border-bottom:none;}
+.imp-table input[type=text]{width:100%;min-width:90px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-family:inherit;font-size:.85rem;box-sizing:border-box;}
+.imp-table tr.imp-off td{opacity:.5;}
+.imp-tag{display:inline-block;padding:2px 8px;border-radius:50px;font-size:.72rem;font-weight:600;white-space:nowrap;}
+.imp-tag.ok{background:rgba(34,197,94,.15);color:var(--green);}
+.imp-tag.warn{background:rgba(245,158,11,.15);color:var(--yellow);}
+.imp-tag.bad{background:rgba(239,68,68,.15);color:var(--red);}
+.imp-actions{display:flex;gap:10px;}
+.imp-actions .btn-primary{flex:1;justify-content:center;padding:14px;border-radius:50px;}
+.imp-failed{margin:0 0 14px;padding:0;list-style:none;font-size:.82rem;max-height:30vh;overflow:auto;}
+.imp-failed li{padding:6px 0;border-bottom:1px solid var(--border);color:var(--text2);}
+.imp-failed li b{color:var(--text);}
+.imp-result-num{display:flex;gap:10px;margin-bottom:16px;}
+.imp-result-num div{flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;text-align:center;}
+.imp-result-num strong{display:block;font-size:1.3rem;color:var(--text);}
+.imp-result-num span{font-size:.75rem;color:var(--text2);}
+.imp-tag-m{display:none;margin-top:4px;}
+@media (max-width:600px){.imp-table th:nth-child(4),.imp-table td:nth-child(4){display:none;}.imp-tag-m{display:inline-block;}.imp-table input[type=text]{min-width:0;}.imp-table td,.imp-table th{padding:6px 5px;}.imp-tab{font-size:.75rem;padding:8px 6px;}.imp-result-num{flex-wrap:wrap;}.imp-result-num div{min-width:40%;}}
 </style>
 </head>
 <body>
@@ -1236,11 +1280,10 @@ body.dark-mode.eye-care {
     </div>
     <div style="height:24px;"></div>
     <div style="display:flex;gap:12px;align-items:center;margin-bottom:20px;">
-      <button onclick="openBulkImportPicker()" style="padding:9px 16px;border-radius:50px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:.85rem;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px;">
+      <button onclick="openImportModal()" style="padding:9px 16px;border-radius:50px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:.85rem;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px;">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-        Import from Excel
+        Import customers
       </button>
-      <a href="/assets/careloop_customer_import_template.xlsx" download style="font-size:.95rem;font-weight:600;color:var(--blue);text-decoration:underline;">Download template</a>
     </div>
     <div id="bulk-action-bar" style="display:none;align-items:center;gap:12px;padding:12px 16px;background:var(--blue);border-radius:var(--radius);margin-bottom:12px;">
       <span id="bulk-count" style="color:white;font-weight:600;font-size:.9rem;flex:1;"></span>
@@ -1355,6 +1398,97 @@ body.dark-mode.eye-care {
   </div>
 
 </main>
+
+<!-- CUSTOMER IMPORT MODAL -->
+<div class="modal-backdrop" id="import-modal">
+  <div class="modal-card imp-card">
+    <div class="imp-head">
+      <h3 id="imp-title">Import customers</h3>
+      <button class="imp-close" onclick="closeModal('import-modal')" aria-label="Close">&times;</button>
+    </div>
+
+    <!-- Step 1: choose a source -->
+    <div id="imp-step-source">
+      <p class="imp-sub">Bring in the customers already in your phone. You can check the list before anything is saved.</p>
+      <div class="imp-country">
+        <label for="imp-dialcode">Numbers without a country code are in</label>
+        <select id="imp-dialcode" onchange="refreshImportRows()">
+            <option value="+234">Nigeria (+234)</option>
+            <option value="+1">USA (+1)</option>
+            <option value="+44">UK (+44)</option>
+            <option value="+233">Ghana (+233)</option>
+            <option value="+254">Kenya (+254)</option>
+            <option value="+27">S. Africa (+27)</option>
+            <option value="+91">India (+91)</option>
+            <option value="+49">Germany (+49)</option>
+            <option value="+33">France (+33)</option>
+            <option value="+55">Brazil (+55)</option>
+            <option value="+971">UAE (+971)</option>
+            <option value="+20">Egypt (+20)</option>
+            <option value="+212">Morocco (+212)</option>
+            <option value="+225">Ivory Coast (+225)</option>
+            <option value="+221">Senegal (+221)</option>
+        </select>
+      </div>
+      <div class="imp-picker" id="imp-picker" style="display:none;">
+        <span>Pick customers straight from this phone's contacts.</span>
+        <button class="btn-primary" style="border-radius:50px;padding:9px 16px;" onclick="pickPhoneContacts()">Choose contacts</button>
+      </div>
+      <div class="imp-tabs" role="tablist">
+        <button class="imp-tab active" data-pane="paste" onclick="switchImportTab('paste')">Paste list</button>
+        <button class="imp-tab" data-pane="vcf" onclick="switchImportTab('vcf')">Contacts file</button>
+        <button class="imp-tab" data-pane="excel" onclick="switchImportTab('excel')">Excel</button>
+      </div>
+      <div class="imp-pane active" id="imp-pane-paste">
+        <textarea class="imp-textarea" id="imp-paste" placeholder="Ada Obi 0803 123 4567&#10;Chidi, +234 805 333 4444&#10;Mama Tolu - 08071234567"></textarea>
+        <p class="imp-hint">Put one customer per line, name and number in any order. A name on one line with the number on the next also works.</p>
+        <button class="btn-primary" style="width:100%;justify-content:center;padding:14px;border-radius:50px;" onclick="previewPastedContacts()">Check list</button>
+      </div>
+      <div class="imp-pane" id="imp-pane-vcf">
+        <div class="imp-drop">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text3)"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+          <p>Upload a contacts file (.vcf) exported from your phone.</p>
+          <button class="imp-btn-sec" onclick="document.getElementById('imp-vcf-input').click()">Choose .vcf file</button>
+          <input type="file" id="imp-vcf-input" accept=".vcf,text/vcard,text/x-vcard" style="display:none;" onchange="previewVcfFile(this)">
+        </div>
+        <p class="imp-hint"><b>iPhone:</b> open Contacts, tap Lists, long-press a list, then Export. <b>Android:</b> open Contacts, then Settings or Fix &amp; manage, then Export to file.</p>
+      </div>
+      <div class="imp-pane" id="imp-pane-excel">
+        <div class="imp-drop">
+          <p>Upload a spreadsheet. Only the Name column is required. Rows with problems are listed so you can fix them.</p>
+          <button class="imp-btn-sec" onclick="document.getElementById('imp-excel-input').click()">Choose Excel file</button>
+          <input type="file" id="imp-excel-input" accept=".xlsx,.xls" style="display:none;" onchange="uploadExcelImport(this)">
+        </div>
+        <p class="imp-hint"><a href="/assets/careloop_customer_import_template.xlsx" download style="color:var(--blue);font-weight:600;">Download the template</a> to see the columns Careloop reads.</p>
+      </div>
+    </div>
+
+    <!-- Step 2: review -->
+    <div id="imp-step-preview" style="display:none;">
+      <p class="imp-summary" id="imp-summary"></p>
+      <div class="imp-table-wrap">
+        <table class="imp-table">
+          <thead><tr><th><input type="checkbox" id="imp-all" checked onchange="toggleAllImportRows(this.checked)" aria-label="Select all"></th><th>Name</th><th>Phone</th><th>Status</th></tr></thead>
+          <tbody id="imp-rows"></tbody>
+        </table>
+      </div>
+      <div class="imp-actions">
+        <button class="imp-btn-sec" onclick="showImportStep('source')">Back</button>
+        <button class="btn-primary" id="imp-save-btn" onclick="saveImportRows()">Import</button>
+      </div>
+    </div>
+
+    <!-- Step 3: result -->
+    <div id="imp-step-result" style="display:none;">
+      <div class="imp-result-num" id="imp-result-num"></div>
+      <div id="imp-failed-wrap"></div>
+      <div class="imp-actions">
+        <button class="imp-btn-sec" onclick="resetImportModal()">Import more</button>
+        <button class="btn-primary" onclick="closeModal('import-modal')">Done</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- BULK EMAIL MODAL -->
 <div class="modal-backdrop" id="bulk-email-modal">
@@ -2119,42 +2253,319 @@ async function saveCurrencyPreference(currency){
   renderSalesPage();
 }
 
-// --- BULK IMPORT ---
-function openBulkImportPicker(){
-  const inp = document.createElement("input");
-  inp.type = "file";
-  inp.accept = ".xlsx,.xls";
-  inp.onchange = async e => {
-    const f = e.target.files[0];
-    if(!f) return;
-    const token = localStorage.getItem("authToken");
-    const formData = new FormData();
-    formData.append("file", f);
-    clAlert("Importing customers, please wait...", "success");
-    try{
-      const r = await fetch(`${API_URL}/api/customers/bulk-import`, {
-        method: "POST",
-        headers: { "Authorization": "Bearer " + token },
-        body: formData
-      });
-      const d = await r.json();
-      if(r.ok){
-        clAlert(`Import complete: ${d.created} created, ${d.updated} updated, ${d.skipped} unchanged.`, "success");
-        await loadCustomers();
-        renderCustomers();
-      } else {
-        const detail = d.detail;
-        if(detail && typeof detail === "object" && detail.errors){
-          clAlert(`Import rejected: ${detail.errors.slice(0,3).join("; ")}${detail.errors.length > 3 ? "..." : ""}`, "warning");
-        } else {
-          clAlert(detail || "Import failed.", "warning");
-        }
+// --- CUSTOMER IMPORT (paste list, contacts file, phone contact picker, Excel) ---
+// Keep in step with app/utils/phone.py, which the server uses as the source of truth.
+const IMPORT_TRUNK_ZERO_CODES=new Set(["234","233","254","255","256","250","27","44","91","49","33","971","20","212","62","61","63","92","880","31","32","41","43"]);
+function normalizeImportPhone(raw, dialCode){
+  if(raw==null) return null;
+  const text=String(raw).trim(); if(!text) return null;
+  const hasPlus=text.startsWith("+");
+  let digits=text.replace(/\D/g,""); if(!digits) return null;
+  const dial=(String(dialCode||"").replace(/\D/g,""))||"234";
+  let intl;
+  if(hasPlus) intl=digits;
+  else if(digits.startsWith("00")) intl=digits.slice(2);
+  else if(digits.startsWith("0")) intl=IMPORT_TRUNK_ZERO_CODES.has(dial)?dial+digits.replace(/^0+/,""):dial+digits;
+  else if(digits.startsWith(dial)&&digits.length>=dial.length+7) intl=digits;
+  else intl=dial+digits;
+  for(const code of IMPORT_TRUNK_ZERO_CODES){
+    if(intl.startsWith(code+"0")){intl=code+intl.slice(code.length+1);break;}
+  }
+  if(intl.length<8||intl.length>15) return null;
+  return "+"+intl;
+}
+
+let importRows=[];
+let importSourceLabel="";
+
+function importDialCode(){return document.getElementById("imp-dialcode").value||"+234";}
+
+function openImportModal(){
+  resetImportModal();
+  const picker=document.getElementById("imp-picker");
+  picker.style.display=("contacts" in navigator && "ContactsManager" in window)?"flex":"none";
+  openModal("import-modal");
+}
+function resetImportModal(){
+  importRows=[];
+  document.getElementById("imp-paste").value="";
+  document.getElementById("imp-vcf-input").value="";
+  document.getElementById("imp-excel-input").value="";
+  showImportStep("source");
+}
+function showImportStep(step){
+  ["source","preview","result"].forEach(s=>{
+    document.getElementById("imp-step-"+s).style.display=s===step?"block":"none";
+  });
+  document.getElementById("imp-title").textContent=step==="preview"?"Check your list":step==="result"?"Import finished":"Import customers";
+}
+function switchImportTab(pane){
+  document.querySelectorAll("#import-modal .imp-tab").forEach(b=>b.classList.toggle("active",b.dataset.pane===pane));
+  document.querySelectorAll("#import-modal .imp-pane").forEach(p=>p.classList.toggle("active",p.id==="imp-pane-"+pane));
+}
+
+// "Ada Obi 0803 123 4567", "Chidi, +234 805 333 4444", "Name: Tolu  Phone: 0807...",
+// or a name on one line followed by its number on the next.
+function parsePastedContacts(text){
+  const phoneRe=/\+?\(?\d[\d\s\-().]{5,}\d/;
+  const emailRe=/[^\s,;<>()]+@[^\s,;<>()]+\.[^\s,;<>()]+/;
+  const out=[]; let pendingName="";
+  const flushPending=()=>{ if(pendingName){out.push({name:pendingName,phone:"",email:""});pendingName="";} };
+  text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean).forEach(line=>{
+    const pm=line.match(phoneRe), em=line.match(emailRe);
+    let rest=line;
+    if(pm) rest=rest.replace(pm[0]," ");
+    if(em) rest=rest.replace(em[0]," ");
+    const name=rest
+      .replace(/^\s*\d{1,3}[.)]\s+/,"")
+      .replace(/\b(name|phone|tel|mobile|number|whatsapp|email|e-mail)\s*[:=]/gi," ")
+      .replace(/^[\s,;:|\-–—•*()]+|[\s,;:|\-–—•*()]+$/g,"")
+      .replace(/\s{2,}/g," ").trim();
+    const phone=pm?pm[0].trim():"", email=em?em[0]:"";
+    if(!phone && !email){ flushPending(); pendingName=name; return; }
+    if(name){ flushPending(); out.push({name,phone,email}); }
+    else { out.push({name:pendingName,phone,email}); pendingName=""; }
+  });
+  flushPending();
+  return out;
+}
+
+function decodeQuotedPrintable(s){
+  const bytes=[];
+  for(let i=0;i<s.length;i++){
+    if(s[i]==="="&&/^[0-9A-F]{2}$/i.test(s.substr(i+1,2))){bytes.push(parseInt(s.substr(i+1,2),16));i+=2;}
+    else bytes.push(s.charCodeAt(i)&255);
+  }
+  try{return new TextDecoder("utf-8").decode(new Uint8Array(bytes));}catch(e){return s;}
+}
+// Split on ";" that is not escaped as "\;" (avoids regex lookbehind, which older iOS Safari rejects).
+function splitVcardValue(v){
+  const parts=[]; let cur="";
+  for(let i=0;i<v.length;i++){
+    if(v[i]==="\\"&&i+1<v.length){cur+=v[i]+v[i+1];i++;}
+    else if(v[i]===";"){parts.push(cur);cur="";}
+    else cur+=v[i];
+  }
+  parts.push(cur); return parts;
+}
+function unescapeVcard(v){return v.replace(/\\n/gi," ").replace(/\\([,;\\])/g,"$1").trim();}
+
+// Handles vCard 2.1/3.0/4.0 as exported by iPhone, Android and Google Contacts.
+function parseVCards(text){
+  const lines=text.replace(/\r\n?/g,"\n").replace(/\n[ \t]/g,"").split("\n");
+  const out=[]; let cur=null;
+  for(let i=0;i<lines.length;i++){
+    let line=lines[i];
+    while(/QUOTED-PRINTABLE/i.test(line.split(":")[0]) && line.endsWith("=") && i+1<lines.length){ line=line.slice(0,-1)+lines[++i]; }
+    if(/^BEGIN:VCARD/i.test(line)){cur={fn:"",n:"",org:"",tels:[],email:"",bday:""};continue;}
+    if(/^END:VCARD/i.test(line)){
+      if(cur){
+        const tel=(cur.tels.find(t=>t.preferred)||cur.tels[0]||{}).value||"";
+        out.push({name:cur.fn||cur.n||cur.org,phone:tel,email:cur.email,date_of_birth:cur.bday});
       }
-    }catch(err){
-      clAlert("Network error during import. Please try again.", "warning");
+      cur=null; continue;
     }
+    if(!cur) continue;
+    const idx=line.indexOf(":"); if(idx<0) continue;
+    const params=line.slice(0,idx).split(";");
+    const prop=params.shift().replace(/^item\d+\./i,"").toUpperCase();
+    const paramStr=params.join(";").toUpperCase();
+    let value=line.slice(idx+1);
+    if(/QUOTED-PRINTABLE/.test(paramStr)) value=decodeQuotedPrintable(value);
+    if(prop==="FN") cur.fn=unescapeVcard(value);
+    else if(prop==="N"){
+      const [family,given,additional]=splitVcardValue(value).map(unescapeVcard);
+      cur.n=[given,additional,family].filter(Boolean).join(" ");
+    }
+    else if(prop==="ORG" && !cur.org) cur.org=unescapeVcard(splitVcardValue(value)[0]);
+    else if(prop==="TEL") cur.tels.push({value:unescapeVcard(value).replace(/^tel:/i,""),preferred:/PREF|CELL|MOBILE|IPHONE/.test(paramStr)});
+    else if(prop==="EMAIL" && !cur.email) cur.email=unescapeVcard(value);
+    else if(prop==="BDAY") cur.bday=unescapeVcard(value);
+  }
+  return out;
+}
+
+function previewPastedContacts(){
+  const text=document.getElementById("imp-paste").value;
+  const rows=parsePastedContacts(text);
+  if(!rows.length){clAlert("Paste at least one name and phone number.","warning");return;}
+  openImportPreview(rows,"pasted list");
+}
+function previewVcfFile(input){
+  const f=input.files&&input.files[0]; if(!f) return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    const rows=parseVCards(String(reader.result||""));
+    if(!rows.length){clAlert("No contacts found in that file. Make sure it is a .vcf contacts export.","warning");return;}
+    openImportPreview(rows,"contacts file");
   };
-  inp.click();
+  reader.onerror=()=>clAlert("Could not read that file.","warning");
+  reader.readAsText(f);
+}
+async function pickPhoneContacts(){
+  try{
+    const supported=await navigator.contacts.getProperties();
+    const props=["name","tel","email"].filter(p=>supported.includes(p));
+    const picked=await navigator.contacts.select(props,{multiple:true});
+    if(!picked||!picked.length) return;
+    openImportPreview(picked.map(c=>({
+      name:(c.name||[])[0]||"",
+      phone:(c.tel||[])[0]||"",
+      email:(c.email||[])[0]||""
+    })),"phone contacts");
+  }catch(e){
+    if(e&&e.name!=="AbortError") clAlert("Could not open your contacts. Try pasting them or uploading a contacts file instead.","warning");
+  }
+}
+
+function openImportPreview(rows,sourceLabel){
+  importSourceLabel=sourceLabel;
+  importRows=rows.map(r=>({
+    name:(r.name||"").trim(),
+    phone:(r.phone||"").trim(),
+    email:(r.email||"").trim(),
+    date_of_birth:(r.date_of_birth||"").trim(),
+    include:true,
+    touched:false
+  }));
+  evaluateImportRows(true);
+  renderImportRows();
+  showImportStep("preview");
+}
+
+// Works out each row's status. On first pass, rows that are problems, duplicates or
+// existing customers start unticked; after that the owner's choice is kept.
+function evaluateImportRows(setDefaults){
+  const dial=importDialCode();
+  const known=new Set(customers.map(c=>normalizeImportPhone(c.phone_number,dial)).filter(Boolean));
+  const knownEmails=new Set(customers.map(c=>(c.email||"").toLowerCase()).filter(Boolean));
+  const seen=new Set();
+  importRows.forEach(r=>{
+    r.normalized=r.phone?normalizeImportPhone(r.phone,dial):null;
+    const emailKey=r.email.toLowerCase();
+    if(!r.name) r.status=["bad","Needs a name"];
+    else if(r.phone && !r.normalized) r.status=["bad","Check number"];
+    else if(!r.normalized && !r.email) r.status=["bad","No number"];
+    else if((r.normalized&&known.has(r.normalized))||(!r.normalized&&knownEmails.has(emailKey))) r.status=["warn","Already a customer"];
+    else if((r.normalized&&seen.has(r.normalized))||(!r.normalized&&seen.has(emailKey))) r.status=["warn","Listed twice"];
+    else r.status=["ok","Ready"];
+    if(r.normalized) seen.add(r.normalized); else if(emailKey) seen.add(emailKey);
+    if(setDefaults) r.include=r.status[0]==="ok";
+    if(r.status[0]==="bad") r.include=false;
+  });
+}
+
+function renderImportRows(){
+  document.getElementById("imp-rows").innerHTML=importRows.map((r,i)=>`
+    <tr id="imp-tr-${i}" class="${r.include?"":"imp-off"}">
+      <td><input type="checkbox" id="imp-cb-${i}" ${r.include?"checked":""} ${r.status[0]==="bad"?"disabled":""} onchange="importRows[${i}].include=this.checked;updateImportStatuses()" aria-label="Include ${esc(r.name)}"></td>
+      <td><input type="text" value="${esc(r.name)}" placeholder="Name" oninput="editImportRow(${i},'name',this.value)"><span class="imp-tag imp-tag-m" id="imp-stm-${i}"></span></td>
+      <td><input type="text" value="${esc(r.phone)}" placeholder="Phone" inputmode="tel" oninput="editImportRow(${i},'phone',this.value)"><div id="imp-norm-${i}" style="font-size:.72rem;color:var(--text3);margin-top:2px;"></div></td>
+      <td><span class="imp-tag" id="imp-st-${i}"></span></td>
+    </tr>`).join("");
+  updateImportStatuses();
+}
+function editImportRow(i,field,value){
+  const r=importRows[i]; const wasBad=r.status[0]==="bad";
+  r[field]=value.trim();
+  evaluateImportRows(false);
+  if(wasBad && r.status[0]==="ok") r.include=true; // fixed a problem row, so include it
+  updateImportStatuses();
+}
+function refreshImportRows(){
+  if(!importRows.length) return;
+  evaluateImportRows(false);
+  updateImportStatuses();
+}
+function updateImportStatuses(){
+  let ready=0,existing=0,bad=0;
+  importRows.forEach((r,i)=>{
+    const tag=document.getElementById("imp-st-"+i); if(!tag) return;
+    tag.className="imp-tag "+r.status[0]; tag.textContent=r.status[1];
+    const tagM=document.getElementById("imp-stm-"+i);
+    tagM.className="imp-tag imp-tag-m "+r.status[0]; tagM.textContent=r.status[1];
+    const cb=document.getElementById("imp-cb-"+i);
+    cb.disabled=r.status[0]==="bad"; cb.checked=r.include;
+    document.getElementById("imp-tr-"+i).className=r.include?"":"imp-off";
+    const norm=document.getElementById("imp-norm-"+i);
+    norm.textContent=r.normalized&&r.normalized.replace(/\D/g,"")!==r.phone.replace(/\D/g,"")?"Saved as "+r.normalized:"";
+    if(r.status[0]==="bad") bad++; else if(r.status[1]==="Ready") ready++; else existing++;
+  });
+  const selected=importRows.filter(r=>r.include).length;
+  const parts=[`${importRows.length} contact${importRows.length===1?"":"s"} from your ${importSourceLabel}`,`${ready} ready`];
+  if(existing) parts.push(`${existing} already in Careloop or listed twice`);
+  if(bad) parts.push(`${bad} need fixing`);
+  document.getElementById("imp-summary").textContent=parts.join(" · ")+".";
+  const btn=document.getElementById("imp-save-btn");
+  btn.textContent=selected?`Import ${selected} customer${selected===1?"":"s"}`:"Nothing selected";
+  btn.disabled=!selected;
+  const all=document.getElementById("imp-all");
+  const selectable=importRows.filter(r=>r.status[0]!=="bad");
+  all.checked=selectable.length>0&&selectable.every(r=>r.include);
+}
+function toggleAllImportRows(on){
+  importRows.forEach(r=>{ if(r.status[0]!=="bad") r.include=on; });
+  updateImportStatuses();
+}
+
+async function saveImportRows(){
+  const chosen=importRows.filter(r=>r.include&&r.status[0]!=="bad");
+  if(!chosen.length) return;
+  const btn=document.getElementById("imp-save-btn");
+  btn.disabled=true; btn.textContent="Importing...";
+  const token=localStorage.getItem("authToken");
+  const total={created:0,updated:0,skipped:0,failed:[]};
+  try{
+    for(let start=0;start<chosen.length;start+=500){
+      const chunk=chosen.slice(start,start+500);
+      const r=await fetch(`${API_URL}/api/customers/import-rows`,{
+        method:"POST",
+        headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},
+        body:JSON.stringify({
+          default_dial_code:importDialCode(),
+          rows:chunk.map(x=>({name:x.name,phone_number:x.normalized||null,email:x.email||null,date_of_birth:x.date_of_birth||null}))
+        })
+      });
+      if(r.status===401){window.location.href="careloop-login.html";return;}
+      const d=await r.json().catch(()=>({}));
+      if(!r.ok) throw new Error(typeof d.detail==="string"?d.detail:"Import failed.");
+      total.created+=d.created; total.updated+=d.updated; total.skipped+=d.skipped;
+      total.failed.push(...(d.failed||[]).map(f=>({row:f.name||f.row,reason:f.reason})));
+    }
+  }catch(err){
+    clAlert((err&&err.message)||"Network error during import. Please try again.","warning");
+    updateImportStatuses();
+    if(!total.created&&!total.updated) return;
+  }
+  await loadCustomers(); renderCustomers();
+  showImportResult(total);
+}
+
+function uploadExcelImport(input){
+  const f=input.files&&input.files[0]; if(!f) return;
+  const token=localStorage.getItem("authToken");
+  const formData=new FormData();
+  formData.append("file",f);
+  formData.append("default_dial_code",importDialCode());
+  clAlert("Importing customers, please wait...","success");
+  fetch(`${API_URL}/api/customers/bulk-import`,{method:"POST",headers:{"Authorization":"Bearer "+token},body:formData})
+    .then(async r=>{
+      const d=await r.json().catch(()=>({}));
+      input.value="";
+      if(!r.ok){clAlert(typeof d.detail==="string"?d.detail:"Import failed.","warning");return;}
+      await loadCustomers(); renderCustomers();
+      showImportResult({created:d.created,updated:d.updated,skipped:d.skipped,failed:(d.failed||[]).map(f=>({row:f.row+(f.name?` (${f.name})`:""),reason:f.reason}))});
+    })
+    .catch(()=>{input.value="";clAlert("Network error during import. Please try again.","warning");});
+}
+
+function showImportResult(t){
+  document.getElementById("imp-result-num").innerHTML=[
+    [t.created,"added"],[t.updated,"updated"],[t.skipped,"already there"],[t.failed.length,"not imported"]
+  ].map(([n,l])=>`<div><strong>${n}</strong><span>${l}</span></div>`).join("");
+  document.getElementById("imp-failed-wrap").innerHTML=t.failed.length?
+    `<p class="imp-summary">These were not imported. Fix them and import again:</p><ul class="imp-failed">${t.failed.map(f=>`<li><b>${esc(f.row)}</b>: ${esc(f.reason)}</li>`).join("")}</ul>`:"";
+  showImportStep("result");
 }
 
 function openBulkSalesImportPicker(){
@@ -2869,7 +3280,7 @@ async function goStep3(){
   const token=localStorage.getItem('authToken');
   const body={
     name:addFlowData.name,
-    phone_number:(addFlowData.dialCode||'+234')+addFlowData.phone.replace(/\D/g,''),
+    phone_number:normalizeImportPhone(addFlowData.phone,addFlowData.dialCode||'+234')||((addFlowData.dialCode||'+234')+addFlowData.phone.replace(/\D/g,'')),
     email:addFlowData.email||null,
     customer_type:addFlowData.purchased?'active':'new',
     has_purchased:addFlowData.purchased,
