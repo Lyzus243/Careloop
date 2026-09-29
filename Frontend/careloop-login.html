@@ -132,7 +132,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: 'Inter', system-ui, sans-serif;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
             background: #ffffff;
             min-height: 100vh;
             display: flex;
@@ -140,6 +140,7 @@
             justify-content: center;
             padding: 2rem 1.5rem;
         }
+        button, input, select, textarea { font-family: inherit; }
 
         .container { width: 100%; max-width: 460px; }
 
@@ -231,7 +232,7 @@
         .submit-button {
             width: 100%;
             padding: 15px;
-            font-family: 'Inter', sans-serif;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
             font-size: 15px;
             font-weight: 500;
             border: none;
