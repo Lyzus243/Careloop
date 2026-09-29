@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
 from enum import Enum
@@ -48,3 +48,16 @@ class CustomerListResponse(BaseModel):
     page: int
     per_page: int
     total_pages: int
+
+class CustomerImportRow(BaseModel):
+    """One contact from a quick import (pasted list, vCard file or phone contact picker)."""
+    name: Optional[str] = None
+    phone_number: Optional[str] = None
+    email: Optional[str] = None
+    date_of_birth: Optional[str] = None
+    customer_type: Optional[str] = None
+    has_purchased: Optional[bool] = None
+
+class CustomerImportRequest(BaseModel):
+    rows: list[CustomerImportRow] = Field(..., min_length=1, max_length=1000)
+    default_dial_code: str = Field("+234", max_length=6)

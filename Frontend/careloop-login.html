@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Careloop - Login</title>
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16.png">
+    <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+    <script src="/assets/cl-dialog.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
 
@@ -132,7 +137,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: 'Inter', system-ui, sans-serif;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
             background: #ffffff;
             min-height: 100vh;
             display: flex;
@@ -140,6 +145,7 @@
             justify-content: center;
             padding: 2rem 1.5rem;
         }
+        button, input, select, textarea { font-family: inherit; }
 
         .container { width: 100%; max-width: 460px; }
 
@@ -231,7 +237,7 @@
         .submit-button {
             width: 100%;
             padding: 15px;
-            font-family: 'Inter', sans-serif;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
             font-size: 15px;
             font-weight: 500;
             border: none;
@@ -327,7 +333,8 @@
         html.dark.eyecare .forgot-password-link a{color:#c8a84b!important}
         html.dark.eyecare .signup-link a{color:#c8a84b!important}
         html.dark.eyecare .submit-button.state-active{background:#3c4fe0!important}
-    </style>
+            html.dark #logo-img { content: url('/assets/primary_logo_dark.png'); }
+</style>
 </head>
 <script>(function(){var d=localStorage.getItem('cl_dark')==='1';var e=localStorage.getItem('cl_eye')==='1';if(d)document.documentElement.classList.add('dark');if(e)document.documentElement.classList.add('eyecare');})();</script>
 <body>
@@ -335,7 +342,7 @@
 
     <!-- LOGO PLACEHOLDER — replace src with final asset path -->
     <div class="logo-container">
-        <img id="logo-img" src="assets/primary_logo.jpg" alt="Careloop">
+        <img id="logo-img" src="assets/primary_logo.png" alt="Careloop">
     </div>
 
     <h1>Welcome back!</h1>
@@ -469,10 +476,10 @@ const API_URL = window.location.origin;
         const password = passwordInput.value.trim();
 
         if (!email || !email.includes('@')) {
-            alert('Please enter a valid email address.'); return;
+            clAlert('Please enter a valid email address.', 'warning'); return;
         }
         if (!password) {
-            alert('Please enter your password.'); return;
+            clAlert('Please enter your password.', 'warning'); return;
         }
 
         setBtn('loading');
@@ -501,7 +508,7 @@ const API_URL = window.location.origin;
                 throw new Error(data.detail || 'Login failed');
             }
         } catch (error) {
-            alert(error.message || 'Login failed. Please check your credentials and try again.');
+            clAlert(error.message || 'Login failed. Please check your credentials and try again.', 'error', 'Login failed');
             setBtn('active');
         }
     });
