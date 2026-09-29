@@ -22,6 +22,19 @@ from app.services.email_service import email_service
 MAX_LOGIN_ATTEMPTS = 5
 LOCKOUT_MINUTES = 15
 
+
+def _is_expired(expires_at: Optional[datetime]) -> bool:
+    """True if the expiry time has passed.
+
+    Postgres returns timezone-aware datetimes but SQLite drops the timezone,
+    so a naive value is treated as UTC instead of crashing the comparison.
+    """
+    if expires_at is None:
+        return False
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    return expires_at < datetime.now(timezone.utc)
+
 class AuthController:
 
     @staticmethod
@@ -190,7 +203,7 @@ class AuthController:
                 detail="Invalid or expired verification token"
             )
 
-        if user.email_verification_expires_at and user.email_verification_expires_at < datetime.now(timezone.utc):
+        if _is_expired(user.email_verification_expires_at):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Verification token has expired"
@@ -241,7 +254,7 @@ class AuthController:
                 detail="Invalid or expired reset token"
             )
 
-        if user.password_reset_expires_at and user.password_reset_expires_at < datetime.now(timezone.utc):
+        if _is_expired(user.password_reset_expires_at):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Reset token has expired"
@@ -285,7 +298,7 @@ class AuthController:
         if not user:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired verification token")
 
-        if user.email_verification_expires_at and user.email_verification_expires_at < datetime.now(timezone.utc):
+        if _is_expired(user.email_verification_expires_at):
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Verification token has expired")
 
         if not PasswordService.validate_password_strength(password):
