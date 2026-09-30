@@ -36,6 +36,10 @@ jobs:
           fi
 
       - name: Check FastAPI Import
+        env:
+          # Falls back to a dummy key so the import check also runs on forks, where secrets are unavailable.
+          SECRET_KEY: ${{ secrets.SECRET_KEY || 'dummy-ci-secret-key-for-import-check' }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           python -c "from app.main import app"
 

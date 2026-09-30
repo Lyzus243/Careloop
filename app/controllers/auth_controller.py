@@ -19,22 +19,21 @@ from app.schemas.user import (
 from app.services.auth_service import TokenService, PasswordService, TokenGeneratorService
 from app.services.email_service import email_service
 
-def _expired(deadline) -> bool:
-    """True if the deadline has passed.
-
-    Postgres returns timestamptz columns as aware datetimes while SQLite
-    returns them naive, so the stored value is normalised to UTC before it is
-    compared. Without this, every token check raised TypeError on SQLite.
-    """
-    if deadline is None:
-        return False
-    if deadline.tzinfo is None:
-        deadline = deadline.replace(tzinfo=timezone.utc)
-    return deadline < datetime.now(timezone.utc)
-
-
 MAX_LOGIN_ATTEMPTS = 5
 LOCKOUT_MINUTES = 15
+
+
+def _is_expired(expires_at: Optional[datetime]) -> bool:
+    """True if the expiry time has passed.
+
+    Postgres returns timezone-aware datetimes but SQLite drops the timezone,
+    so a naive value is treated as UTC instead of crashing the comparison.
+    """
+    if expires_at is None:
+        return False
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    return expires_at < datetime.now(timezone.utc)
 
 class AuthController:
 
@@ -204,7 +203,7 @@ class AuthController:
                 detail="Invalid or expired verification token"
             )
 
-        if _expired(user.email_verification_expires_at):
+        if _is_expired(user.email_verification_expires_at):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Verification token has expired"
@@ -255,7 +254,7 @@ class AuthController:
                 detail="Invalid or expired reset token"
             )
 
-        if _expired(user.password_reset_expires_at):
+        if _is_expired(user.password_reset_expires_at):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Reset token has expired"
@@ -299,7 +298,7 @@ class AuthController:
         if not user:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired verification token")
 
-        if _expired(user.email_verification_expires_at):
+        if _is_expired(user.email_verification_expires_at):
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Verification token has expired")
 
         if not PasswordService.validate_password_strength(password):
