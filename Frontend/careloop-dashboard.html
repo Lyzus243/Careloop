@@ -3059,6 +3059,10 @@
           <option value="active">Active/Existing</option>
           <option value="inactive">Inactive</option>
         </select>
+        <button onclick="bulkDeleteCustomers()"
+          style="background:#FEF2F2;color:#B91C1C;border:none;padding:8px 16px;border-radius:50px;font-weight:600;cursor:pointer;font-size:.85rem;">
+          Delete
+        </button>
         <button onclick="selectedCustomers.clear();renderCustomers();updateBulkBar();"
           style="background:transparent;color:white;border:1.5px solid white;padding:8px 16px;border-radius:50px;font-weight:600;cursor:pointer;font-size:.85rem;">
           Cancel
@@ -4997,6 +5001,35 @@
         clAlert("Network error. Please try again.", "warning");
       }
     }
+    async function bulkDeleteCustomers() {
+      const selected = Array.from(selectedCustomers);
+      if (!selected.length) return;
+      const confirmed = await clConfirm(`Delete ${selected.length} customer${selected.length !== 1 ? 's' : ''}? This will also remove their sales history. This cannot be undone.`, 'Delete Customers', { type: 'danger', confirmText: 'Delete', cancelText: 'Cancel' });
+      if (!confirmed) return;
+
+      const token = localStorage.getItem("authToken");
+      try {
+        const r = await fetch(`${API_URL}/api/customers/bulk-delete`, {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+          body: JSON.stringify({ customer_ids: selected })
+        });
+        if (r.ok) {
+          const d = await r.json();
+          customers = customers.filter(c => !selectedCustomers.has(c.id));
+          clAlert(`${d.deleted} customer${d.deleted !== 1 ? 's' : ''} deleted.`, "success");
+          selectedCustomers.clear();
+          renderCustomers();
+          buildFollowups();
+          renderDashboard();
+        } else {
+          clAlert("Failed to delete selected customers.", "warning");
+        }
+      } catch (e) {
+        clAlert("Network error. Please try again.", "warning");
+      }
+    }
+
     async function bulkWhatsApp() {
       const selected = customers.filter(c => selectedCustomers.has(c.id));
       if (!selected.length) return;

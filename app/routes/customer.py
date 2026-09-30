@@ -120,6 +120,42 @@ async def update_customer(
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to update customer: {str(e)}")
 
+@router.delete("/bulk-delete")
+async def bulk_delete_customers(
+    request: Request,
+    data: dict,
+    user_id: int = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db)
+):
+    """Delete multiple customers and their related sales records at once."""
+    from sqlalchemy import delete
+    from app.models.customer import Customer
+    from app.models.sale import Sale
+
+    customer_ids = data.get("customer_ids", [])
+    if not customer_ids:
+        raise HTTPException(status_code=400, detail="No customers selected")
+
+    result = await db.execute(
+        select(Customer).where(
+            and_(Customer.id.in_(customer_ids), Customer.user_id == user_id)
+        )
+    )
+    owned_customers = result.scalars().all()
+    owned_ids = [c.id for c in owned_customers]
+
+    if not owned_ids:
+        raise HTTPException(status_code=404, detail="No matching customers found")
+
+    await db.execute(delete(Sale).where(Sale.customer_id.in_(owned_ids)))
+    await db.execute(delete(Customer).where(Customer.id.in_(owned_ids)))
+    await db.commit()
+
+    for cid in owned_ids:
+        await log_action(db, action="DELETE", resource="customer", user_id=user_id, resource_id=cid, ip_address=request.client.host)
+
+    return {"success": True, "deleted": len(owned_ids)}
+
 @router.delete("/{customer_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_customer(
     request: Request,
