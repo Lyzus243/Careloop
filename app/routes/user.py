@@ -65,6 +65,8 @@ async def delete_account(
     if confirm_email.strip().lower() != user.email.strip().lower():
         raise HTTPException(status_code=400, detail="Email confirmation does not match")
 
+    from app.services.billing_service import cancel_for_deleted_account
+    await cancel_for_deleted_account(db, user_id)
     await db.execute(delete(Notification).where(Notification.user_id == user_id))
     await db.execute(delete(AuditLog).where(AuditLog.user_id == user_id))
     await db.execute(delete(Sale).where(Sale.user_id == user_id))

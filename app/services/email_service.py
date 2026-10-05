@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 # win over a local .env file, and tests need to be able to unset the API key.
 load_dotenv()
 import logging
+from html import escape as html_escape
 import resend
 
 logger = logging.getLogger(__name__)
@@ -441,6 +442,94 @@ class EmailService:
         </table>
         """
         return self._send(to_email, subject, html)
+
+    def _render_account_notice(self, label: str, title: str, owner_name: str, body: str, button_text: str, button_url: str) -> str:
+        """The follow-up nudge layout, for short account notices such as billing emails."""
+        owner_name = html_escape(owner_name)
+        return f"""
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:8px;overflow:hidden;border:1px solid #e5e7eb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+          <tr>
+            <td style="height:4px;background:#4F46E5;line-height:4px;font-size:1px;">&nbsp;</td>
+          </tr>
+          <tr>
+            <td style="padding:40px 36px 8px;">
+              <div style="font-size:13px;font-weight:600;color:#4F46E5;letter-spacing:0.6px;text-transform:uppercase;margin-bottom:14px;">
+                {label}
+              </div>
+              <div style="font-size:22px;font-weight:700;color:#111111;line-height:1.3;margin-bottom:20px;letter-spacing:-0.4px;">
+                {title}
+              </div>
+              <p style="font-size:15px;color:#4b5563;line-height:1.7;margin:0 0 16px;">
+                Hi {owner_name},
+              </p>
+              <p style="font-size:15px;color:#4b5563;line-height:1.7;margin:0 0 28px;">
+                {body}
+              </p>
+              <table role="presentation" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="border-radius:6px;background:#4F46E5;">
+                    <a href="{button_url}" style="display:inline-block;padding:12px 24px;font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:6px;">
+                      {button_text}
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:18px 36px;background:#fafafa;border-top:1px solid #f0f0f0;">
+              <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td style="font-size:11px;color:#b0b3b9;vertical-align:middle;">
+                    Sent with
+                  </td>
+                  <td style="width:70px;vertical-align:middle;padding-left:6px;">
+                    <img src="data:image/jpeg;base64,{CARELOOP_LOGO_B64}" alt="Careloop" style="height:16px;width:auto;display:block;opacity:0.55;">
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+        """
+
+    def send_payment_failed(self, to_email: str, owner_name: str, plan_name: str, days_left: int, base_url: str = "https://mycareloop.com.ng") -> bool:
+        """Remind the owner during the grace period after a subscription renewal failed."""
+        days = f"{days_left} day{'s' if days_left != 1 else ''}"
+        html = self._render_account_notice(
+            "Payment failed",
+            f"We couldn't renew your {plan_name} plan",
+            owner_name,
+            f"Your latest payment didn't go through. Pay within the next <strong>{days}</strong> to keep your "
+            f"{plan_name} plan. After that your account moves to the Free plan. Your customers stay safe, "
+            "but you won't be able to add new ones while you have more than the Free limit.",
+            "Pay now",
+            f"{base_url}/dashboard?page=billing",
+        )
+        return self._send(to_email, f"Action needed: your {plan_name} payment failed", html)
+
+    def send_plan_ended(self, to_email: str, owner_name: str, plan_name: str, base_url: str = "https://mycareloop.com.ng") -> bool:
+        html = self._render_account_notice(
+            "Plan update",
+            "Your account is now on the Free plan",
+            owner_name,
+            f"We didn't receive payment for your {plan_name} plan, so your account has moved to the Free plan. "
+            "All your customers are still there. Choose a plan any time to add more customers again.",
+            "Choose a plan",
+            f"{base_url}/dashboard?page=billing",
+        )
+        return self._send(to_email, "Your Careloop plan has ended", html)
+
+    def send_card_expiring(self, to_email: str, owner_name: str, plan_name: str, update_url: str) -> bool:
+        html = self._render_account_notice(
+            "Card expiring",
+            "Your card is about to expire",
+            owner_name,
+            f"The card paying for your {plan_name} plan expires soon. Update it now so your plan renews without interruption.",
+            "Update card",
+            update_url,
+        )
+        return self._send(to_email, "Update the card for your Careloop plan", html)
 
 # Create a singleton instance
 email_service = EmailService()
