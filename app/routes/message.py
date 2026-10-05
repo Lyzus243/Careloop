@@ -3,10 +3,22 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import BaseModel
 from typing import Optional
 
+import re
+
 from app.database import get_db
 from app.dependencies import get_current_user_id
 from app.services.openai_service import openai_service
 from app.rate_limit import RateLimitedRouter
+
+
+def apply_name_placeholder(template: str, name: str) -> str:
+    """Fill in {name}, or drop it cleanly if the customer has no name on file."""
+    if name:
+        return template.replace("{name}", name)
+    result = template.replace("{name}", "")
+    result = re.sub(r"[ \t]+,", ",", result)
+    result = re.sub(r"[ \t]{2,}", " ", result)
+    return result.strip()
 
 router = RateLimitedRouter(prefix="/api/messages", tags=["messages"], limit="30/minute")
 
@@ -45,17 +57,38 @@ async def generate_message(
         user_name = user.full_name or user.email.split("@")[0]
         user_business = user.business_name or "Your Business"
 
-        if user.use_default_message and user.default_message:
-            message = user.default_message
-        elif body.message_type == "sales" and body.product:
-            message = await openai_service.generate_sales_message(
-                customer=customer_dict, product=body.product,
-                user_name=user_name, user_business=user_business
-            )
-        else:
-            message = await openai_service.generate_follow_up_message(
+        category = str(customer.customer_type)
+        if category not in ("new", "active", "inactive"):
+            category = "new"
+
+        enabled = getattr(user, f"ai_message_{category}_enabled", False)
+        personalize = getattr(user, f"ai_message_{category}_personalize", True)
+
+        async def generate_ai_message():
+            if body.message_type == "sales" and body.product:
+                return await openai_service.generate_sales_message(
+                    customer=customer_dict, product=body.product,
+                    user_name=user_name, user_business=user_business
+                )
+            return await openai_service.generate_follow_up_message(
                 customer=customer_dict, user_name=user_name, user_business=user_business
             )
+
+        if enabled:
+            rotation_field = f"ai_message_{category}_rotation_index"
+            current_index = getattr(user, rotation_field, 0) or 0
+            slot_num = (current_index % 5) + 1
+            slot_text = getattr(user, f"ai_message_{category}_{slot_num}", None)
+
+            if slot_text:
+                message = apply_name_placeholder(slot_text, customer.name) if personalize else slot_text
+            else:
+                message = await generate_ai_message()
+
+            setattr(user, rotation_field, (current_index + 1) % 5)
+            await db.commit()
+        else:
+            message = await generate_ai_message()
 
         return MessageResponse(message=message, success=True)
     except Exception as e:

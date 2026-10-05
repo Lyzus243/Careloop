@@ -478,3 +478,41 @@ async def check_activity_summaries():
 @app.on_event("startup")
 async def start_activity_summary_checker():
     asyncio.create_task(check_activity_summaries())
+
+
+async def check_auto_inactive():
+    while True:
+        try:
+            today = datetime.utcnow()
+            async with AsyncSessionLocal() as db:
+                from sqlalchemy import select, and_
+                from datetime import timedelta
+                from app.models.customer import Customer, CustomerType
+                from app.models.user import User
+
+                users_result = await db.execute(select(User).where(User.auto_inactive_days.isnot(None)))
+                users = users_result.scalars().all()
+                for owner in users:
+                    threshold = today - timedelta(days=owner.auto_inactive_days)
+                    cust_result = await db.execute(
+                        select(Customer).where(
+                            and_(
+                                Customer.user_id == owner.id,
+                                Customer.customer_type != CustomerType.INACTIVE
+                            )
+                        )
+                    )
+                    customers = cust_result.scalars().all()
+                    for customer in customers:
+                        last_activity = customer.last_contact or customer.created_at
+                        if last_activity and last_activity < threshold:
+                            customer.customer_type = CustomerType.INACTIVE
+                            customer.updated_at = today
+                await db.commit()
+        except Exception as e:
+            print(f"Auto-inactive check error: {e}")
+        await asyncio.sleep(86400)
+
+@app.on_event("startup")
+async def start_auto_inactive_checker():
+    asyncio.create_task(check_auto_inactive())

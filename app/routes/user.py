@@ -116,13 +116,67 @@ async def update_user_settings(
     if "custom_existing_customer_days" in data:
         val = data["custom_existing_customer_days"]
         user.custom_existing_customer_days = int(val) if val not in (None, "") else None
-    if "use_default_message" in data:
-        user.use_default_message = bool(data["use_default_message"])
-    if "default_message" in data:
-        user.default_message = data["default_message"] or None
+    for cat in ("new", "active", "inactive"):
+        enabled_key = f"ai_message_{cat}_enabled"
+        if enabled_key in data:
+            setattr(user, enabled_key, bool(data[enabled_key]))
+        personalize_key = f"ai_message_{cat}_personalize"
+        if personalize_key in data:
+            setattr(user, personalize_key, bool(data[personalize_key]))
+        for n in range(1, 6):
+            slot_key = f"ai_message_{cat}_{n}"
+            if slot_key in data:
+                setattr(user, slot_key, data[slot_key] or None)
+    if "auto_inactive_days" in data:
+        val = data["auto_inactive_days"]
+        user.auto_inactive_days = int(val) if val not in (None, "") else None
 
     await db.commit()
     return {"success": True}
+
+@router.post("/ai-message/save-to-rotation")
+async def save_ai_message_to_rotation(
+    request: Request,
+    data: dict,
+    user_id: int = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db)
+):
+    """Save a message from the WhatsApp modal into the next open rotation slot
+    for its category, or overwrite the slot at the current rotation index if
+    all 5 slots are already full. Also enables AI-message rotation for that
+    category."""
+    from sqlalchemy import select
+    from app.models.user import User
+
+    category = data.get("category")
+    message = data.get("message", "")
+    if category not in ("new", "active", "inactive"):
+        raise HTTPException(status_code=400, detail="Invalid category")
+    if not message or not message.strip():
+        raise HTTPException(status_code=400, detail="Message is required")
+
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    slot_used = None
+    for n in range(1, 6):
+        field_name = f"ai_message_{category}_{n}"
+        if not getattr(user, field_name):
+            setattr(user, field_name, message.strip())
+            slot_used = n
+            break
+
+    if slot_used is None:
+        rotation_index = getattr(user, f"ai_message_{category}_rotation_index") or 0
+        slot_used = (rotation_index % 5) + 1
+        setattr(user, f"ai_message_{category}_{slot_used}", message.strip())
+
+    setattr(user, f"ai_message_{category}_enabled", True)
+
+    await db.commit()
+    return {"success": True, "category": category, "slot_used": slot_used}
 
 @router.put("/unresponsive-prompt")
 async def mark_unresponsive_prompted(

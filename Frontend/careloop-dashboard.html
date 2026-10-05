@@ -2932,16 +2932,154 @@
           style="width:100%;justify-content:center;padding:12px;border-radius:10px;">Save Messages</button>
       </div>
 
-      <div style="max-width:520px;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:24px;margin-top:16px;">
-        <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:6px;">WhatsApp AI message</div>
-        <div style="font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:14px;">By default, a new AI-generated message is created every time you open a customer to message them on WhatsApp. Turn this on to reuse one saved message instead.</div>
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
-          <input type="checkbox" id="settings-use-default-message" onchange="saveAIMessageDefault(false)" style="width:15px;height:15px;cursor:pointer;accent-color:#4F46E5;">
-          <label for="settings-use-default-message" style="font-size:13px;color:var(--text);cursor:pointer;">Always use my saved message instead of generating a new one</label>
+                  <div style="max-width:520px;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:24px;margin-top:16px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <div style="font-size:15px;font-weight:600;color:var(--text);">New customers message</div>
+          <label style="position:relative;display:inline-block;width:38px;height:22px;cursor:pointer;flex-shrink:0;">
+            <input type="checkbox" id="settings-ai-switch-new" onchange="toggleCategoryEnabled('new')" style="opacity:0;width:0;height:0;">
+            <span id="settings-ai-switch-track-new" style="position:absolute;inset:0;background:#d9dce3;border-radius:22px;transition:background .15s;"></span>
+            <span id="settings-ai-switch-knob-new" style="position:absolute;top:2px;left:2px;width:18px;height:18px;background:white;border-radius:50%;transition:left .15s;box-shadow:0 1px 2px rgba(0,0,0,.2);"></span>
+          </label>
         </div>
-        <label class="field-label">Saved message</label>
-        <textarea id="settings-default-message" class="field-input" rows="3" placeholder="Type or save a message from the WhatsApp send screen" style="margin-bottom:14px;resize:vertical;"></textarea>
-        <button class="btn-primary" onclick="saveAIMessageDefault()" style="width:100%;justify-content:center;padding:12px;border-radius:10px;">Save</button>
+        <div style="font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:14px;">While on, these messages rotate instead of a new AI suggestion for every new customer.</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+          <input type="checkbox" id="settings-ai-personalize-new" onchange="savePersonalize('new')" checked style="width:15px;height:15px;cursor:pointer;accent-color:#4F46E5;">
+          <label for="settings-ai-personalize-new" style="font-size:13px;color:var(--text);cursor:pointer;">Personalize with customer name</label>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <label class="field-label" style="margin-bottom:0;">Message 1</label>
+          <button type="button" onclick="insertNamePlaceholder('new',1)" style="font-size:12px;color:#4F46E5;background:none;border:none;cursor:pointer;font-weight:600;">+ Insert name</button>
+        </div>
+        <textarea id="settings-ai-message-new-1" class="field-input" rows="2" placeholder="e.g. Hi {name}, thanks for your patronage" oninput="updatePreview('new',1)" style="margin-bottom:6px;resize:vertical;"></textarea>
+        <div id="settings-ai-preview-new-1" style="font-size:12.5px;color:var(--text2);background:var(--bg2);border-radius:8px;padding:8px 12px;margin-bottom:12px;min-height:18px;"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <label class="field-label" style="margin-bottom:0;">Message 2</label>
+          <button type="button" onclick="insertNamePlaceholder('new',2)" style="font-size:12px;color:#4F46E5;background:none;border:none;cursor:pointer;font-weight:600;">+ Insert name</button>
+        </div>
+        <textarea id="settings-ai-message-new-2" class="field-input" rows="2" placeholder="e.g. Hi {name}, thanks for your patronage" oninput="updatePreview('new',2)" style="margin-bottom:6px;resize:vertical;"></textarea>
+        <div id="settings-ai-preview-new-2" style="font-size:12.5px;color:var(--text2);background:var(--bg2);border-radius:8px;padding:8px 12px;margin-bottom:12px;min-height:18px;"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <label class="field-label" style="margin-bottom:0;">Message 3</label>
+          <button type="button" onclick="insertNamePlaceholder('new',3)" style="font-size:12px;color:#4F46E5;background:none;border:none;cursor:pointer;font-weight:600;">+ Insert name</button>
+        </div>
+        <textarea id="settings-ai-message-new-3" class="field-input" rows="2" placeholder="e.g. Hi {name}, thanks for your patronage" oninput="updatePreview('new',3)" style="margin-bottom:6px;resize:vertical;"></textarea>
+        <div id="settings-ai-preview-new-3" style="font-size:12.5px;color:var(--text2);background:var(--bg2);border-radius:8px;padding:8px 12px;margin-bottom:12px;min-height:18px;"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <label class="field-label" style="margin-bottom:0;">Message 4</label>
+          <button type="button" onclick="insertNamePlaceholder('new',4)" style="font-size:12px;color:#4F46E5;background:none;border:none;cursor:pointer;font-weight:600;">+ Insert name</button>
+        </div>
+        <textarea id="settings-ai-message-new-4" class="field-input" rows="2" placeholder="e.g. Hi {name}, thanks for your patronage" oninput="updatePreview('new',4)" style="margin-bottom:6px;resize:vertical;"></textarea>
+        <div id="settings-ai-preview-new-4" style="font-size:12.5px;color:var(--text2);background:var(--bg2);border-radius:8px;padding:8px 12px;margin-bottom:12px;min-height:18px;"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <label class="field-label" style="margin-bottom:0;">Message 5</label>
+          <button type="button" onclick="insertNamePlaceholder('new',5)" style="font-size:12px;color:#4F46E5;background:none;border:none;cursor:pointer;font-weight:600;">+ Insert name</button>
+        </div>
+        <textarea id="settings-ai-message-new-5" class="field-input" rows="2" placeholder="e.g. Hi {name}, thanks for your patronage" oninput="updatePreview('new',5)" style="margin-bottom:6px;resize:vertical;"></textarea>
+        <div id="settings-ai-preview-new-5" style="font-size:12.5px;color:var(--text2);background:var(--bg2);border-radius:8px;padding:8px 12px;margin-bottom:12px;min-height:18px;"></div>
+        <div id="settings-ai-hint-new" style="display:none;font-size:12px;color:#B45309;margin-bottom:12px;">Sending identical text to many people can look like spam on WhatsApp.</div>
+        <button class="btn-primary" onclick="saveCategoryMessages('new')" style="width:100%;justify-content:center;padding:12px;border-radius:10px;">Save All Messages</button>
+      </div>
+      <div style="max-width:520px;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:24px;margin-top:16px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <div style="font-size:15px;font-weight:600;color:var(--text);">Active customers message</div>
+          <label style="position:relative;display:inline-block;width:38px;height:22px;cursor:pointer;flex-shrink:0;">
+            <input type="checkbox" id="settings-ai-switch-active" onchange="toggleCategoryEnabled('active')" style="opacity:0;width:0;height:0;">
+            <span id="settings-ai-switch-track-active" style="position:absolute;inset:0;background:#d9dce3;border-radius:22px;transition:background .15s;"></span>
+            <span id="settings-ai-switch-knob-active" style="position:absolute;top:2px;left:2px;width:18px;height:18px;background:white;border-radius:50%;transition:left .15s;box-shadow:0 1px 2px rgba(0,0,0,.2);"></span>
+          </label>
+        </div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:14px;">While on, these messages rotate instead of a new AI suggestion for every active customer.</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+          <input type="checkbox" id="settings-ai-personalize-active" onchange="savePersonalize('active')" checked style="width:15px;height:15px;cursor:pointer;accent-color:#4F46E5;">
+          <label for="settings-ai-personalize-active" style="font-size:13px;color:var(--text);cursor:pointer;">Personalize with customer name</label>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <label class="field-label" style="margin-bottom:0;">Message 1</label>
+          <button type="button" onclick="insertNamePlaceholder('active',1)" style="font-size:12px;color:#4F46E5;background:none;border:none;cursor:pointer;font-weight:600;">+ Insert name</button>
+        </div>
+        <textarea id="settings-ai-message-active-1" class="field-input" rows="2" placeholder="e.g. Hi {name}, thanks for your patronage" oninput="updatePreview('active',1)" style="margin-bottom:6px;resize:vertical;"></textarea>
+        <div id="settings-ai-preview-active-1" style="font-size:12.5px;color:var(--text2);background:var(--bg2);border-radius:8px;padding:8px 12px;margin-bottom:12px;min-height:18px;"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <label class="field-label" style="margin-bottom:0;">Message 2</label>
+          <button type="button" onclick="insertNamePlaceholder('active',2)" style="font-size:12px;color:#4F46E5;background:none;border:none;cursor:pointer;font-weight:600;">+ Insert name</button>
+        </div>
+        <textarea id="settings-ai-message-active-2" class="field-input" rows="2" placeholder="e.g. Hi {name}, thanks for your patronage" oninput="updatePreview('active',2)" style="margin-bottom:6px;resize:vertical;"></textarea>
+        <div id="settings-ai-preview-active-2" style="font-size:12.5px;color:var(--text2);background:var(--bg2);border-radius:8px;padding:8px 12px;margin-bottom:12px;min-height:18px;"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <label class="field-label" style="margin-bottom:0;">Message 3</label>
+          <button type="button" onclick="insertNamePlaceholder('active',3)" style="font-size:12px;color:#4F46E5;background:none;border:none;cursor:pointer;font-weight:600;">+ Insert name</button>
+        </div>
+        <textarea id="settings-ai-message-active-3" class="field-input" rows="2" placeholder="e.g. Hi {name}, thanks for your patronage" oninput="updatePreview('active',3)" style="margin-bottom:6px;resize:vertical;"></textarea>
+        <div id="settings-ai-preview-active-3" style="font-size:12.5px;color:var(--text2);background:var(--bg2);border-radius:8px;padding:8px 12px;margin-bottom:12px;min-height:18px;"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <label class="field-label" style="margin-bottom:0;">Message 4</label>
+          <button type="button" onclick="insertNamePlaceholder('active',4)" style="font-size:12px;color:#4F46E5;background:none;border:none;cursor:pointer;font-weight:600;">+ Insert name</button>
+        </div>
+        <textarea id="settings-ai-message-active-4" class="field-input" rows="2" placeholder="e.g. Hi {name}, thanks for your patronage" oninput="updatePreview('active',4)" style="margin-bottom:6px;resize:vertical;"></textarea>
+        <div id="settings-ai-preview-active-4" style="font-size:12.5px;color:var(--text2);background:var(--bg2);border-radius:8px;padding:8px 12px;margin-bottom:12px;min-height:18px;"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <label class="field-label" style="margin-bottom:0;">Message 5</label>
+          <button type="button" onclick="insertNamePlaceholder('active',5)" style="font-size:12px;color:#4F46E5;background:none;border:none;cursor:pointer;font-weight:600;">+ Insert name</button>
+        </div>
+        <textarea id="settings-ai-message-active-5" class="field-input" rows="2" placeholder="e.g. Hi {name}, thanks for your patronage" oninput="updatePreview('active',5)" style="margin-bottom:6px;resize:vertical;"></textarea>
+        <div id="settings-ai-preview-active-5" style="font-size:12.5px;color:var(--text2);background:var(--bg2);border-radius:8px;padding:8px 12px;margin-bottom:12px;min-height:18px;"></div>
+        <div id="settings-ai-hint-active" style="display:none;font-size:12px;color:#B45309;margin-bottom:12px;">Sending identical text to many people can look like spam on WhatsApp.</div>
+        <button class="btn-primary" onclick="saveCategoryMessages('active')" style="width:100%;justify-content:center;padding:12px;border-radius:10px;">Save All Messages</button>
+      </div>
+      <div style="max-width:520px;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:24px;margin-top:16px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <div style="font-size:15px;font-weight:600;color:var(--text);">Inactive customers message</div>
+          <label style="position:relative;display:inline-block;width:38px;height:22px;cursor:pointer;flex-shrink:0;">
+            <input type="checkbox" id="settings-ai-switch-inactive" onchange="toggleCategoryEnabled('inactive')" style="opacity:0;width:0;height:0;">
+            <span id="settings-ai-switch-track-inactive" style="position:absolute;inset:0;background:#d9dce3;border-radius:22px;transition:background .15s;"></span>
+            <span id="settings-ai-switch-knob-inactive" style="position:absolute;top:2px;left:2px;width:18px;height:18px;background:white;border-radius:50%;transition:left .15s;box-shadow:0 1px 2px rgba(0,0,0,.2);"></span>
+          </label>
+        </div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:14px;">While on, these messages rotate instead of a new AI suggestion for every inactive customer.</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+          <input type="checkbox" id="settings-ai-personalize-inactive" onchange="savePersonalize('inactive')" checked style="width:15px;height:15px;cursor:pointer;accent-color:#4F46E5;">
+          <label for="settings-ai-personalize-inactive" style="font-size:13px;color:var(--text);cursor:pointer;">Personalize with customer name</label>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <label class="field-label" style="margin-bottom:0;">Message 1</label>
+          <button type="button" onclick="insertNamePlaceholder('inactive',1)" style="font-size:12px;color:#4F46E5;background:none;border:none;cursor:pointer;font-weight:600;">+ Insert name</button>
+        </div>
+        <textarea id="settings-ai-message-inactive-1" class="field-input" rows="2" placeholder="e.g. Hi {name}, thanks for your patronage" oninput="updatePreview('inactive',1)" style="margin-bottom:6px;resize:vertical;"></textarea>
+        <div id="settings-ai-preview-inactive-1" style="font-size:12.5px;color:var(--text2);background:var(--bg2);border-radius:8px;padding:8px 12px;margin-bottom:12px;min-height:18px;"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <label class="field-label" style="margin-bottom:0;">Message 2</label>
+          <button type="button" onclick="insertNamePlaceholder('inactive',2)" style="font-size:12px;color:#4F46E5;background:none;border:none;cursor:pointer;font-weight:600;">+ Insert name</button>
+        </div>
+        <textarea id="settings-ai-message-inactive-2" class="field-input" rows="2" placeholder="e.g. Hi {name}, thanks for your patronage" oninput="updatePreview('inactive',2)" style="margin-bottom:6px;resize:vertical;"></textarea>
+        <div id="settings-ai-preview-inactive-2" style="font-size:12.5px;color:var(--text2);background:var(--bg2);border-radius:8px;padding:8px 12px;margin-bottom:12px;min-height:18px;"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <label class="field-label" style="margin-bottom:0;">Message 3</label>
+          <button type="button" onclick="insertNamePlaceholder('inactive',3)" style="font-size:12px;color:#4F46E5;background:none;border:none;cursor:pointer;font-weight:600;">+ Insert name</button>
+        </div>
+        <textarea id="settings-ai-message-inactive-3" class="field-input" rows="2" placeholder="e.g. Hi {name}, thanks for your patronage" oninput="updatePreview('inactive',3)" style="margin-bottom:6px;resize:vertical;"></textarea>
+        <div id="settings-ai-preview-inactive-3" style="font-size:12.5px;color:var(--text2);background:var(--bg2);border-radius:8px;padding:8px 12px;margin-bottom:12px;min-height:18px;"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <label class="field-label" style="margin-bottom:0;">Message 4</label>
+          <button type="button" onclick="insertNamePlaceholder('inactive',4)" style="font-size:12px;color:#4F46E5;background:none;border:none;cursor:pointer;font-weight:600;">+ Insert name</button>
+        </div>
+        <textarea id="settings-ai-message-inactive-4" class="field-input" rows="2" placeholder="e.g. Hi {name}, thanks for your patronage" oninput="updatePreview('inactive',4)" style="margin-bottom:6px;resize:vertical;"></textarea>
+        <div id="settings-ai-preview-inactive-4" style="font-size:12.5px;color:var(--text2);background:var(--bg2);border-radius:8px;padding:8px 12px;margin-bottom:12px;min-height:18px;"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <label class="field-label" style="margin-bottom:0;">Message 5</label>
+          <button type="button" onclick="insertNamePlaceholder('inactive',5)" style="font-size:12px;color:#4F46E5;background:none;border:none;cursor:pointer;font-weight:600;">+ Insert name</button>
+        </div>
+        <textarea id="settings-ai-message-inactive-5" class="field-input" rows="2" placeholder="e.g. Hi {name}, thanks for your patronage" oninput="updatePreview('inactive',5)" style="margin-bottom:6px;resize:vertical;"></textarea>
+        <div id="settings-ai-preview-inactive-5" style="font-size:12.5px;color:var(--text2);background:var(--bg2);border-radius:8px;padding:8px 12px;margin-bottom:12px;min-height:18px;"></div>
+        <div id="settings-ai-hint-inactive" style="display:none;font-size:12px;color:#B45309;margin-bottom:12px;">Sending identical text to many people can look like spam on WhatsApp.</div>
+        <button class="btn-primary" onclick="saveCategoryMessages('inactive')" style="width:100%;justify-content:center;padding:12px;border-radius:10px;">Save All Messages</button>
+      </div>
+
+<div style="max-width:520px;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:24px;margin-top:16px;">
+        <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:6px;">Auto-mark customers as Inactive</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:14px;">Automatically move a customer to Inactive after this many days with no contact. Leave blank to only change categories manually.</div>
+        <label class="field-label">Days with no contact</label>
+        <input type="number" id="settings-auto-inactive-days" class="field-input" min="1" max="365" placeholder="e.g. 30" style="margin-bottom:14px;">
+        <button class="btn-primary" onclick="saveAutoInactiveDays()" style="width:100%;justify-content:center;padding:12px;border-radius:10px;">Save</button>
       </div>
 
       <div
@@ -3391,7 +3529,7 @@
       <span class="add-msg-link" onclick="document.getElementById('msg-textarea').focus()">✏️ Add message</span>
       <div style="display:flex;align-items:center;gap:8px;margin:10px 0 14px;">
         <input type="checkbox" id="msg-save-default-check" style="width:15px;height:15px;cursor:pointer;accent-color:#4F46E5;">
-        <label for="msg-save-default-check" style="font-size:12.5px;color:#4b5563;cursor:pointer;">Save this as my default message (stop auto-generating new ones)</label>
+        <label for="msg-save-default-check" id="msg-save-default-label" style="font-size:12.5px;color:#4b5563;cursor:pointer;">Always use this message for New customers</label>
       </div>
       <button class="btn-primary" id="msg-send-btn"
         style="width:100%;justify-content:center;padding:14px;border-radius:50px;" onclick="sendWhatsApp()">
@@ -3812,16 +3950,73 @@
     }
 
     // --- ACCOUNT SETTINGS ---
-    async function saveAIMessageDefault(clearText) {
-      const token = localStorage.getItem("authToken");
-      const useDefaultCheck = document.getElementById("settings-use-default-message");
-      const textBox = document.getElementById("settings-default-message");
-      const payload = {
-        use_default_message: useDefaultCheck ? useDefaultCheck.checked : false
-      };
-      if (clearText !== false) {
-        payload.default_message = textBox.value.trim();
+    function applyNamePlaceholderJS(template, name) {
+      if (name) return template.split('{name}').join(name);
+      let result = template.split('{name}').join('');
+      result = result.replace(/[ \t]+,/g, ',');
+      result = result.replace(/[ \t]{2,}/g, ' ');
+      return result.trim();
+    }
+
+    function setSwitchUI(cat, on) {
+      const track = document.getElementById(`settings-ai-switch-track-${cat}`);
+      const knob = document.getElementById(`settings-ai-switch-knob-${cat}`);
+      const checkbox = document.getElementById(`settings-ai-switch-${cat}`);
+      if (checkbox) checkbox.checked = on;
+      if (track) track.style.background = on ? '#4F46E5' : '#d9dce3';
+      if (knob) knob.style.left = on ? '18px' : '2px';
+    }
+
+    function updateSpamHint(cat) {
+      const personalizeCheck = document.getElementById(`settings-ai-personalize-${cat}`);
+      const hintEl = document.getElementById(`settings-ai-hint-${cat}`);
+      if (!hintEl) return;
+      const personalize = personalizeCheck ? personalizeCheck.checked : true;
+      let anyText = false;
+      for (let n = 1; n <= 5; n++) {
+        const ta = document.getElementById(`settings-ai-message-${cat}-${n}`);
+        if (ta && ta.value.trim()) anyText = true;
       }
+      hintEl.style.display = (!personalize && anyText) ? 'block' : 'none';
+    }
+
+    function updatePreview(cat, n) {
+      const ta = document.getElementById(`settings-ai-message-${cat}-${n}`);
+      const personalizeCheck = document.getElementById(`settings-ai-personalize-${cat}`);
+      const previewEl = document.getElementById(`settings-ai-preview-${cat}-${n}`);
+      if (!ta || !previewEl) return;
+      const text = ta.value;
+      if (!text.trim()) {
+        previewEl.textContent = '';
+        updateSpamHint(cat);
+        return;
+      }
+      const personalize = personalizeCheck ? personalizeCheck.checked : true;
+      const preview = personalize ? applyNamePlaceholderJS(text, 'Dorcas') : text;
+      previewEl.textContent = `Preview: "${preview}"`;
+      updateSpamHint(cat);
+    }
+
+    function insertNamePlaceholder(cat, n) {
+      const ta = document.getElementById(`settings-ai-message-${cat}-${n}`);
+      if (!ta) return;
+      const start = ta.selectionStart != null ? ta.selectionStart : ta.value.length;
+      const end = ta.selectionEnd != null ? ta.selectionEnd : ta.value.length;
+      ta.value = ta.value.slice(0, start) + '{name}' + ta.value.slice(end);
+      ta.focus();
+      ta.selectionStart = ta.selectionEnd = start + 6;
+      updatePreview(cat, n);
+    }
+
+    async function saveCategoryMessages(cat) {
+      const token = localStorage.getItem("authToken");
+      const payload = {};
+      for (let n = 1; n <= 5; n++) {
+        const ta = document.getElementById(`settings-ai-message-${cat}-${n}`);
+        payload[`ai_message_${cat}_${n}`] = ta ? ta.value.trim() : '';
+      }
+      const checkbox = document.getElementById(`settings-ai-switch-${cat}`);
+      payload[`ai_message_${cat}_enabled`] = checkbox ? checkbox.checked : false;
       try {
         const r = await fetch(`${API_URL}/api/user/settings`, {
           method: "PUT",
@@ -3829,9 +4024,60 @@
           body: JSON.stringify(payload)
         });
         if (r.ok) {
-          clAlert("AI message setting saved!", "success");
+          clAlert("Messages saved!", "success");
         } else {
-          clAlert("Failed to save setting.", "warning");
+          clAlert("Failed to save messages.", "warning");
+        }
+      } catch (e) {
+        clAlert("Network error. Please try again.", "warning");
+      }
+    }
+
+    async function savePersonalize(cat) {
+      const token = localStorage.getItem("authToken");
+      const check = document.getElementById(`settings-ai-personalize-${cat}`);
+      const payload = {};
+      payload[`ai_message_${cat}_personalize`] = check ? check.checked : true;
+      try {
+        await fetch(`${API_URL}/api/user/settings`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+          body: JSON.stringify(payload)
+        });
+      } catch (e) {}
+      for (let n = 1; n <= 5; n++) updatePreview(cat, n);
+    }
+
+    async function toggleCategoryEnabled(cat) {
+      const checkbox = document.getElementById(`settings-ai-switch-${cat}`);
+      if (!checkbox) return;
+      const on = checkbox.checked;
+      setSwitchUI(cat, on);
+      const token = localStorage.getItem("authToken");
+      const payload = {};
+      payload[`ai_message_${cat}_enabled`] = on;
+      try {
+        await fetch(`${API_URL}/api/user/settings`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+          body: JSON.stringify(payload)
+        });
+      } catch (e) {}
+    }
+
+    async function saveAutoInactiveDays() {
+      const token = localStorage.getItem("authToken");
+      const val = document.getElementById("settings-auto-inactive-days").value;
+      try {
+        const r = await fetch(`${API_URL}/api/user/settings`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+          body: JSON.stringify({ auto_inactive_days: val })
+        });
+        if (r.ok) {
+          clAlert("Auto-inactive rule saved!", "success");
+        } else {
+          clAlert("Failed to save.", "warning");
         }
       } catch (e) {
         clAlert("Network error. Please try again.", "warning");
@@ -3890,10 +4136,19 @@
           if (bMsg) bMsg.value = u.birthday_message || "";
           if (nDays) nDays.value = u.custom_new_customer_days || "";
           if (eDays) eDays.value = u.custom_existing_customer_days || "";
-          const useDefaultCheck = document.getElementById("settings-use-default-message");
-          if (useDefaultCheck) useDefaultCheck.checked = u.use_default_message === true;
-          const defaultMsgBox = document.getElementById("settings-default-message");
-          if (defaultMsgBox) defaultMsgBox.value = u.default_message || "";
+          const categories = ['new', 'active', 'inactive'];
+          categories.forEach(cat => {
+            const personalizeCheck = document.getElementById(`settings-ai-personalize-${cat}`);
+            if (personalizeCheck) personalizeCheck.checked = u[`ai_message_${cat}_personalize`] !== false;
+            for (let n = 1; n <= 5; n++) {
+              const ta = document.getElementById(`settings-ai-message-${cat}-${n}`);
+              if (ta) ta.value = u[`ai_message_${cat}_${n}`] || "";
+            }
+            setSwitchUI(cat, !!u[`ai_message_${cat}_enabled`]);
+            for (let n = 1; n <= 5; n++) updatePreview(cat, n);
+          });
+          const autoInactiveInput = document.getElementById("settings-auto-inactive-days");
+          if (autoInactiveInput) autoInactiveInput.value = u.auto_inactive_days || "";
         }
       } catch (e) { }
     }
@@ -4807,6 +5062,10 @@
       ta.value = '';
       const saveDefaultCheck = document.getElementById('msg-save-default-check');
       if (saveDefaultCheck) saveDefaultCheck.checked = false;
+      const categoryLabels = { new: 'New', active: 'Active', inactive: 'Inactive' };
+      const categoryLabel = categoryLabels[c.customer_type] || 'New';
+      const saveDefaultLabel = document.getElementById('msg-save-default-label');
+      if (saveDefaultLabel) saveDefaultLabel.textContent = `Always use this message for ${categoryLabel} customers`;
       document.getElementById('message-modal').classList.add('open');
       const btn = document.getElementById('msg-send-btn');
       btn.innerHTML = '<div class="dot-spinner"><span></span><span></span><span></span></div>';
@@ -4832,11 +5091,14 @@
       const saveDefaultCheck = document.getElementById('msg-save-default-check');
       if (saveDefaultCheck && saveDefaultCheck.checked) {
         const token = localStorage.getItem('authToken');
+        const category = c.customer_type === 'active' ? 'active' : (c.customer_type === 'inactive' ? 'inactive' : 'new');
+        const payload = {};
+        payload[`ai_message_${category}`] = msg;
         try {
           await fetch(`${API_URL}/api/user/settings`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-            body: JSON.stringify({ use_default_message: true, default_message: msg })
+            body: JSON.stringify(payload)
           });
         } catch (e) { }
       }

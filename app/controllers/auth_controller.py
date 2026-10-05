@@ -341,8 +341,28 @@ class AuthController:
             custom_new_customer_days=getattr(user, 'custom_new_customer_days', None),
             custom_existing_customer_days=getattr(user, 'custom_existing_customer_days', None),
             last_unresponsive_prompt_at=getattr(user, 'last_unresponsive_prompt_at', None),
-            use_default_message=getattr(user, 'use_default_message', False),
-            default_message=getattr(user, 'default_message', None)
+            ai_message_new_enabled=getattr(user, 'ai_message_new_enabled', False),
+            ai_message_new_personalize=getattr(user, 'ai_message_new_personalize', True),
+            ai_message_new_1=getattr(user, 'ai_message_new_1', None),
+            ai_message_new_2=getattr(user, 'ai_message_new_2', None),
+            ai_message_new_3=getattr(user, 'ai_message_new_3', None),
+            ai_message_new_4=getattr(user, 'ai_message_new_4', None),
+            ai_message_new_5=getattr(user, 'ai_message_new_5', None),
+            ai_message_active_enabled=getattr(user, 'ai_message_active_enabled', False),
+            ai_message_active_personalize=getattr(user, 'ai_message_active_personalize', True),
+            ai_message_active_1=getattr(user, 'ai_message_active_1', None),
+            ai_message_active_2=getattr(user, 'ai_message_active_2', None),
+            ai_message_active_3=getattr(user, 'ai_message_active_3', None),
+            ai_message_active_4=getattr(user, 'ai_message_active_4', None),
+            ai_message_active_5=getattr(user, 'ai_message_active_5', None),
+            ai_message_inactive_enabled=getattr(user, 'ai_message_inactive_enabled', False),
+            ai_message_inactive_personalize=getattr(user, 'ai_message_inactive_personalize', True),
+            ai_message_inactive_1=getattr(user, 'ai_message_inactive_1', None),
+            ai_message_inactive_2=getattr(user, 'ai_message_inactive_2', None),
+            ai_message_inactive_3=getattr(user, 'ai_message_inactive_3', None),
+            ai_message_inactive_4=getattr(user, 'ai_message_inactive_4', None),
+            ai_message_inactive_5=getattr(user, 'ai_message_inactive_5', None),
+            auto_inactive_days=getattr(user, 'auto_inactive_days', None)
         )
 
     @staticmethod

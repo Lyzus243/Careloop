@@ -43,8 +43,28 @@ class UserResponse(BaseModel):
     custom_existing_customer_days: Optional[int] = None
     last_unresponsive_prompt_at: Optional[datetime] = None
     created_at: Optional[datetime] = None
-    use_default_message: Optional[bool] = False
-    default_message: Optional[str] = None
+    ai_message_new_enabled: Optional[bool] = False
+    ai_message_new_personalize: Optional[bool] = True
+    ai_message_new_1: Optional[str] = None
+    ai_message_new_2: Optional[str] = None
+    ai_message_new_3: Optional[str] = None
+    ai_message_new_4: Optional[str] = None
+    ai_message_new_5: Optional[str] = None
+    ai_message_active_enabled: Optional[bool] = False
+    ai_message_active_personalize: Optional[bool] = True
+    ai_message_active_1: Optional[str] = None
+    ai_message_active_2: Optional[str] = None
+    ai_message_active_3: Optional[str] = None
+    ai_message_active_4: Optional[str] = None
+    ai_message_active_5: Optional[str] = None
+    ai_message_inactive_enabled: Optional[bool] = False
+    ai_message_inactive_personalize: Optional[bool] = True
+    ai_message_inactive_1: Optional[str] = None
+    ai_message_inactive_2: Optional[str] = None
+    ai_message_inactive_3: Optional[str] = None
+    ai_message_inactive_4: Optional[str] = None
+    ai_message_inactive_5: Optional[str] = None
+    auto_inactive_days: Optional[int] = None
 
 class UserUpdate(BaseModel):
     full_name: Optional[str] = None
