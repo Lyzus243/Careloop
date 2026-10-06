@@ -381,6 +381,10 @@ async def check_followup_nudges():
                     due_count = 0
                     overdue_count = 0
                     for c in customers:
+                        if c.customer_type == 'inactive':
+                            continue
+                        if c.last_followed_up_at and c.last_followed_up_at.date() == today.date():
+                            continue
                         last_contact = c.last_contact or c.created_at
                         if not last_contact:
                             continue
