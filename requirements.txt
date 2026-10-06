@@ -33,6 +33,7 @@ openai
 # Utilities
 python-multipart
 requests
+httpx
 
 # Excel import/export
 pandas

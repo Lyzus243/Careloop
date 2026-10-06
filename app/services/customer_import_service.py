@@ -104,6 +104,7 @@ async def import_customer_rows(
     default_dial_code: str = "+234",
     overwrite: bool = False,
     row_labels: Optional[list[str]] = None,
+    max_new: Optional[int] = None,
 ) -> dict:
     """Validate, dedupe and save rows for one owner.
 
@@ -111,6 +112,8 @@ async def import_customer_rows(
     With ``overwrite`` (Excel uploads) matched customers take the imported values.
     Without it (quick imports) only fields that are empty on the customer are filled in,
     so importing phone contacts never renames or recategorises someone.
+    ``max_new`` caps how many new customers are created (the plan's remaining slots);
+    rows past it are reported in ``failed``. Updates to existing customers always go through.
     """
     existing = (await db.execute(select(Customer).where(Customer.user_id == user_id))).scalars().all()
     by_phone: dict[str, Customer] = {}
@@ -123,6 +126,7 @@ async def import_customer_rows(
             by_email.setdefault(c.email.strip().lower(), c)
 
     created = updated = skipped = 0
+    limit_reached = False
     failed: list[dict] = []
     new_ids: set[int] = set()  # id() of customers created in this import
 
@@ -140,6 +144,10 @@ async def import_customer_rows(
         )
 
         if match is None:
+            if max_new is not None and created >= max_new:
+                failed.append({"row": label, "name": data["name"], "reason": "Over your plan's customer limit. Upgrade to add more."})
+                limit_reached = True
+                continue
             customer = Customer(
                 user_id=user_id,
                 name=data["name"],
@@ -189,4 +197,5 @@ async def import_customer_rows(
         "skipped": skipped,
         "failed": failed,
         "total_rows": len(rows),
+        "limit_reached": limit_reached,
     }

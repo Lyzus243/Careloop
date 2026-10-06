@@ -18,6 +18,7 @@ from app.models.customer import CustomerType
 from app.rate_limit import RateLimitedRouter
 from app.services.audit_service import log_action
 from app.services.customer_import_service import import_customer_rows
+from app.services.billing_service import ensure_can_add_customer, remaining_customer_slots
 
 router = RateLimitedRouter(prefix="/api/customers", tags=["customers"], limit="50/minute", redirect_slashes=False)
 
@@ -29,6 +30,7 @@ async def create_customer(
     db: AsyncSession = Depends(get_db)
 ):
     try:
+        await ensure_can_add_customer(db, user_id)
         customer = await CustomerController.create_customer(db, customer_data, user_id)
         await log_action(db, action="CREATE", resource="customer", user_id=user_id, resource_id=customer.id, ip_address=request.client.host)
         return customer
@@ -263,7 +265,8 @@ async def bulk_import_customers(
         raise HTTPException(status_code=400, detail="The file has no customer rows.")
 
     result = await import_customer_rows(
-        db, user_id, rows, default_dial_code=default_dial_code, overwrite=True, row_labels=labels
+        db, user_id, rows, default_dial_code=default_dial_code, overwrite=True, row_labels=labels,
+        max_new=await remaining_customer_slots(db, user_id),
     )
     await log_action(
         db, action="IMPORT", resource="customer", user_id=user_id,
@@ -287,7 +290,8 @@ async def import_customer_rows_endpoint(
     """
     rows = [r.model_dump() for r in payload.rows]
     result = await import_customer_rows(
-        db, user_id, rows, default_dial_code=payload.default_dial_code, overwrite=False
+        db, user_id, rows, default_dial_code=payload.default_dial_code, overwrite=False,
+        max_new=await remaining_customer_slots(db, user_id),
     )
     await log_action(
         db, action="IMPORT", resource="customer", user_id=user_id,

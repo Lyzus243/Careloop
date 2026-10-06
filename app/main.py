@@ -9,7 +9,7 @@ from pydantic import ValidationError
 load_dotenv()
 from app.database import get_db, AsyncSessionLocal
 from app.models import Customer, User
-from app.routes import auth, user, customer, message, notification, sale
+from app.routes import auth, user, customer, message, notification, sale, billing
 from fastapi import APIRouter
 from app.schemas.user import ResetPasswordRequest
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -210,6 +210,8 @@ app.include_router(customer.router)
 app.include_router(message.router)
 app.include_router(notification.router)
 app.include_router(sale.router)
+app.include_router(billing.router)
+app.include_router(billing.public_router)
 
 @app.get("/careloop-signup.html", response_class=HTMLResponse)
 async def serve_signup_page():
@@ -520,3 +522,18 @@ async def check_auto_inactive():
 @app.on_event("startup")
 async def start_auto_inactive_checker():
     asyncio.create_task(check_auto_inactive())
+
+
+async def check_subscriptions():
+    from app.services.billing_service import process_subscriptions
+    while True:
+        try:
+            async with AsyncSessionLocal() as db:
+                await process_subscriptions(db)
+        except Exception as e:
+            print(f"SUBSCRIPTION CHECK ERROR: {e}")
+        await asyncio.sleep(3600)
+
+@app.on_event("startup")
+async def start_subscription_checker():
+    asyncio.create_task(check_subscriptions())
