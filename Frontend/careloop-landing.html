@@ -288,6 +288,56 @@
             .dash-tab { flex-shrink: 0; }
         }
             html.dark .nav-logo img { content: url('/assets/primary_logo_dark.png'); }
+
+
+    /* --- FIXES FOR HORIZONTAL OVERFLOW --- */
+
+/* 1. Prevent the navigation logo from causing overflow */
+.nav-logo {
+    min-width: 0; /* Allows the flex item to shrink properly */
+}
+.nav-logo img {
+    height: 34px;
+    max-width: 100%;
+    object-fit: contain;
+}
+
+/* 2. Fix the complex table row in the Features section */
+@media (max-width: 768px) {
+    .feat-mock-table-row {
+        flex-wrap: wrap; /* Allow items to wrap to the next line */
+    }
+    .feat-mock-tdesc {
+        flex-basis: 100%; /* Force the description to its own line */
+        margin-top: 8px;
+        order: 3; /* Move it below the name and avatar */
+    }
+}
+
+/* 3. Reduce padding on very small screens to give layout more room */
+@media (max-width: 480px) {
+    .dash-mockup {
+        padding: 16px;
+    }
+    .feat-mock {
+        padding: 16px;
+    }
+    .price-card {
+        padding: 20px 16px;
+    }
+    .faq-q {
+        padding: 16px 20px;
+    }
+    .faq-a-inner {
+        padding: 0 20px 16px;
+    }
+}
+
+/* 4. Safety net: Prevent any accidental horizontal scrolling */
+html, body {
+    max-width: 100%;
+    overflow-x: hidden;
+}
 </style>
 </head>
 <body>

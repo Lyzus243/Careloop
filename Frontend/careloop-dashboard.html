@@ -2683,6 +2683,42 @@
     .automation-notice { font-size: 14px; color: var(--text); line-height: 1.6; background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; margin: 12px 0 16px; }
     .automation-ack { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; color: var(--text); margin-bottom: 18px; cursor: pointer; }
     .automation-ack input { margin-top: 3px; width: 16px; height: 16px; accent-color: var(--blue); }
+
+.main {
+    padding-bottom: 120px !important; /* Adds space at the bottom so the widget doesn't cover content */
+}
+@media (max-width: 480px) {
+    .floating-widget { /* Replace with the actual class name */
+        transform: scale(0.8);
+        bottom: 70px !important; /* Move it up so it doesn't cover the bottom card */
+        right: 10px !important;
+    }
+}
+
+/* Hide the floating widget on small screens */
+@media (max-width: 480px) {
+    /* Replace .floating-widget with the actual class name you find when inspecting the element */
+    .floating-widget, 
+    #eye-care-extension-button { 
+        display: none !important;
+    }
+}
+
+@media (max-width: 768px) {
+    /* Forces the eye care toggle to hide on mobile screens */
+    #eyeCareToggle {
+        display: none !important;
+    }
+    
+    /* OR, if you want to keep it in the header, force it to stay in its place */
+    /* 
+    #eyeCareToggle {
+        position: static !important; 
+        margin: 0 !important;
+    }
+    */
+}
+
 </style>
 </head>
 
