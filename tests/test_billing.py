@@ -401,3 +401,19 @@ def test_webhook_rejects_bad_signatures(db, env, monkeypatch):
         finally:
             app.dependency_overrides.clear()
     run(go())
+
+
+def test_launch_discount_shows_until_the_end_date_then_disappears(monkeypatch):
+    def plans_at(utc):
+        monkeypatch.setattr(billing_service, "utcnow", lambda: utc)
+        return {p["key"]: p for p in billing_service.public_plans()}
+
+    # 23:30 UTC on 31 Dec is already 1 January in Lagos.
+    last_day = plans_at(datetime(2026, 12, 31, 22, 59))
+    assert last_day["basic"]["original_price"] == PLANS["basic"]["original_price"]
+    assert last_day["basic"]["offer_ends"] == "2026-12-31"
+    assert last_day["free"]["offer_ends"] is None
+
+    after = plans_at(datetime(2026, 12, 31, 23, 30))
+    assert all(p["original_price"] is None and p["offer_ends"] is None for p in after.values())
+    assert after["basic"]["price"] == PLANS["basic"]["price"]

@@ -140,7 +140,10 @@
         .price-amount { font-size: 1.9rem; font-weight: 700; color: var(--text); letter-spacing: -0.02em; }
         .price-amount.soon { font-size: 1.4rem; line-height: 2.85rem; }
         .price-amount small { font-size: 0.85rem; font-weight: 500; color: var(--text-muted); letter-spacing: 0; }
-        .price-was { font-size: 0.9rem; color: var(--text-light); text-decoration: line-through; min-height: 1.4em; margin-bottom: 16px; }
+        .price-was { font-size: 0.9rem; color: var(--text-light); min-height: 1.4em; margin-bottom: 16px; }
+        .pricing-grid.has-offer .price-was { min-height: 4.1em; }
+        .price-offer { display: block; width: fit-content; margin-top: 4px; padding: 1px 8px; border-radius: 50px; font-size: 0.72rem; font-weight: 600; color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+        .price-offer-ends { font-size: 0.8rem; margin-top: 4px; }
         .price-features { list-style: none; margin-bottom: 24px; flex: 1; }
         .price-features li { font-size: 0.9rem; color: var(--text-muted); line-height: 1.5; padding: 4px 0 4px 22px; position: relative; }
         .price-features li::before { content: "✓"; position: absolute; left: 0; color: var(--accent); font-weight: 700; }
@@ -520,7 +523,7 @@ html, body {
         <div class="badge">Pricing</div>
         <h2 class="section-title">Start free, upgrade as you grow</h2>
         <p class="section-body" style="max-width:560px;margin-left:auto;margin-right:auto;">Every plan includes smart follow-ups, customer tracking and quick actions. Plans differ by how many customers you can keep.</p>
-        <div class="pricing-grid" id="pricing-grid">
+        <div class="pricing-grid has-offer" id="pricing-grid">
             <div class="price-card">
                 <h3>Free</h3>
                 <div class="price-amount">₦0</div>
@@ -531,21 +534,21 @@ html, body {
             <div class="price-card">
                 <h3>Basic</h3>
                 <div class="price-amount">₦1,499<small>/month</small></div>
-                <div class="price-was">₦4,499</div>
+                <div class="price-was"><s>₦4,499</s><span class="price-offer">Launch discount</span><div class="price-offer-ends">Ends 31 Dec 2026</div></div>
                 <ul class="price-features"><li>Up to 150 customers</li></ul>
                 <a href="/signup" class="btn-primary">Get started</a>
             </div>
             <div class="price-card">
                 <h3>Standard</h3>
                 <div class="price-amount">₦3,499<small>/month</small></div>
-                <div class="price-was">₦6,499</div>
+                <div class="price-was"><s>₦6,499</s><span class="price-offer">Launch discount</span><div class="price-offer-ends">Ends 31 Dec 2026</div></div>
                 <ul class="price-features"><li>Up to 250 customers</li></ul>
                 <a href="/signup" class="btn-primary">Get started</a>
             </div>
             <div class="price-card">
                 <h3>Premium</h3>
                 <div class="price-amount">₦7,499<small>/month</small></div>
-                <div class="price-was">₦10,499</div>
+                <div class="price-was"><s>₦10,499</s><span class="price-offer">Launch discount</span><div class="price-offer-ends">Ends 31 Dec 2026</div></div>
                 <ul class="price-features"><li>Unlimited customers</li></ul>
                 <a href="/signup" class="btn-primary">Get started</a>
             </div>
@@ -690,7 +693,14 @@ html, body {
     function renderPricing(plans){
         const fmt = n => '₦' + Number(n).toLocaleString('en-NG');
         const esc = t => String(t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-        document.getElementById('pricing-grid').innerHTML = plans.map(p => {
+        const offerDate = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); };
+        // Old prices are only shown with the reason and end date next to them.
+        const offer = p => p.offer_ends
+            ? '<s>' + fmt(p.original_price) + '</s><span class="price-offer">Launch discount</span><div class="price-offer-ends">Ends ' + offerDate(p.offer_ends) + '</div>'
+            : '';
+        const grid = document.getElementById('pricing-grid');
+        grid.classList.toggle('has-offer', plans.some(p => p.offer_ends));
+        grid.innerHTML = plans.map(p => {
             const soon = p.key !== 'free' && p.price == null;
             const price = p.price === 0 ? '₦0' : soon ? 'Coming soon' : fmt(p.price) + '<small>/month</small>';
             const features = [p.customer_limit == null ? 'Unlimited customers' : 'Up to ' + p.customer_limit + ' customers'];
@@ -699,7 +709,7 @@ html, body {
             const action = soon ? '<span class="btn-soon">Coming soon</span>'
                 : '<a href="/signup" class="' + (p.key === 'free' ? 'btn-outline' : 'btn-primary') + '">Get started</a>';
             return '<div class="price-card"><h3>' + esc(p.name) + '</h3><div class="price-amount' + (soon ? ' soon' : '') + '">' + price + '</div>' +
-                '<div class="price-was">' + (p.original_price ? fmt(p.original_price) : '') + '</div>' +
+                '<div class="price-was">' + offer(p) + '</div>' +
                 '<ul class="price-features">' + features.map(f => '<li>' + f + '</li>').join('') + '</ul>' + action + '</div>';
         }).join('');
     }

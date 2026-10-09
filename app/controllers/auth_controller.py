@@ -2,11 +2,13 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import HTTPException, status, Request
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.models.user import User
 from app.models.login_attempt import LoginAttempt
+from app.models.revoked_token import RevokedToken
 from app.schemas.user import (
     UserCreate, UserCreateResponse, UserLogin, Token, UserResponse,
     UserUpdate,
@@ -21,6 +23,7 @@ from app.services.email_service import email_service
 
 MAX_LOGIN_ATTEMPTS = 5
 LOCKOUT_MINUTES = 15
+ACCESS_TOKEN_MINUTES = 60
 
 
 def _is_expired(expires_at: Optional[datetime]) -> bool:
@@ -35,7 +38,25 @@ def _is_expired(expires_at: Optional[datetime]) -> bool:
         expires_at = expires_at.replace(tzinfo=timezone.utc)
     return expires_at < datetime.now(timezone.utc)
 
+
+def _revoked(payload: dict) -> RevokedToken:
+    # revoked_tokens.expires_at is a naive UTC column.
+    expires_at = datetime.fromtimestamp(payload["exp"], timezone.utc).replace(tzinfo=None)
+    return RevokedToken(jti=payload["jti"], expires_at=expires_at)
+
 class AuthController:
+
+    @staticmethod
+    def _issue_tokens(user: User) -> dict:
+        access_token_expires = timedelta(minutes=ACCESS_TOKEN_MINUTES)
+        return {
+            "access_token": TokenService.create_access_token(
+                data={"sub": str(user.id), "email": user.email},
+                expires_delta=access_token_expires
+            ),
+            "refresh_token": TokenService.create_refresh_token(user.id, user.hashed_password),
+            "expires_in": int(access_token_expires.total_seconds()),
+        }
 
     @staticmethod
     async def create_user(
@@ -168,16 +189,9 @@ class AuthController:
         await db.commit()
         await db.refresh(user)
 
-        access_token_expires = timedelta(minutes=60)
-        access_token = TokenService.create_access_token(
-            data={"sub": str(user.id), "email": user.email},
-            expires_delta=access_token_expires
-        )
-
         return Token(
-            access_token=access_token,
+            **AuthController._issue_tokens(user),
             token_type="bearer",
-            expires_in=int(access_token_expires.total_seconds()),
             user=UserResponse(
                 id=user.id,
                 email=user.email,
@@ -286,7 +300,52 @@ class AuthController:
 
         user.hashed_password = PasswordService.hash_password(request.new_password)
         await db.commit()
-        return ChangePasswordResponse(message="Password changed successfully")
+        return ChangePasswordResponse(message="Password changed successfully", **AuthController._issue_tokens(user))
+
+    @staticmethod
+    async def refresh_session(db: AsyncSession, refresh_token: str) -> Token:
+        """Swap a refresh token for a new access token and refresh token.
+
+        The old refresh token is revoked, so each one works once and an active
+        user stays signed in indefinitely.
+        """
+        invalid = HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Session expired. Please log in again.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+        payload = TokenService.get_token_data(refresh_token)
+        if not payload or payload.get("type") != "refresh" or not payload.get("jti"):
+            raise invalid
+        try:
+            user = await AuthController._get_user_by_id(db, int(payload.get("sub")))
+        except (TypeError, ValueError):
+            raise invalid
+        if (not user or not user.is_active
+                or payload.get("pwd") != TokenService.password_fingerprint(user.hashed_password)):
+            raise invalid
+
+        # jti is unique, so a token that was already used (or is being used by a
+        # concurrent request) fails here instead of minting a second session.
+        db.add(_revoked(payload))
+        try:
+            await db.commit()
+        except IntegrityError:
+            await db.rollback()
+            raise invalid
+
+        return Token(**AuthController._issue_tokens(user), token_type="bearer")
+
+    @staticmethod
+    async def revoke_tokens(db: AsyncSession, tokens: list) -> None:
+        for token in tokens:
+            payload = TokenService.get_token_data(token)
+            if not payload or not payload.get("jti"):
+                continue
+            result = await db.execute(select(RevokedToken).where(RevokedToken.jti == payload["jti"]))
+            if not result.scalars().first():
+                db.add(_revoked(payload))
+        await db.commit()
 
     @staticmethod
     async def set_initial_password(db: AsyncSession, token: str, password: str) -> dict:

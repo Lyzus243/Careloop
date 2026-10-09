@@ -28,8 +28,8 @@ from app.models.customer import Customer
 from app.models.subscription import Subscription
 from app.models.user import User
 from app.plans import (
-    PLANS, FREE_PLAN, PAYMENT_GRACE_DAYS,
-    plan_rank, paystack_plan_code, plan_for_paystack_code, is_purchasable,
+    PLANS, FREE_PLAN, PAYMENT_GRACE_DAYS, LAUNCH_OFFER_ENDS,
+    plan_rank, paystack_plan_code, plan_for_paystack_code, is_purchasable, launch_offer_active,
 )
 from app.services.paystack_service import paystack_service, PaystackError
 from app.services.email_service import email_service
@@ -137,13 +137,15 @@ async def billing_status(db: AsyncSession, user_id: int) -> dict:
 
 def public_plans() -> list[dict]:
     """The plan list shown on the landing page and the billing page."""
+    offer = launch_offer_active(utcnow())
     return [
         {
             "key": key,
             "name": p["name"],
             "customer_limit": p["customer_limit"],
             "price": p["price"],
-            "original_price": p["original_price"],
+            "original_price": p["original_price"] if offer else None,
+            "offer_ends": LAUNCH_OFFER_ENDS.isoformat() if offer and p["original_price"] else None,
             "bulk_messaging": p["bulk_messaging"],
             "available": key == FREE_PLAN or is_purchasable(key),
         }

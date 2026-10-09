@@ -22,7 +22,14 @@ class Token(BaseModel):
     access_token: str
     token_type: str
     expires_in: Optional[int] = None
+    refresh_token: Optional[str] = None
     user: Optional["UserResponse"] = None
+
+class RefreshRequest(BaseModel):
+    refresh_token: str
+
+class LogoutRequest(BaseModel):
+    refresh_token: Optional[str] = None
 
 class UserResponse(BaseModel):
     preferred_currency: Optional[str] = "USD"
@@ -95,6 +102,11 @@ class ChangePasswordRequest(BaseModel):
 
 class ChangePasswordResponse(BaseModel):
     message: str
+    # Changing the password ends every session, so the device that changed it
+    # gets a fresh pair to stay signed in.
+    access_token: Optional[str] = None
+    refresh_token: Optional[str] = None
+    expires_in: Optional[int] = None
 
 class SetInitialPasswordRequest(BaseModel):
     token: str

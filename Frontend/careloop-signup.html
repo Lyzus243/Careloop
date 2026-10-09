@@ -9,6 +9,7 @@
     <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16.png">
     <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
     <script src="/assets/cl-dialog.js"></script>
+    <script src="/assets/cl-auth.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
 
@@ -544,6 +545,11 @@
 
     <script>
 const API_URL = window.location.origin;
+        // Returning users reach this page from the landing page's "Try Careloop".
+        clAuth.resumeSession().then(function (ok) {
+            if (ok) window.location.replace('careloop-dashboard.html');
+        });
+
         // Country data
         const countries = [
             { name: 'United States', code: 'us', dial: '+1' },
