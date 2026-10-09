@@ -4,6 +4,8 @@ import jwt
 import uuid
 from passlib.context import CryptContext
 from fastapi import HTTPException, status
+import hashlib
+import hmac
 import secrets
 import os
 import re
@@ -16,6 +18,8 @@ if not SECRET_KEY:
 
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
+# A session lasts this long without the app being opened; each refresh restarts it.
+REFRESH_TOKEN_EXPIRE_DAYS = 30
 
 class TokenService:
     @staticmethod
@@ -26,6 +30,25 @@ class TokenService:
         to_encode.update({"exp": expire, "jti": jti})
         encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
         return encoded_jwt
+
+    @staticmethod
+    def create_refresh_token(user_id: int, hashed_password: Optional[str]) -> str:
+        return TokenService.create_access_token(
+            data={
+                "sub": str(user_id),
+                "type": "refresh",
+                "pwd": TokenService.password_fingerprint(hashed_password),
+            },
+            expires_delta=timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS),
+        )
+
+    @staticmethod
+    def password_fingerprint(hashed_password: Optional[str]) -> str:
+        """Ties a refresh token to the password it was issued under, so changing
+        or resetting the password signs out every other device."""
+        return hmac.new(
+            SECRET_KEY.encode(), (hashed_password or "").encode(), hashlib.sha256
+        ).hexdigest()[:16]
 
     @staticmethod
     def verify_token(token: str):

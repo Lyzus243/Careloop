@@ -8,7 +8,7 @@ from pydantic import ValidationError
 
 load_dotenv()
 from app.database import get_db, AsyncSessionLocal
-from app.models import Customer, User
+from app.models import Customer, User, RevokedToken
 from app.routes import auth, user, customer, message, notification, sale, billing
 from fastapi import APIRouter
 from app.schemas.user import ResetPasswordRequest
@@ -313,6 +313,8 @@ async def cleanup_unverified_users():
                         User.created_at < cutoff
                     )
                 )
+                # An expired token is rejected anyway; its revocation record is no longer needed.
+                await db.execute(delete(RevokedToken).where(RevokedToken.expires_at < datetime.utcnow()))
                 await db.commit()
                 print(f"Cleanup: removed unverified accounts older than 24hrs")
         except Exception as e:

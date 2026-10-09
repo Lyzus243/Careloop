@@ -15,7 +15,7 @@ async def get_current_user_id(
 ) -> int:
     token = credentials.credentials
     token_data = TokenService.get_token_data(token)
-    if not token_data:
+    if not token_data or token_data.get("type") == "refresh":
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authentication credentials",
