@@ -2677,7 +2677,10 @@
     .plan-card-name { font-size: 1rem; font-weight: 700; color: var(--text); }
     .plan-price { font-size: 1.5rem; font-weight: 700; color: var(--text); }
     .plan-price small { font-size: .8rem; font-weight: 500; color: var(--text2); }
-    .plan-price-was { font-size: .85rem; color: var(--text3); text-decoration: line-through; min-height: 1.3em; }
+    .plan-price-was { font-size: .85rem; color: var(--text3); min-height: 1.3em; }
+    .plan-grid.has-offer .plan-price-was { min-height: 4.1em; }
+    .plan-offer { display: block; width: fit-content; margin-top: 4px; padding: 1px 8px; border-radius: 50px; font-size: .72rem; font-weight: 600; color: var(--blue); background: var(--blue-light); }
+    .plan-offer-ends { font-size: .78rem; margin-top: 4px; }
     .plan-feature { font-size: .85rem; color: var(--text2); }
     .plan-card button { margin-top: auto; justify-content: center; width: 100%; }
     .plan-card-gap { flex: 1; min-height: 12px; }
@@ -6079,6 +6082,7 @@
 
     function fmtNaira(n) { return '₦' + Number(n).toLocaleString('en-NG'); }
     function fmtPlanDate(iso) { return iso ? new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' }) : ''; }
+    function fmtOfferDate(ymd) { const [y, m, d] = ymd.split('-').map(Number); return new Date(y, m - 1, d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); }
     function billingPlan(key) { return billing.plans.find(p => p.key === key); }
     function billingRank(key) { return billing.plans.findIndex(p => p.key === key); }
     function atCustomerLimit() { return !!billing && billing.customer_limit != null && billing.customer_count >= billing.customer_limit; }
@@ -6139,7 +6143,9 @@
           <div class="action-row">${actions.join('')}</div>
         </div>${usage}`;
 
-      document.getElementById('billing-plans').innerHTML = b.plans.map(p => {
+      const grid = document.getElementById('billing-plans');
+      grid.classList.toggle('has-offer', b.plans.some(p => p.offer_ends));
+      grid.innerHTML = b.plans.map(p => {
         const price = p.price === 0 ? '₦0' : p.price == null ? 'Coming soon' : `${fmtNaira(p.price)}<small>/month</small>`;
         const features = [p.customer_limit == null ? 'Unlimited customers' : `Up to ${p.customer_limit} customers`];
         if (p.bulk_messaging) features.push('Everything in Premium', 'Bulk automatic messaging');
@@ -6153,7 +6159,7 @@
         return `<div class="plan-card${p.key === b.plan ? ' current' : ''}">
           <div class="plan-card-name">${esc(p.name)}</div>
           <div class="plan-price">${price}</div>
-          <div class="plan-price-was">${p.original_price ? fmtNaira(p.original_price) : ''}</div>
+          <div class="plan-price-was">${p.offer_ends ? `<s>${fmtNaira(p.original_price)}</s><span class="plan-offer">Launch discount</span><div class="plan-offer-ends">Ends ${fmtOfferDate(p.offer_ends)}</div>` : ''}</div>
           ${features.map(f => `<div class="plan-feature">${f}</div>`).join('')}
           <div class="plan-card-gap"></div>${button}</div>`;
       }).join('');

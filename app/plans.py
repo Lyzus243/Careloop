@@ -1,4 +1,5 @@
 import os
+from datetime import date, datetime, timedelta
 from typing import Optional
 
 # Subscription plans, cheapest first. Prices are in naira and only drive what the
@@ -52,8 +53,19 @@ PLANS = {
 
 FREE_PLAN = "free"
 
+# Last day (Lagos time) of the launch discount. Until then each plan's
+# original_price is shown crossed out with a "Launch discount" label; after it,
+# both disappear on their own. Paystack keeps charging the plan's amount, so
+# raise "price" here and in Paystack when the offer ends.
+LAUNCH_OFFER_ENDS = date(2026, 12, 31)
+
 # Days a user keeps their paid plan after a failed renewal before dropping to Free limits.
 PAYMENT_GRACE_DAYS = 3
+
+
+def launch_offer_active(now: datetime) -> bool:
+    """now is naive UTC. Nigeria is UTC+1 all year."""
+    return (now + timedelta(hours=1)).date() <= LAUNCH_OFFER_ENDS
 
 
 def plan_rank(plan: str) -> int:
