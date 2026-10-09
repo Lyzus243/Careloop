@@ -27,9 +27,156 @@ async def get_sales(
 ):
     return await SaleController.get_sales(db, user_id)
 
+TOP_N = 5
+
+
+def _as_date(d):
+    """Sale.date may be a date, a datetime or an ISO string; return something with .year/.month."""
+    from datetime import datetime
+    if d is None:
+        return None
+    if isinstance(d, str):
+        try:
+            return datetime.fromisoformat(d[:10]).date()
+        except ValueError:
+            return None
+    return d
+
+
+def _rank_sales(rows, year, month=0, limit=TOP_N):
+    """rows: (Sale, customer_name) pairs. Returns {currency: {"customers": [...], "products": [...]}}.
+    Totals are grouped per currency so different currencies are never added together.
+    month=0 means the whole year."""
+    cust, prod = {}, {}
+    for sale, name in rows:
+        d = _as_date(sale.date)
+        if d is None or d.year != year or (month and d.month != month):
+            continue
+        cur = sale.currency or ""
+        amt = float(sale.amount or 0)
+        c = cust.setdefault((cur, sale.customer_id), {"name": name or "Unknown", "total": 0.0, "count": 0})
+        c["total"] += amt
+        c["count"] += 1
+        p_name = (sale.product or "").strip()
+        if p_name:
+            p = prod.setdefault((cur, p_name.lower()), {"name": p_name, "total": 0.0, "count": 0})
+            p["total"] += amt
+            p["count"] += 1
+
+    out = {}
+    for (cur, _), v in cust.items():
+        out.setdefault(cur, {"customers": [], "products": []})["customers"].append(v)
+    for (cur, _), v in prod.items():
+        out.setdefault(cur, {"customers": [], "products": []})["products"].append(v)
+    for cur, d in out.items():
+        for k in ("customers", "products"):
+            d[k] = sorted(d[k], key=lambda x: (-x["total"], x["name"].lower()))[:limit]
+    return out
+
+
+def _period_label(year, month):
+    import calendar
+    return f"{calendar.month_name[month]} {year}" if month else f"Whole year {year}"
+
+
+def _add_ranking_sheets(wb, rows, year, month=0):
+    from openpyxl.chart import BarChart, Reference
+    from openpyxl.styles import Font, PatternFill, Alignment
+
+    ranks = _rank_sales(rows, year, month)
+    label = _period_label(year, month)
+
+    def header(ws, r, titles):
+        for ci, t in enumerate(titles, 1):
+            c = ws.cell(row=r, column=ci, value=t)
+            c.font = Font(bold=True, color="FFFFFF")
+            c.fill = PatternFill("solid", fgColor="3730A3")
+            c.alignment = Alignment(horizontal="center")
+
+    def build(sheet_title, key, name_header):
+        ws = wb.create_sheet(sheet_title)
+        ws.cell(row=1, column=1, value=f"{sheet_title} - {label}").font = Font(bold=True, size=13)
+        row = 3
+        if not ranks:
+            ws.cell(row=row, column=1, value="No sales in this period.")
+        for cur in sorted(ranks):
+            items = ranks[cur][key]
+            if not items:
+                continue
+            ws.cell(row=row, column=1, value=f"Currency: {cur or 'not set'}").font = Font(bold=True)
+            hdr = row + 1
+            header(ws, hdr, ["Rank", name_header, "Total", "Purchases"])
+            for i, it in enumerate(items, 1):
+                r = hdr + i
+                ws.cell(row=r, column=1, value=i)
+                n = ws.cell(row=r, column=2, value=it["name"])
+                n.data_type = "s"
+                t = ws.cell(row=r, column=3, value=round(it["total"], 2))
+                t.number_format = "#,##0.00"
+                ws.cell(row=r, column=4, value=it["count"])
+            ch = BarChart()
+            ch.type = "bar"
+            ch.title = f"{sheet_title} ({cur or 'n/a'})"
+            ch.legend = None
+            ch.add_data(Reference(ws, min_col=3, min_row=hdr, max_row=hdr + len(items)), titles_from_data=True)
+            ch.set_categories(Reference(ws, min_col=2, min_row=hdr + 1, max_row=hdr + len(items)))
+            ch.y_axis.scaling.orientation = "maxMin"   # rank 1 at the top
+            ch.x_axis.delete = False
+            ch.y_axis.delete = False
+            ch.y_axis.scaling.min = 0
+            ch.height, ch.width = 7.5, 15
+            ws.add_chart(ch, f"F{row}")
+            row = max(hdr + len(items) + 3, row + 17)
+        ws.column_dimensions["A"].width = 8
+        ws.column_dimensions["B"].width = 32
+        ws.column_dimensions["C"].width = 18
+        ws.column_dimensions["D"].width = 11
+
+    build("Top Customers", "customers", "Customer")
+    build("Top Products", "products", "Product / Service")
+
+
+@router.get("/top")
+async def top_sales(
+    request: Request,
+    year: int = 0,
+    month: int = 0,
+    user_id: int = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db)
+):
+    """Top customers and products by total spent, for one month or a whole year (month=0)."""
+    from datetime import datetime
+    from fastapi import HTTPException
+    from sqlalchemy import select
+    from app.models.sale import Sale
+    from app.models.customer import Customer
+
+    if month and not 1 <= month <= 12:
+        raise HTTPException(status_code=400, detail="month must be 1-12")
+    year = year or datetime.now().year
+    result = await db.execute(
+        select(Sale, Customer.name)
+        .outerjoin(Customer, Customer.id == Sale.customer_id)
+        .where(Sale.user_id == user_id)
+    )
+    ranks = _rank_sales(result.all(), year, month)
+    return {
+        "year": year,
+        "month": month,
+        "label": _period_label(year, month),
+        "limit": TOP_N,
+        "currencies": [
+            {"currency": cur or "", "customers": d["customers"], "products": d["products"]}
+            for cur, d in sorted(ranks.items())
+        ],
+    }
+
+
 @router.get("/export")
 async def export_sales(
     request: Request,
+    year: int = 0,
+    month: int = 0,
     user_id: int = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db)
 ):
@@ -78,6 +225,8 @@ async def export_sales(
         ws.column_dimensions[ws.cell(row=1, column=i).column_letter].width = min(max(longest + 3, 12), 50)
     ws.freeze_panes = "A2"
 
+    from datetime import datetime as _dt
+    _add_ranking_sheets(wb, rows, year or _dt.now().year, month if 1 <= month <= 12 else 0)
     buf = io.BytesIO()
     wb.save(buf)
     buf.seek(0)

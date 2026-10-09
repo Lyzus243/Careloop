@@ -3478,7 +3478,7 @@
               <polyline points="7 10 12 15 17 10" />
               <line x1="12" y1="15" x2="12" y2="3" />
             </svg>
-            Download Excel
+            <span id="export-sales-label">Download Excel</span>
           </button>
           <button class="btn-outline" onclick="openBulkSalesImportPicker()">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -3523,6 +3523,37 @@
         </div>
         <div style="position:relative;height:220px;">
           <canvas id="rev-chart"></canvas>
+        </div>
+      </div>
+
+      <!-- Top performers -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+        <span style="font-size:1rem;font-weight:700;color:var(--text);">Top Performers</span>
+        <div style="display:flex;gap:8px;">
+          <select id="top-month-filter" onchange="renderTopRankings()"
+            style="padding:6px 12px;border-radius:50px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-size:.82rem;cursor:pointer;">
+            <option value="0">Whole year</option>
+          </select>
+          <select id="top-year-filter" onchange="renderTopRankings()"
+            style="padding:6px 12px;border-radius:50px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-size:.82rem;cursor:pointer;"></select>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px;margin-bottom:28px;">
+        <div class="stat-card" style="padding:24px;">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px;gap:8px;">
+            <span style="font-size:.95rem;font-weight:700;color:var(--text);">Top Customers</span>
+            <span style="font-size:.75rem;color:var(--text2);" id="top-cust-period"></span>
+          </div>
+          <div style="position:relative;height:170px;margin-bottom:12px;"><canvas id="top-cust-chart"></canvas></div>
+          <div id="top-cust-list"></div>
+        </div>
+        <div class="stat-card" style="padding:24px;">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px;gap:8px;">
+            <span style="font-size:.95rem;font-weight:700;color:var(--text);">Top Products</span>
+            <span style="font-size:.75rem;color:var(--text2);" id="top-prod-period"></span>
+          </div>
+          <div style="position:relative;height:170px;margin-bottom:12px;"><canvas id="top-prod-chart"></canvas></div>
+          <div id="top-prod-list"></div>
         </div>
       </div>
 
@@ -6084,6 +6115,7 @@
     function renderSalesPage() {
       updateRevenueStats();
       renderSalesChart();
+      renderTopRankings();
       renderSalesTable();
       const sub = document.getElementById('sales-sub');
       if (sub) sub.textContent = `${sales.length} sale${sales.length !== 1 ? 's' : ''} recorded`;
@@ -6166,6 +6198,157 @@
       });
     }
 
+    // ─── TOP PERFORMERS ───
+    const topCharts = { cust: null, prod: null };
+    const TOP_MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+    function rankSales(rows, custList, year, month) {
+      const custMap = {}, prodMap = {};
+      const inPeriod = (d) => {
+        const dt = new Date(d);
+        if (isNaN(dt)) return false;
+        if (dt.getFullYear() !== year) return false;
+        if (month && dt.getMonth() + 1 !== month) return false;
+        return true;
+      };
+      rows.forEach(s => {
+        if (!inPeriod(s.date)) return;
+        const cur = s.currency || '';
+        const amt = Number(s.amount) || 0;
+        const ck = cur + '|' + s.customerId;
+        if (!custMap[ck]) {
+          const c = (custList || []).find(x => String(x.id) === String(s.customerId));
+          custMap[ck] = { currency: cur, name: c ? c.name : 'Unknown', total: 0, count: 0 };
+        }
+        custMap[ck].total += amt;
+        custMap[ck].count += 1;
+        const pname = (s.product || '').trim();
+        if (pname) {
+          const pk = cur + '|' + pname.toLowerCase();
+          if (!prodMap[pk]) prodMap[pk] = { currency: cur, name: pname, total: 0, count: 0 };
+          prodMap[pk].total += amt;
+          prodMap[pk].count += 1;
+        }
+      });
+      const group = (map) => {
+        const out = {};
+        Object.values(map).forEach(v => { (out[v.currency] = out[v.currency] || []).push(v); });
+        Object.values(out).forEach(arr => arr.sort((a, b) => b.total - a.total || a.name.localeCompare(b.name)));
+        return out;
+      };
+      return { customers: group(custMap), products: group(prodMap) };
+    }
+
+    function pickCurrency(grouped) {
+      const curs = Object.keys(grouped);
+      if (!curs.length) return { currency: preferredCurrency, items: [], multi: false };
+      const cur = curs.includes(preferredCurrency) ? preferredCurrency : curs[0];
+      return { currency: cur, items: grouped[cur], multi: curs.length > 1 };
+    }
+
+    function renderTopRankings() {
+      const yearSel = document.getElementById('top-year-filter');
+      const monthSel = document.getElementById('top-month-filter');
+      if (!yearSel || !monthSel) return;
+
+      if (!yearSel.options.length) {
+        const years = [...new Set(sales.map(s => new Date(s.date).getFullYear()).filter(y => !isNaN(y)))].sort((a, b) => b - a);
+        const cur = new Date().getFullYear();
+        if (!years.includes(cur)) years.unshift(cur);
+        yearSel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+      }
+      if (monthSel.options.length === 1) {
+        monthSel.innerHTML += TOP_MONTHS.map((m, i) => `<option value="${i + 1}">${m}</option>`).join('');
+      }
+
+      const year = parseInt(yearSel.value) || new Date().getFullYear();
+      const month = parseInt(monthSel.value) || 0;
+      const ranks = rankSales(sales, customers, year, month);
+
+      const label = month ? `${TOP_MONTHS[month - 1]} ${year}` : `Whole year ${year}`;
+      const cPer = document.getElementById('top-cust-period'); if (cPer) cPer.textContent = label;
+      const pPer = document.getElementById('top-prod-period'); if (pPer) pPer.textContent = label;
+
+      renderTopList('cust', ranks.customers);
+      renderTopList('prod', ranks.products);
+      renderTopChart('cust', 'top-cust-chart', ranks.customers);
+      renderTopChart('prod', 'top-prod-chart', ranks.products);
+      updateExportLabel();
+    }
+
+    function updateExportLabel() {
+      const el = document.getElementById('export-sales-label');
+      if (!el) return;
+      const yEl = document.getElementById('top-year-filter');
+      const mEl = document.getElementById('top-month-filter');
+      const year = (yEl && yEl.value) ? yEl.value : new Date().getFullYear();
+      const month = mEl ? (parseInt(mEl.value) || 0) : 0;
+      el.textContent = month
+        ? `Export ${TOP_MONTHS[month - 1]} ${year}`
+        : `Export whole year ${year}`;
+    }
+
+    function renderTopList(kind, grouped) {
+      const el = document.getElementById('top-' + kind + '-list');
+      if (!el) return;
+      const { currency, items, multi } = pickCurrency(grouped);
+      const top = items.slice(0, 5);
+      if (!top.length) {
+        el.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text2);font-size:.82rem;">No sales in this period.</div>';
+        return;
+      }
+      el.innerHTML = top.map((it, i) => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-top:1px solid var(--border);gap:10px;">
+          <span style="display:flex;align-items:center;gap:10px;min-width:0;">
+            <span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--bg2);font-size:.72rem;font-weight:700;color:var(--text2);flex-shrink:0;">${i + 1}</span>
+            <span style="font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(it.name)}</span>
+          </span>
+          <span style="text-align:right;flex-shrink:0;">
+            <span style="font-weight:700;color:var(--green);">${formatMoney(it.total, currency)}</span>
+            <span style="color:var(--text3);font-size:.75rem;margin-left:6px;">${it.count}\u00d7</span>
+          </span>
+        </div>`).join('') +
+        (multi ? `<div style="margin-top:10px;font-size:.72rem;color:var(--text3);line-height:1.4;">Showing ${esc(currency || 'no currency')}; other currencies are ranked separately in the Excel export.</div>` : '');
+    }
+
+    function renderTopChart(key, canvasId, grouped) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+      if (topCharts[key]) { topCharts[key].destroy(); topCharts[key] = null; }
+      const { currency, items } = pickCurrency(grouped);
+      const top = items.slice(0, 5);
+      if (!top.length) return;
+
+      const isDark = document.body.classList.contains('dark-mode');
+      const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+      const labelColor = isDark ? '#9ca3af' : '#6b7280';
+
+      topCharts[key] = new Chart(canvas, {
+        type: 'bar',
+        data: {
+          labels: top.map(it => it.name.length > 20 ? it.name.slice(0, 19) + '\u2026' : it.name),
+          datasets: [{
+            data: top.map(it => it.total),
+            backgroundColor: 'rgba(51,51,204,0.75)',
+            borderRadius: 6,
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: ctx => formatMoney(ctx.raw, currency) } }
+          },
+          scales: {
+            x: { grid: { color: gridColor }, ticks: { color: labelColor, font: { size: 10 }, callback: v => formatMoney(v, currency) }, beginAtZero: true },
+            y: { grid: { display: false }, ticks: { color: labelColor, font: { size: 11 } } }
+          }
+        }
+      });
+    }
+
     function renderSalesTable() {
       const q = (document.getElementById('sales-search') || {}).value?.toLowerCase() || '';
       const tbody = document.getElementById('sales-table-body');
@@ -6205,7 +6388,10 @@
       if (!sales.length) { clAlert('No sales to download.', 'warning'); return; }
       const token = localStorage.getItem('authToken');
       try {
-        const r = await fetch(`${API_URL}/api/sales/export`, { headers: { 'Authorization': 'Bearer ' + token } });
+        const yEl = document.getElementById('top-year-filter');
+        const mEl = document.getElementById('top-month-filter');
+        const qs = `year=${encodeURIComponent(yEl ? yEl.value : '')}&month=${encodeURIComponent(mEl ? mEl.value : '0')}`;
+        const r = await fetch(`${API_URL}/api/sales/export?${qs}`, { headers: { 'Authorization': 'Bearer ' + token } });
         if (!r.ok) { clAlert('Could not download the sales file.', 'warning'); return; }
         const blob = await r.blob();
         const url = URL.createObjectURL(blob);
