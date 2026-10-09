@@ -526,6 +526,25 @@
       .section-title {
         font-size: 0.85rem;
       }
+
+      /* Header title must not run into the icons */
+      .header-label {
+        flex: 1 1 0 !important;
+        min-width: 0 !important;
+        font-size: 0.85rem !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+      }
+
+      .header-right {
+        flex-shrink: 0 !important;
+      }
+
+      /* Names should not break mid-word in rows */
+      .row-name {
+        overflow-wrap: anywhere;
+      }
     }
 
     /* Tablet landscape (between 769px and 1024px) */
@@ -2723,7 +2742,146 @@
     */
 }
 
-</style>
+
+    /* == MOBILE ROW FIX == */
+    @media (max-width: 480px) {
+      /* Header title must not run into the icons */
+      .header-label {
+        flex: 1 1 0 !important;
+        min-width: 0 !important;
+        font-size: 0.85rem !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+      }
+      .header-right { flex-shrink: 0 !important; }
+
+      /* Dashboard follow-up rows and Customers rows: same layout */
+      .followup-row,
+      .customer-row {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        gap: 8px 10px !important;
+      }
+      .row-info,
+      .cust-info {
+        flex: 1 1 0 !important;
+        min-width: 0 !important;
+        width: auto !important;
+        margin-left: 0 !important;
+      }
+      .row-name,
+      .cust-name {
+        overflow-wrap: anywhere;
+      }
+      .row-reason,
+      .cust-type {
+        flex: 1 1 100% !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding-left: 0 !important;
+      }
+      .row-actions,
+      .cust-actions {
+        flex: 1 1 100% !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+        justify-content: flex-start !important;
+        gap: 8px !important;
+        margin-top: 2px !important;
+      }
+      .row-actions button,
+      .cust-actions button {
+        white-space: nowrap;
+      }
+
+      /* Sales page action row */
+      #page-sales .page-top {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 12px !important;
+      }
+      #page-sales .action-row {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        gap: 8px !important;
+        width: 100%;
+      }
+      #page-sales .action-row .btn-primary,
+      #page-sales .action-row .btn-outline {
+        flex: 0 0 auto;
+        white-space: nowrap;
+      }
+      #page-sales .action-row a {
+        flex: 1 1 100%;
+        font-size: 0.8rem;
+      }
+    }
+  
+    /* == MOBILE SALES TABLE FIX == */
+    @media (max-width: 768px) {
+      /* Inline display:grid on the header beats the old rule, so force it */
+      #sales-table-wrap > div:first-child {
+        display: none !important;
+      }
+
+      /* Two lines per sale: name | product, then amount | date */
+      #sales-table-body > div {
+        grid-template-columns: minmax(0, 1fr) auto !important;
+        column-gap: 12px !important;
+        row-gap: 6px !important;
+        padding: 14px 16px !important;
+      }
+      #sales-table-body > div span:nth-child(1) {
+        grid-column: 1 !important;
+        grid-row: 1 !important;
+        margin-bottom: 0 !important;
+        overflow-wrap: anywhere;
+      }
+      #sales-table-body > div span:nth-child(3) {
+        grid-column: 2 !important;
+        grid-row: 1 !important;
+        text-align: right !important;
+        font-size: 0.8rem;
+        overflow-wrap: anywhere;
+      }
+      #sales-table-body > div span:nth-child(2) {
+        grid-column: 1 !important;
+        grid-row: 2 !important;
+      }
+      #sales-table-body > div span:nth-child(4) {
+        grid-column: 2 !important;
+        grid-row: 2 !important;
+        text-align: right !important;
+        margin-top: 0 !important;
+        font-size: 0.75rem !important;
+        white-space: nowrap;
+      }
+    }
+  
+    /* == MOBILE BULK BAR FIX == */
+    @media (max-width: 480px) {
+      #bulk-action-bar {
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+        padding: 12px !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+      }
+      #bulk-count {
+        flex: 1 1 100% !important;
+      }
+      #bulk-action-bar button,
+      #bulk-action-bar select {
+        padding: 7px 12px !important;
+        font-size: 0.78rem !important;
+        flex: 0 0 auto !important;
+        max-width: 100% !important;
+      }
+    }
+  </style>
 </head>
 
 <body>
@@ -3314,13 +3472,13 @@
         </div>
         <div class="action-row">
           <button class="btn-primary" onclick="openRecordSaleModal()">+ Record Sale</button>
-          <button class="btn-outline" onclick="downloadSalesCSV()">
+          <button class="btn-outline" onclick="downloadSalesExcel()">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
               <polyline points="7 10 12 15 17 10" />
               <line x1="12" y1="15" x2="12" y2="3" />
             </svg>
-            Download CSV
+            Download Excel
           </button>
           <button class="btn-outline" onclick="openBulkSalesImportPicker()">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -6041,6 +6199,22 @@
       <span style="color:var(--text3);">${date}</span>
     </div>`;
       }).join('');
+    }
+
+    async function downloadSalesExcel() {
+      if (!sales.length) { clAlert('No sales to download.', 'warning'); return; }
+      const token = localStorage.getItem('authToken');
+      try {
+        const r = await fetch(`${API_URL}/api/sales/export`, { headers: { 'Authorization': 'Bearer ' + token } });
+        if (!r.ok) { clAlert('Could not download the sales file.', 'warning'); return; }
+        const blob = await r.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'careloop-sales.xlsx'; a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1500);
+      } catch (e) {
+        clAlert('Network error. Please try again.', 'warning');
+      }
     }
 
     function downloadSalesCSV() {

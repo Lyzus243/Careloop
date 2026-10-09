@@ -27,6 +27,66 @@ async def get_sales(
 ):
     return await SaleController.get_sales(db, user_id)
 
+@router.get("/export")
+async def export_sales(
+    request: Request,
+    user_id: int = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db)
+):
+    """Download all of the user's sales as a formatted .xlsx file."""
+    import io
+    from fastapi.responses import StreamingResponse
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill, Alignment
+    from sqlalchemy import select
+    from app.models.sale import Sale
+    from app.models.customer import Customer
+
+    result = await db.execute(
+        select(Sale, Customer.name)
+        .outerjoin(Customer, Customer.id == Sale.customer_id)
+        .where(Sale.user_id == user_id)
+        .order_by(Sale.date.desc())
+    )
+    rows = result.all()
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Sales"
+    headers = ["Customer", "Amount", "Currency", "Product/Service", "Date"]
+    ws.append(headers)
+    for c in ws[1]:
+        c.font = Font(bold=True, color="FFFFFF")
+        c.fill = PatternFill("solid", fgColor="3730A3")
+        c.alignment = Alignment(horizontal="center", vertical="center")
+
+    for sale, name in rows:
+        ws.append([name or "Unknown", float(sale.amount or 0), sale.currency or "", sale.product or "", sale.date])
+        r = ws.max_row
+        for col in (1, 3, 4):
+            cell = ws.cell(row=r, column=col)
+            if isinstance(cell.value, str):
+                cell.data_type = "s"
+        ws.cell(row=r, column=2).number_format = "#,##0.00"
+        ws.cell(row=r, column=5).number_format = "yyyy-mm-dd"
+        ws.cell(row=r, column=5).alignment = Alignment(horizontal="left")
+
+    for i in range(1, len(headers) + 1):
+        longest = max(len(str(ws.cell(row=r, column=i).value or "")) for r in range(1, ws.max_row + 1))
+        if i == 2:
+            longest += 4
+        ws.column_dimensions[ws.cell(row=1, column=i).column_letter].width = min(max(longest + 3, 12), 50)
+    ws.freeze_panes = "A2"
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return StreamingResponse(
+        buf,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": 'attachment; filename="careloop-sales.xlsx"'}
+    )
+
 @router.delete("/{sale_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_sale(
     request: Request,
