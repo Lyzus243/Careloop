@@ -55,6 +55,42 @@ async def create_notification(
     await db.refresh(notif)
     return notif
 
+@router.delete("")
+async def clear_notifications(
+    request: Request,
+    user_id: int = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db)
+):
+    """Delete every notification for the current user."""
+    from sqlalchemy import delete
+    result = await db.execute(
+        delete(Notification).where(Notification.user_id == user_id)
+    )
+    await db.commit()
+    return {"success": True, "deleted": result.rowcount or 0}
+
+
+@router.delete("/{notification_id}")
+async def clear_one_notification(
+    notification_id: int,
+    request: Request,
+    user_id: int = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db)
+):
+    """Delete one notification, scoped to the current user."""
+    from sqlalchemy import delete
+    result = await db.execute(
+        delete(Notification).where(
+            Notification.id == notification_id,
+            Notification.user_id == user_id
+        )
+    )
+    await db.commit()
+    if not result.rowcount:
+        raise HTTPException(status_code=404, detail="Notification not found")
+    return {"success": True, "id": notification_id}
+
+
 @router.put("/mark-all-read")
 async def mark_all_read(
     request: Request,

@@ -3616,8 +3616,12 @@
 
     <!-- NOTIFICATIONS PAGE -->
     <div class="page" id="page-notifications">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-        <h1 class="page-title">Notifications</h1>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;gap:12px;">
+        <h1 class="page-title" style="margin:0;">Notifications</h1>
+        <button type="button" id="notif-clear-all" onclick="clearAllNotifications()"
+          style="display:none;padding:8px 16px;border-radius:50px;border:1.5px solid var(--border);background:var(--bg);color:#DC2626;font-size:.82rem;font-weight:600;cursor:pointer;font-family:inherit;">
+          Clear all
+        </button>
       </div>
       <div id="notif-page-content"></div>
     </div>
@@ -6101,6 +6105,8 @@
 
     function renderNotifPage() {
       const el = document.getElementById('notif-page-content'); if (!el) return;
+      const clearBtn = document.getElementById('notif-clear-all');
+      if (clearBtn) clearBtn.style.display = notifications.length ? 'inline-block' : 'none';
       if (!notifications.length) {
         el.innerHTML = `<div class="empty-state"><div class="empty-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div><div class="empty-title">No notifications right now.</div></div>`;
         return;
@@ -6124,9 +6130,65 @@
           <div class="notif-names">${esc(n.names)}</div>
         </div>
         <div class="notif-time">${fmtAgo(n.date)}</div>
+        <button type="button" title="Clear this notification"
+          onclick="clearOneNotification('${esc(String(n.id))}')"
+          style="background:none;border:none;padding:4px 6px;cursor:pointer;color:var(--text3);font-size:18px;line-height:1;margin-left:6px;"
+          onmouseover="this.style.color='#DC2626';"
+          onmouseout="this.style.color='var(--text3)';">&times;</button>
       </div>`).join('');
       }
       el.innerHTML = html;
+    }
+
+    function clearAllNotifications() {
+      if (!notifications.length) return;
+      clConfirm({
+        title: 'Clear all notifications?',
+        body: `This will remove all ${notifications.length} notification${notifications.length === 1 ? '' : 's'}. This cannot be undone.`,
+        confirmLabel: 'Clear all',
+        danger: true,
+        onConfirm: _clearAllNotificationsNow
+      });
+    }
+
+    async function _clearAllNotificationsNow() {
+      const token = localStorage.getItem('authToken');
+      try {
+        const r = await fetch(`${API_URL}/api/notifications`, {
+          method: 'DELETE',
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (!r.ok) {
+          clAlert(`Could not clear notifications (${r.status}).`, 'error');
+          return;
+        }
+        notifications = [];
+        renderNotifPage();
+        renderDashNotifs();
+        const badge = document.getElementById('bell-badge');
+        if (badge) badge.style.display = 'none';
+        clAlert('Notifications cleared.', 'success');
+      } catch (e) {
+        clAlert('Network error while clearing notifications.', 'error');
+      }
+    }
+
+    function clearOneNotification(id) {
+      if (!id) return;
+      const idx = notifications.findIndex(n => String(n.id) === String(id));
+      if (idx < 0) return;
+      notifications.splice(idx, 1);
+      renderNotifPage();
+      renderDashNotifs();
+      if (!notifications.length) {
+        const badge = document.getElementById('bell-badge');
+        if (badge) badge.style.display = 'none';
+      }
+      const token = localStorage.getItem('authToken');
+      fetch(`${API_URL}/api/notifications/${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': 'Bearer ' + token }
+      }).catch(() => { /* UI already updated; next load will resync */ });
     }
 
     async function markAllRead() {
