@@ -3851,10 +3851,6 @@
       </div>
       <textarea class="message-textarea" id="msg-textarea" placeholder="Generating message..."></textarea>
       <span class="add-msg-link" onclick="document.getElementById('msg-textarea').focus()">✏️ Add message</span>
-      <div style="display:flex;align-items:center;gap:8px;margin:10px 0 14px;">
-        <input type="checkbox" id="msg-save-default-check" style="width:15px;height:15px;cursor:pointer;accent-color:#4F46E5;">
-        <label for="msg-save-default-check" id="msg-save-default-label" style="font-size:12.5px;color:#4b5563;cursor:pointer;">Always use this message for New customers</label>
-      </div>
       <button class="btn-primary" id="msg-send-btn"
         style="width:100%;justify-content:center;padding:14px;border-radius:50px;" onclick="sendWhatsApp()">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
@@ -5428,12 +5424,6 @@
       document.getElementById('msg-cust-badge').textContent = c.customer_type === 'active' ? 'Existing' : 'New';
       const ta = document.getElementById('msg-textarea');
       ta.value = '';
-      const saveDefaultCheck = document.getElementById('msg-save-default-check');
-      if (saveDefaultCheck) saveDefaultCheck.checked = false;
-      const categoryLabels = { new: 'New', active: 'Active', inactive: 'Inactive' };
-      const categoryLabel = categoryLabels[c.customer_type] || 'New';
-      const saveDefaultLabel = document.getElementById('msg-save-default-label');
-      if (saveDefaultLabel) saveDefaultLabel.textContent = `Always use this message for ${categoryLabel} customers`;
       document.getElementById('message-modal').classList.add('open');
       const btn = document.getElementById('msg-send-btn');
       btn.innerHTML = '<div class="dot-spinner"><span></span><span></span><span></span></div>';
@@ -5456,20 +5446,6 @@
     async function sendWhatsApp() {
       const c = customers.find(x => x.id === msgCustomerId); if (!c) return;
       const msg = document.getElementById('msg-textarea').value.trim(); if (!msg) return;
-      const saveDefaultCheck = document.getElementById('msg-save-default-check');
-      if (saveDefaultCheck && saveDefaultCheck.checked) {
-        const token = localStorage.getItem('authToken');
-        const category = c.customer_type === 'active' ? 'active' : (c.customer_type === 'inactive' ? 'inactive' : 'new');
-        const payload = {};
-        payload[`ai_message_${category}`] = msg;
-        try {
-          await fetch(`${API_URL}/api/user/settings`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-            body: JSON.stringify(payload)
-          });
-        } catch (e) { }
-      }
       const phone = c.phone_number.replace(/\D/g, '');
       window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank');
       if (c) { c.last_contact = new Date().toISOString(); buildFollowups(); renderDashboard(); }
