@@ -3120,7 +3120,7 @@
       </div>
 
       <div class="followup-list" id="products-table-wrap">
-        <div style="display:grid;grid-template-columns:36px 2.2fr 1.4fr 1fr 110px 100px;padding:12px 20px;background:var(--bg2);font-size:.78rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;gap:10px;">
+        <div style="display:grid;grid-template-columns:36px minmax(180px,2fr) 140px 110px 110px 90px;padding:12px 20px;background:var(--bg2);gap:14px;font-size:.78rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;gap:10px;">
           <span><input type="checkbox" id="products-select-all" onchange="toggleSelectAllProducts(this)" style="width:15px;height:15px;cursor:pointer;accent-color:#4F46E5;"></span><span>Name</span><span>Price</span><span>Availability</span><span></span><span></span>
         </div>
         <div id="products-table-body"></div>
@@ -3165,6 +3165,19 @@
           <input type="checkbox" id="product-available" checked style="width:15px;height:15px;cursor:pointer;accent-color:#4F46E5;">
           Available today
         </label>
+        <label class="field-label">Product photo (optional)</label>
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;">
+          <div id="product-image-preview" style="width:76px;height:76px;border-radius:10px;border:1.5px dashed var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;background:var(--bg2);">
+            <span id="product-image-placeholder" style="font-size:11px;color:var(--text3);text-align:center;line-height:1.3;">No<br>photo</span>
+            <img id="product-image-img" style="display:none;width:100%;height:100%;object-fit:cover;">
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <button type="button" onclick="pickProductImage()" style="padding:9px 16px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">Choose photo</button>
+            <button type="button" id="product-image-remove" onclick="removeProductImage()" style="display:none;padding:4px 0;border:none;background:none;color:#DC2626;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;text-align:left;">Remove photo</button>
+          </div>
+        </div>
+        <input type="file" id="product-image-input" accept="image/jpeg,image/png,image/jpg" style="display:none" onchange="onProductImageSelected(this)">
+        <div id="product-image-status" style="display:none;font-size:12px;color:var(--text3);margin-bottom:14px;"></div>
         <button class="btn-primary" onclick="submitProduct()" style="width:100%;justify-content:center;padding:12px;border-radius:10px;">Save product</button>
       </div>
     </div>
@@ -3177,6 +3190,15 @@
         </div>
       </div>
 
+      <div id="orders-hidden-banner" style="display:none;margin-bottom:16px;padding:14px 18px;border-radius:12px;background:linear-gradient(135deg,rgba(79,70,229,0.08),rgba(99,102,241,0.05));border:1px solid rgba(79,70,229,0.25);">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:200px;">
+            <div id="orders-hidden-title" style="font-weight:700;font-size:.92rem;color:var(--text);">You have orders waiting.</div>
+            <div style="font-size:.8rem;color:var(--text2);margin-top:3px;">Subscribe to see them and keep receiving orders.</div>
+          </div>
+          <button type="button" onclick="showPage('billing')" style="padding:9px 18px;border-radius:50px;border:none;background:var(--blue);color:#fff;font-size:.84rem;font-weight:700;cursor:pointer;font-family:inherit;">Upgrade</button>
+        </div>
+      </div>
       <div id="orders-tabs-wrap" style="display:flex;gap:8px;margin-bottom:20px;overflow-x:auto;padding-bottom:4px;"></div>
 
       <div id="orders-list"></div>
@@ -3213,6 +3235,14 @@
           <h1 class="page-title">Account Settings</h1>
           <p class="page-sub">Manage your reminder email preferences</p>
         </div>
+      </div>
+
+      <div id="as-tabs-bar" style="display:flex;gap:8px;overflow-x:auto;margin-bottom:22px;padding-bottom:2px;">
+        <button type="button" data-as="business" onclick="switchAsTab('business')" style="padding:9px 16px;border-radius:50px;border:1.5px solid var(--border);background:var(--bg);color:var(--text2);font-size:.84rem;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;">Business</button>
+        <button type="button" data-as="followups" onclick="switchAsTab('followups')" style="padding:9px 16px;border-radius:50px;border:1.5px solid var(--border);background:var(--bg);color:var(--text2);font-size:.84rem;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;">Follow-ups</button>
+        <button type="button" data-as="ai" onclick="switchAsTab('ai')" style="padding:9px 16px;border-radius:50px;border:1.5px solid var(--border);background:var(--bg);color:var(--text2);font-size:.84rem;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;">AI Messages</button>
+        <button type="button" data-as="preferences" onclick="switchAsTab('preferences')" style="padding:9px 16px;border-radius:50px;border:1.5px solid var(--border);background:var(--bg);color:var(--text2);font-size:.84rem;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;">Preferences</button>
+        <button type="button" data-as="security" onclick="switchAsTab('security')" style="padding:9px 16px;border-radius:50px;border:1.5px solid var(--border);background:var(--bg);color:var(--text2);font-size:.84rem;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;">Security</button>
       </div>
 
       <div
@@ -3317,7 +3347,7 @@
 
       <div
         style="max-width:520px;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:24px;margin-top:16px;">
-        <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:14px;">Follow-up messages</div>
+        <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:14px;">Reasons For Wanting Follow-up messages</div>
         <label class="field-label">New customer message</label>
         <textarea id="settings-followup-new" class="field-input" rows="2" placeholder="Introduce and build relationship"
           style="margin-bottom:14px;resize:vertical;"></textarea>
@@ -4255,6 +4285,94 @@
     }
 
     // ─── PAGE NAV ───
+    // ─── ACCOUNT SETTINGS TABS ───
+    function _tagAccountCards() {
+      const page = document.getElementById('page-account-settings');
+      if (!page) return;
+      Array.from(page.children).forEach(el => {
+        const s = (el.getAttribute && el.getAttribute('style')) || '';
+        if (s.indexOf('max-width:520px') === -1) return;
+        const t = (el.innerText || '').trim();
+        let key = null;
+        if (t.indexOf('Business logo') !== -1) key = 'business';
+        else if (t.indexOf('Preferred currency') !== -1) key = 'business';
+        else if (t.indexOf('Order link') !== -1 && t.indexOf('Customers use this link') !== -1) key = 'business';
+        else if (t.indexOf('Change password') !== -1) key = 'security';
+        else if (t.indexOf('Danger zone') !== -1) key = 'security';
+        else if (t.indexOf('Reminder emails') !== -1 && t.indexOf('Receive birthday reminders') !== -1) key = 'preferences';
+        else if (t.indexOf('Auto-mark customers as Inactive') !== -1) key = 'preferences';
+        else if (t.indexOf('Reasons For Wanting Follow-up messages') !== -1) key = 'followups';
+        else if (t.indexOf('Birthday email message') !== -1) key = 'followups';
+        else if (t.indexOf('Reminder timing') !== -1) key = 'followups';
+        else if (t.indexOf('New customers message') !== -1) key = 'ai';
+        else if (t.indexOf('Active customers message') !== -1) key = 'ai';
+        else if (t.indexOf('Inactive customers message') !== -1) key = 'ai';
+        if (key) el.setAttribute('data-as-section', key);
+      });
+    }
+
+    function switchAsTab(key) {
+      window._asCurrentTab = key;
+      document.querySelectorAll('#as-tabs-bar [data-as]').forEach(btn => {
+        const active = btn.dataset.as === key;
+        btn.style.background = active ? 'var(--blue)' : 'var(--bg)';
+        btn.style.color = active ? '#fff' : 'var(--text2)';
+        btn.style.borderColor = active ? 'var(--blue)' : 'var(--border)';
+      });
+      document.querySelectorAll('#page-account-settings > [data-as-section]').forEach(card => {
+        card.style.display = card.dataset.asSection === key ? '' : 'none';
+      });
+    }
+
+    function _wrapAiCardsAsAccordions() {
+      const page = document.getElementById('page-account-settings');
+      if (!page || window._asAiWrapped) return;
+      const cards = Array.from(page.querySelectorAll('[data-as-section="ai"]'));
+      cards.forEach((card, i) => {
+        const id = 'as-ai-card-' + i;
+        card.setAttribute('id', id);
+
+        // Find the header row (with title + toggle) and add a caret
+        const firstRow = card.querySelector('div');
+        if (firstRow && !firstRow.querySelector('.as-ai-caret')) {
+          const caret = document.createElement('span');
+          caret.className = 'as-ai-caret';
+          caret.innerHTML = '\u25BE';
+          caret.style.cssText = 'margin-left:8px;color:var(--text3);font-size:.9rem;transition:transform .15s;display:inline-block;';
+          firstRow.appendChild(caret);
+        }
+
+        // Wrap everything after the first row in a collapsible body
+        const body = document.createElement('div');
+        body.className = 'as-ai-body';
+        body.style.cssText = 'overflow:hidden;transition:max-height .25s ease;max-height:0;';
+        const siblings = Array.from(card.children).slice(1);
+        siblings.forEach(sib => body.appendChild(sib));
+        card.appendChild(body);
+
+        // Make the header row clickable
+        card.style.cursor = 'pointer';
+        card.addEventListener('click', function (e) {
+          if (e.target.closest('input, textarea, select, button, label')) return;
+          const isOpen = body.style.maxHeight && body.style.maxHeight !== '0px';
+          body.style.maxHeight = isOpen ? '0px' : (body.scrollHeight + 40) + 'px';
+          const c2 = card.querySelector('.as-ai-caret');
+          if (c2) c2.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+        });
+      });
+      window._asAiWrapped = true;
+    }
+
+    function _initAsTabs() {
+      if (!document.getElementById('as-tabs-bar')) return;
+      if (!window._asTagged) {
+        _tagAccountCards();
+        window._asTagged = true;
+      }
+      _wrapAiCardsAsAccordions();
+      switchAsTab(window._asCurrentTab || 'business');
+    }
+
     function showPage(page) {
       if (page === 'add-customer' && atCustomerLimit()) { showLimitReached(); return; }
       document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -4271,7 +4389,7 @@
       if (page === 'sales') renderSalesPage();
       if (page === 'products') renderProductsPage();
       if (page === 'orders') renderOrdersPage();
-      if (page === 'account-settings') { renderAccountSettings(); loadOrderSettings(); }
+      if (page === 'account-settings') { renderAccountSettings(); loadOrderSettings(); _initAsTabs(); }
       if (page === 'billing') renderBilling();
     }
 
@@ -6217,7 +6335,28 @@
     function notifIcon(type) {
       if (type === 'check') return `<div class="notif-icon check"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>`;
       if (type === 'clock') return `<div class="notif-icon clock"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>`;
+      if (type === 'renewal') return `<div class="notif-icon clock"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>`;
       return `<div class="notif-icon cart"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg></div>`;
+    }
+
+    function onOrderNotifClick(id) {
+      const token = localStorage.getItem('authToken');
+      if (id) {
+        fetch(`${API_URL}/api/notifications/mark-all-read`, {
+          method: 'PUT', headers: { 'Authorization': 'Bearer ' + token }
+        }).catch(function(){});
+      }
+      showPage('orders');
+    }
+
+    function onRenewalNotifClick(id) {
+      const token = localStorage.getItem('authToken');
+      if (id) {
+        fetch(`${API_URL}/api/notifications/mark-all-read`, {
+          method: 'PUT', headers: { 'Authorization': 'Bearer ' + token }
+        }).catch(function(){});
+      }
+      showPage('billing');
     }
 
     function renderDashNotifs() {
@@ -6255,7 +6394,7 @@
         if (!items.length) continue;
         html += `<div class="notif-group-label">${group}</div>`;
         html += items.map(n => `
-      <div class="notif-item">
+      <div class="notif-item"${n.type === 'order' ? ' style="cursor:pointer;" onclick="onOrderNotifClick(\'' + n.id + '\')"' : ''}${n.type === 'renewal' ? ' style="cursor:pointer;" onclick="onRenewalNotifClick(\'' + n.id + '\')"' : ''}>
         ${notifIcon(n.type)}
         <div class="notif-body">
           <div class="notif-title">${esc(n.title)}</div>
@@ -6378,10 +6517,20 @@
         const availBadge = available
           ? '<span style="display:inline-block;padding:3px 10px;border-radius:50px;background:rgba(16,185,129,0.12);color:#059669;font-size:.72rem;font-weight:600;">Available</span>'
           : '<span style="display:inline-block;padding:3px 10px;border-radius:50px;background:rgba(107,114,128,0.12);color:#6b7280;font-size:.72rem;font-weight:600;">Hidden</span>';
-        return `<div style="display:grid;grid-template-columns:36px 2.2fr 1.4fr 1fr 110px 100px;padding:14px 20px;background:${bg};border-top:1px solid var(--border);font-size:.875rem;align-items:center;gap:10px;">
+        const thumb = p.image_key
+          ? `<img src="/api/public/product-image/${esc(p.image_key)}" alt="" style="width:40px;height:40px;border-radius:10px;object-fit:cover;flex-shrink:0;background:var(--bg2);">`
+          : `<span style="width:40px;height:40px;border-radius:10px;background:var(--bg2);flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;font-size:14px;color:var(--text3);font-weight:700;">${esc((p.name||'?').charAt(0).toUpperCase())}</span>`;
+        const nameCell = '<span style="display:flex;align-items:center;gap:12px;min-width:0;">'
+          + thumb
+          + '<span style="min-width:0;">'
+          +   '<span style="display:block;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(p.name) + '</span>'
+          +   (p.category ? '<span style="display:block;font-size:.74rem;color:var(--text3);margin-top:2px;">' + esc(p.category) + '</span>' : '')
+          + '</span>'
+          + '</span>';
+        return `<div style="display:grid;grid-template-columns:36px minmax(180px,2fr) 140px 110px 110px 90px;padding:14px 20px;background:${bg};border-top:1px solid var(--border);font-size:.875rem;align-items:center;gap:14px;">
           <span><input type="checkbox" class="product-row-check" data-id="${p.id}"${productSelection.has(String(p.id)) ? ' checked' : ''} onchange="toggleProductSelection('${p.id}', this.checked)" style="width:15px;height:15px;cursor:pointer;accent-color:#4F46E5;"></span>
-          <span style="font-weight:600;color:var(--text);">${esc(p.name)}${p.category ? ` <span style="color:var(--text3);font-weight:400;font-size:.75rem;">\u00b7 ${esc(p.category)}</span>` : ''}</span>
-          <span style="font-weight:700;color:var(--green);">${priceLabel}</span>
+          ${nameCell}
+          <span style="font-weight:700;color:var(--green);white-space:nowrap;">${priceLabel}</span>
           <span>${availBadge}</span>
           <button type="button" onclick="toggleProductAvailability('${p.id}')" style="padding:6px 10px;font-size:.75rem;border-radius:8px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);cursor:pointer;font-family:inherit;font-weight:600;">${available ? 'Hide today' : 'Show today'}</button>
           <div style="display:flex;gap:6px;">
@@ -6404,7 +6553,27 @@
       document.getElementById('product-unit').value = '';
       document.getElementById('product-category').value = '';
       document.getElementById('product-available').checked = true;
+      _resetProductImageUI(null);
       openModal('product-modal');
+    }
+
+    function _resetProductImageUI(imageKey) {
+      const img = document.getElementById('product-image-img');
+      const ph = document.getElementById('product-image-placeholder');
+      const rm = document.getElementById('product-image-remove');
+      const st = document.getElementById('product-image-status');
+      if (st) { st.style.display = 'none'; st.textContent = ''; }
+      if (imageKey) {
+        img.src = '/api/public/product-image/' + encodeURIComponent(imageKey);
+        img.style.display = 'block';
+        ph.style.display = 'none';
+        if (rm) rm.style.display = 'block';
+      } else {
+        img.removeAttribute('src');
+        img.style.display = 'none';
+        ph.style.display = 'block';
+        if (rm) rm.style.display = 'none';
+      }
     }
 
     function openProductEditModal(id) {
@@ -6417,6 +6586,7 @@
       document.getElementById('product-unit').value = p.unit_label || '';
       document.getElementById('product-category').value = p.category || '';
       document.getElementById('product-available').checked = p.is_available_today !== false;
+      _resetProductImageUI(p.image_key || null);
       openModal('product-modal');
     }
 
@@ -6446,6 +6616,20 @@
           const body = await r.text().catch(() => '');
           clAlert(`Could not save product (${r.status}). ${body || ''}`.trim(), 'error');
           return;
+        }
+        const saved = await r.json();
+        if (!id && window._pendingProductImage && saved && saved.id) {
+          try {
+            const token2 = localStorage.getItem('authToken');
+            const fd = new FormData();
+            fd.append('file', window._pendingProductImage, 'photo.jpg');
+            await fetch(`${API_URL}/api/products/${saved.id}/image`, {
+              method: 'POST',
+              headers: { 'Authorization': 'Bearer ' + token2 },
+              body: fd,
+            });
+          } catch (e) {}
+          window._pendingProductImage = null;
         }
         closeModal('product-modal');
         await loadProducts();
@@ -6551,6 +6735,127 @@
         }
       };
       inp.click();
+    }
+
+    // --- PRODUCT IMAGE PICKER ---
+    function pickProductImage() {
+      document.getElementById('product-image-input').click();
+    }
+
+    function _setProductImageStatus(msg) {
+      const el = document.getElementById('product-image-status');
+      if (!el) return;
+      if (!msg) { el.style.display = 'none'; return; }
+      el.textContent = msg;
+      el.style.display = 'block';
+    }
+
+    async function compressImage(file, maxDim, quality) {
+      return new Promise(function (resolve, reject) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          const img = new Image();
+          img.onload = function () {
+            let w = img.naturalWidth, h = img.naturalHeight;
+            if (w > h && w > maxDim) { h = Math.round(h * maxDim / w); w = maxDim; }
+            else if (h > maxDim) { w = Math.round(w * maxDim / h); h = maxDim; }
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            canvas.toBlob(function (blob) {
+              if (blob) resolve(blob); else reject(new Error('Could not process image'));
+            }, 'image/jpeg', quality);
+          };
+          img.onerror = function () { reject(new Error('Could not read image')); };
+          img.src = e.target.result;
+        };
+        reader.onerror = function () { reject(new Error('Could not read file')); };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function onProductImageSelected(input) {
+      const file = input.files && input.files[0];
+      if (!file) return;
+      const productId = document.getElementById('product-id').value;
+      if (!productId) {
+        _setProductImageStatus('Processing...');
+        try {
+          const blob = await compressImage(file, 1000, 0.82);
+          window._pendingProductImage = blob;
+          const url = URL.createObjectURL(blob);
+          const img = document.getElementById('product-image-img');
+          img.src = url;
+          img.style.display = 'block';
+          document.getElementById('product-image-placeholder').style.display = 'none';
+          document.getElementById('product-image-remove').style.display = 'block';
+          _setProductImageStatus('Photo ready. Will upload when you save.');
+        } catch (e) {
+          _setProductImageStatus('Could not process that image.');
+          clAlert('Could not process that image.', 'error');
+        }
+        input.value = '';
+        return;
+      }
+      _setProductImageStatus('Uploading...');
+      try {
+        const blob = await compressImage(file, 1000, 0.82);
+        const token = localStorage.getItem('authToken');
+        const fd = new FormData();
+        fd.append('file', blob, 'photo.jpg');
+        const r = await fetch(`${API_URL}/api/products/${productId}/image`, {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + token },
+          body: fd,
+        });
+        if (!r.ok) {
+          const body = await r.text().catch(function(){ return ''; });
+          _setProductImageStatus('Upload failed.');
+          clAlert(`Could not upload photo (${r.status}). ${body || ''}`.trim(), 'error');
+          input.value = '';
+          return;
+        }
+        const updated = await r.json();
+        const idx = products.findIndex(x => String(x.id) === String(productId));
+        if (idx >= 0) products[idx] = updated;
+        _setProductImageStatus('Photo updated.');
+        setTimeout(function () { _setProductImageStatus(''); }, 1800);
+      } catch (e) {
+        _setProductImageStatus('Could not process that image.');
+        clAlert('Could not upload photo.', 'error');
+      }
+      input.value = '';
+    }
+
+    async function removeProductImage() {
+      const productId = document.getElementById('product-id').value;
+      if (!productId) {
+        window._pendingProductImage = null;
+        _resetProductImageUI(null);
+        return;
+      }
+      clConfirm({
+        title: 'Remove photo?',
+        body: 'The photo will be removed from this product. This cannot be undone.',
+        confirmLabel: 'Remove',
+        danger: true,
+        onConfirm: async function () {
+          const token = localStorage.getItem('authToken');
+          const r = await fetch(`${API_URL}/api/products/${productId}/image`, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + token },
+          });
+          if (!r.ok && r.status !== 204) {
+            clAlert(`Could not remove photo (${r.status}).`, 'error');
+            return;
+          }
+          const idx = products.findIndex(x => String(x.id) === String(productId));
+          if (idx >= 0) products[idx].image_key = null;
+          _resetProductImageUI(null);
+          clAlert('Photo removed.', 'success');
+        },
+      });
     }
 
     // ─── PRODUCT MULTI-SELECT ───
@@ -6775,6 +7080,7 @@
         orderState.orders = orderState.orders.concat(d.orders || []);
         orderState.nextCursor = d.next_cursor;
         orderState.hasMore = !!d.has_more;
+        _updateHiddenBanner(d.hidden_count || 0);
       } catch (e) {
         clAlert('Network error while loading orders.', 'error');
       } finally {
@@ -6784,6 +7090,18 @@
     }
 
     function loadMoreOrders() { loadOrders(false); }
+
+    function _updateHiddenBanner(n) {
+      const banner = document.getElementById('orders-hidden-banner');
+      const title = document.getElementById('orders-hidden-title');
+      if (!banner) return;
+      if (n > 0) {
+        if (title) title.textContent = `You have ${n} order${n === 1 ? '' : 's'} waiting.`;
+        banner.style.display = 'block';
+      } else {
+        banner.style.display = 'none';
+      }
+    }
 
     function renderOrderList() {
       const el = document.getElementById('orders-list');

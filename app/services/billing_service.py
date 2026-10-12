@@ -608,3 +608,60 @@ async def process_subscriptions(db: AsyncSession) -> None:
             email_service.send_payment_failed(user.email, name, plan_name, days_left)
             sub.last_payment_reminder_at = now
         await db.commit()
+
+
+async def send_due_renewal_reminders(db: AsyncSession) -> dict:
+    """Once per day, email owners whose paid plan renews in 3 days or 1 day.
+    Idempotent within 20 hours."""
+    from app.models.user import User
+    from app.models.notification import Notification
+    from app.services.email_service import email_service
+
+    now = utcnow()
+    result = await db.execute(
+        select(Subscription).where(
+            Subscription.status == "active",
+            Subscription.plan != FREE_PLAN,
+            Subscription.current_period_end.isnot(None),
+        )
+    )
+    subs = result.scalars().all()
+    sent = 0
+    for sub in subs:
+        if not sub.current_period_end:
+            continue
+        days = (sub.current_period_end - now).days
+        if days not in (1, 3):
+            continue
+        if sub.renewal_reminder_at:
+            hours = (now - sub.renewal_reminder_at).total_seconds() / 3600
+            if hours < 20:
+                continue
+
+        ures = await db.execute(select(User).where(User.id == sub.user_id))
+        user = ures.scalar_one_or_none()
+        if not user or not user.email:
+            continue
+
+        plan_name = PLANS[sub.plan]["name"]
+        end_str = sub.current_period_end.strftime("%d %b %Y")
+        ok = email_service.send_renewal_reminder(
+            to_email=user.email,
+            owner_name=user.full_name or "there",
+            plan_name=plan_name,
+            days_left=days,
+            end_date_str=end_str,
+        )
+        if ok:
+            sub.renewal_reminder_at = now
+            plural = "day" if days == 1 else "days"
+            db.add(Notification(
+                user_id=sub.user_id,
+                type="renewal",
+                title=f"Your {plan_name} plan renews in {days} {plural}",
+                names=f"Ends {end_str}. Tap to manage your plan.",
+            ))
+            sent += 1
+
+    await db.commit()
+    return {"sent": sent, "checked": len(subs)}

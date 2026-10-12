@@ -531,5 +531,19 @@ class EmailService:
         )
         return self._send(to_email, "Update the card for your Careloop plan", html)
 
+    def send_renewal_reminder(self, to_email: str, owner_name: str, plan_name: str, days_left: int, end_date_str: str, base_url: str = "https://mycareloop.com.ng") -> bool:
+        plural = "day" if days_left == 1 else "days"
+        html = self._render_account_notice(
+            "Plan renewal",
+            f"Your {plan_name} plan renews in {days_left} {plural}",
+            owner_name,
+            f"Your {plan_name} plan on Careloop is due in {days_left} {plural} (on {end_date_str}). "
+            "If your card is up to date, it will renew automatically. "
+            "If you've cancelled, your account will move to the Free plan when the period ends.",
+            "Manage plan",
+            f"{base_url}/dashboard?page=billing",
+        )
+        return self._send(to_email, f"Your {plan_name} plan renews in {days_left} {plural}", html)
+
 # Create a singleton instance
 email_service = EmailService()

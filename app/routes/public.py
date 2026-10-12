@@ -1,6 +1,7 @@
 import json
 from decimal import Decimal
 from fastapi import Depends, File, Form, HTTPException, Request, UploadFile
+from fastapi.responses import Response
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -61,6 +62,7 @@ async def get_public_business(
                 "unit_label": p.unit_label,
                 "category": p.category,
                 "image_key": p.image_key,
+                "image_url": (f"/api/public/product-image/{p.image_key}" if p.image_key else None),
                 "is_available_today": bool(p.is_available_today),
             }
             for p in products
@@ -229,6 +231,19 @@ async def submit_public_order(
     for od in order_items_data:
         db.add(OrderItem(order_id=order.id, **od))
 
+    # Notify the owner: new order
+    from app.models.notification import Notification
+    currency = user.preferred_currency or "USD"
+    item_count = len(order_items_data)
+    unit = "item" if item_count == 1 else "items"
+    delivery_word = "Delivery" if delivery_type == "delivery" else "Pickup"
+    db.add(Notification(
+        user_id=user.id,
+        type="order",
+        title=f"New order from {name}",
+        names=f"{item_count} {unit} \u00b7 {delivery_word} \u00b7 {subtotal:.2f} {currency}",
+    ))
+
     await db.commit()
     return {"success": True, "order_id": order.id}
 
@@ -258,3 +273,19 @@ async def request_receipt_upload_url(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     return {"upload_url": url, "key": key, "expires_in": 600}
+
+
+@public_router.get("/product-image/{key}")
+async def serve_product_image(
+    request: Request,
+    key: str,
+):
+    """Public image serving. No auth — these are product photos on the
+    public order page. Key is a random 24-char token; guessing is impractical."""
+    from app.services.storage import read_product_image
+    data, mime = read_product_image(key)
+    if data is None:
+        raise HTTPException(status_code=404, detail="Image not found")
+    return Response(content=data, media_type=mime, headers={
+        "Cache-Control": "public, max-age=86400, immutable",
+    })

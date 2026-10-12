@@ -25,6 +25,8 @@ class Subscription(Base):
     current_period_end: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     payment_failed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     last_payment_reminder_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    # Last time a pre-renewal reminder was sent (3-day or 1-day out).
+    renewal_reminder_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
     paystack_customer_code: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     paystack_authorization_code: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)

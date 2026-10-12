@@ -47,8 +47,12 @@ class ProductController:
         p = result.scalar_one_or_none()
         if not p:
             raise HTTPException(status_code=404, detail="Product not found")
+        old_key = p.image_key
         await db.delete(p)
         await db.commit()
+        if old_key:
+            from app.services.storage import delete_product_image
+            delete_product_image(old_key)
 
     @staticmethod
     async def toggle_available(db: AsyncSession, user_id: int, product_id: int):

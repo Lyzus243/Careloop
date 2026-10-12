@@ -81,6 +81,31 @@ app.add_middleware(
 app.state.limiter = limiter
 add_rate_limit_exception_handler(app)
 
+import asyncio as _asyncio
+from datetime import timedelta as _td
+
+
+async def _renewal_reminder_loop():
+    """Runs once per day. Never lets an error kill the loop."""
+    # Small delay so the app finishes startup before we do DB work
+    await _asyncio.sleep(30)
+    while True:
+        try:
+            from app.database import AsyncSessionLocal
+            from app.services.billing_service import send_due_renewal_reminders
+            async with AsyncSessionLocal() as db:
+                result = await send_due_renewal_reminders(db)
+                print(f"[renewal-reminders] {result}")
+        except Exception as e:
+            print(f"[renewal-reminders] error: {e}")
+        await _asyncio.sleep(_td(hours=24).total_seconds())
+
+
+@app.on_event("startup")
+async def _start_renewal_reminder_loop():
+    _asyncio.create_task(_renewal_reminder_loop())
+
+
 main_router = APIRouter()
 
 @main_router.get("/", response_class=HTMLResponse)

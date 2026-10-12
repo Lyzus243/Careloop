@@ -180,3 +180,82 @@ def presigned_download_url(key: str, ttl: int = 900) -> str | None:
 
 def backend_name() -> str:
     return STORAGE_BACKEND
+
+
+# ──────────────────────────────────────────────────────────────────
+# Product images
+# ──────────────────────────────────────────────────────────────────
+
+import re as _re
+
+PRODUCT_IMAGE_MAX_BYTES = 2 * 1024 * 1024
+_KEY_RE = _re.compile(r"^[A-Za-z0-9_\-]{16,64}\.(jpg|jpeg|png)$")
+_S3_PREFIX = "products/"
+_LOCAL_SUBDIR = "product_images"
+
+
+def _safe_product_key(key):
+    if not key or "/" in key or "\\" in key or ".." in key:
+        return None
+    if not _KEY_RE.match(key):
+        return None
+    return key
+
+
+def _ext_of(filename):
+    return os.path.splitext(filename or "")[1].lower()
+
+
+def save_product_image(filename: str, data: bytes) -> str:
+    """Store a product image and return its key (bare token.ext, no prefix)."""
+    ext = _ext_of(filename)
+    if ext not in ALLOWED_EXT:
+        raise ValueError("Image must be a JPG or PNG")
+    if len(data) > PRODUCT_IMAGE_MAX_BYTES:
+        raise ValueError("Image must be 2MB or smaller")
+    key = secrets.token_urlsafe(20).replace("-", "").replace("_", "")[:24] + ext
+    if STORAGE_BACKEND == "s3":
+        mime = mimetypes.types_map.get(ext, "image/jpeg")
+        _s3().put_object(Bucket=S3_BUCKET, Key=_S3_PREFIX + key, Body=data, ContentType=mime)
+    else:
+        d = os.path.join(RECEIPTS_DIR, _LOCAL_SUBDIR)
+        os.makedirs(d, exist_ok=True)
+        with open(os.path.join(d, key), "wb") as f:
+            f.write(data)
+    return key
+
+
+def read_product_image(key: str):
+    """Return (bytes, content_type) or (None, None)."""
+    k = _safe_product_key(key)
+    if not k:
+        return None, None
+    ext = _ext_of(k)
+    mime = mimetypes.types_map.get(ext, "image/jpeg")
+    if STORAGE_BACKEND == "s3":
+        try:
+            r = _s3().get_object(Bucket=S3_BUCKET, Key=_S3_PREFIX + k)
+            return r["Body"].read(), mime
+        except Exception:
+            return None, None
+    p = os.path.join(RECEIPTS_DIR, _LOCAL_SUBDIR, k)
+    if not os.path.isfile(p):
+        return None, None
+    with open(p, "rb") as f:
+        return f.read(), mime
+
+
+def delete_product_image(key: str) -> None:
+    k = _safe_product_key(key)
+    if not k:
+        return
+    if STORAGE_BACKEND == "s3":
+        try:
+            _s3().delete_object(Bucket=S3_BUCKET, Key=_S3_PREFIX + k)
+        except Exception:
+            pass
+        return
+    p = os.path.join(RECEIPTS_DIR, _LOCAL_SUBDIR, k)
+    if os.path.isfile(p):
+        try: os.remove(p)
+        except OSError: pass

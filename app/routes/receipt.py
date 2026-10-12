@@ -8,6 +8,7 @@ from app.dependencies import get_current_user_id
 from app.models.order import Order, OrderItem
 from app.rate_limit import RateLimitedRouter
 from app.services.storage import presigned_download_url, receipt_path
+from app.services.order_visibility import get_visibility
 
 router = RateLimitedRouter(prefix="/api/orders", tags=["orders"], limit="60/minute")
 
@@ -24,7 +25,22 @@ async def list_orders(
     """Cursor-paginated list, oldest first. after_id=0 starts from the beginning."""
     limit = max(1, min(limit, 100))
 
+    hidden_ids, _limit, _over = await get_visibility(db, user_id)
+
+    # Count hidden orders for the current tab so the UI can show a banner
+    hidden_count = 0
+    if hidden_ids:
+        hq = select(func.count(Order.id)).where(
+            Order.user_id == user_id,
+            Order.customer_id.in_(hidden_ids),
+        )
+        if status:
+            hq = hq.where(Order.status == status)
+        hidden_count = (await db.execute(hq)).scalar_one()
+
     q = select(Order).where(Order.user_id == user_id, Order.id > after_id)
+    if hidden_ids:
+        q = q.where(Order.customer_id.notin_(hidden_ids))
     if status:
         q = q.where(Order.status == status)
     q = q.order_by(Order.id.asc()).limit(limit + 1)
@@ -60,6 +76,7 @@ async def list_orders(
         ],
         "next_cursor": rows[-1].id if rows else None,
         "has_more": has_more,
+        "hidden_count": hidden_count,
     }
 
 
@@ -69,12 +86,13 @@ async def pending_order_count(
     user_id: int = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(
-        select(func.count(Order.id)).where(
-            Order.user_id == user_id, Order.status == "pending"
-        )
+    hidden_ids, _limit, _over = await get_visibility(db, user_id)
+    q = select(func.count(Order.id)).where(
+        Order.user_id == user_id, Order.status == "pending"
     )
-    return {"count": result.scalar_one()}
+    if hidden_ids:
+        q = q.where(Order.customer_id.notin_(hidden_ids))
+    return {"count": (await db.execute(q)).scalar_one()}
 
 
 @router.get("/{order_id}")
