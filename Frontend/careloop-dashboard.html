@@ -2983,6 +2983,10 @@
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
       <span>Products</span>
     </button>
+    <button class="nav-item" id="nav-orders" onclick="showPage('orders')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      <span>Orders <span id="orders-nav-badge" style="display:none;background:#DC2626;color:#fff;font-size:10px;font-weight:700;padding:1px 7px;border-radius:50px;margin-left:4px;vertical-align:middle;line-height:1.5;">0</span></span>
+    </button>
     <button class="nav-item" id="nav-add" onclick="showPage('add-customer')">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
         <line x1="12" y1="5" x2="12" y2="19" />
@@ -3162,6 +3166,41 @@
           Available today
         </label>
         <button class="btn-primary" onclick="submitProduct()" style="width:100%;justify-content:center;padding:12px;border-radius:10px;">Save product</button>
+      </div>
+    </div>
+
+    <div class="page" id="page-orders">
+      <div class="page-top">
+        <div>
+          <h1 class="page-title">Orders</h1>
+          <p class="page-sub">Oldest first — serve the first customer first.</p>
+        </div>
+      </div>
+
+      <div id="orders-tabs-wrap" style="display:flex;gap:8px;margin-bottom:20px;overflow-x:auto;padding-bottom:4px;"></div>
+
+      <div id="orders-list"></div>
+
+      <div id="orders-empty" style="display:none;" class="empty-state">
+        <div class="empty-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+        </div>
+        <div class="empty-title">No orders here yet.</div>
+        <div style="font-size:.85rem;color:var(--text2);margin-top:6px;">Orders from your link will show up here as they come in.</div>
+      </div>
+
+      <div id="orders-loadmore-wrap" style="display:none;text-align:center;padding:20px 0;">
+        <button class="btn-outline" onclick="loadMoreOrders()">Load more</button>
+      </div>
+    </div>
+
+    <div class="modal-backdrop" id="order-detail-modal">
+      <div class="modal-card" style="text-align:left;max-width:520px;max-height:86vh;overflow-y:auto;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+          <h3 style="font-size:1.1rem;font-weight:700;">Order details</h3>
+          <button onclick="closeModal('order-detail-modal')" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--text2);">&times;</button>
+        </div>
+        <div id="order-detail-body"></div>
       </div>
     </div>
 
@@ -4220,10 +4259,10 @@
       if (page === 'add-customer' && atCustomerLimit()) { showLimitReached(); return; }
       document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
       document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-      const labels = { dashboard: 'Dashboard', customers: 'Customers', 'add-customer': 'Add Customer', notifications: 'Notifications', sales: 'Sales', products: 'Products', 'account-settings': 'Account Settings', billing: 'Plan & Billing' };
+      const labels = { dashboard: 'Dashboard', customers: 'Customers', 'add-customer': 'Add Customer', notifications: 'Notifications', sales: 'Sales', products: 'Products', orders: 'Orders', 'account-settings': 'Account Settings', billing: 'Plan & Billing' };
       document.getElementById('header-label').textContent = labels[page] || 'Careloop';
       document.getElementById('page-' + page).classList.add('active');
-      const navMap = { dashboard: 'nav-dashboard', customers: 'nav-customers', 'add-customer': 'nav-add', sales: 'nav-sales', products: 'nav-products', 'account-settings': 'nav-account-settings' };
+      const navMap = { dashboard: 'nav-dashboard', customers: 'nav-customers', 'add-customer': 'nav-add', sales: 'nav-sales', products: 'nav-products', orders: 'nav-orders', 'account-settings': 'nav-account-settings' };
       if (navMap[page]) document.getElementById(navMap[page]).classList.add('active');
       if (page === 'add-customer') renderAddStep();
       if (page === 'notifications') { renderNotifPage(); markAllRead(); }
@@ -4231,6 +4270,7 @@
       if (page === 'dashboard') renderDashboard();
       if (page === 'sales') renderSalesPage();
       if (page === 'products') renderProductsPage();
+      if (page === 'orders') renderOrdersPage();
       if (page === 'account-settings') { renderAccountSettings(); loadOrderSettings(); }
       if (page === 'billing') renderBilling();
     }
@@ -6654,6 +6694,293 @@
       } catch (e) {
         if (inp) { inp.select(); inp.setSelectionRange(0, 99999); }
         clAlert('Could not copy — the link is selected, press Ctrl+C.', 'warning');
+      }
+    }
+
+    // ─── ORDERS PAGE ───
+    const ORDER_TABS = [
+      { key: 'pending',    label: 'Pending payment' },
+      { key: 'paid',       label: 'Paid' },
+      { key: 'on_the_way', label: 'On the way' },
+      { key: 'done',       label: 'Done' },
+    ];
+    const ORDER_STATUS_LABELS = { pending: 'Pending', paid: 'Paid', on_the_way: 'On the way', done: 'Done' };
+    const ORDER_STATUS_COLORS = {
+      pending:    { bg: 'rgba(217,119,6,0.12)',  fg: '#d97706' },
+      paid:       { bg: 'rgba(16,185,129,0.12)', fg: '#059669' },
+      on_the_way: { bg: 'rgba(79,70,229,0.12)',  fg: '#4f46e5' },
+      done:       { bg: 'rgba(107,114,128,0.12)',fg: '#6b7280' },
+    };
+
+    const orderState = {
+      tab: 'pending',
+      orders: [],
+      nextCursor: null,
+      hasMore: false,
+      loading: false,
+      booted: false,
+    };
+
+    function renderOrdersPage() {
+      if (!document.getElementById('page-orders')) return;
+      renderOrderTabs();
+      if (!orderState.booted) {
+        orderState.booted = true;
+        loadOrders(true);
+      } else {
+        renderOrderList();
+      }
+      updateOrdersBadge();
+    }
+
+    function renderOrderTabs() {
+      const el = document.getElementById('orders-tabs-wrap');
+      if (!el) return;
+      el.innerHTML = ORDER_TABS.map(function (t) {
+        const active = orderState.tab === t.key;
+        return '<button type="button" onclick="switchOrderTab(\'' + t.key + '\')" style="padding:8px 16px;border-radius:50px;border:1.5px solid ' + (active ? 'var(--blue)' : 'var(--border)') + ';background:' + (active ? 'var(--blue)' : 'var(--bg)') + ';color:' + (active ? '#fff' : 'var(--text2)') + ';font-size:.82rem;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;">' + esc(t.label) + '</button>';
+      }).join('');
+    }
+
+    function switchOrderTab(key) {
+      if (orderState.tab === key) return;
+      orderState.tab = key;
+      orderState.orders = [];
+      orderState.nextCursor = null;
+      orderState.hasMore = false;
+      renderOrderTabs();
+      loadOrders(true);
+    }
+
+    async function loadOrders(reset) {
+      if (orderState.loading) return;
+      orderState.loading = true;
+      if (reset) {
+        orderState.orders = [];
+        orderState.nextCursor = null;
+        orderState.hasMore = false;
+        renderOrderList();
+      }
+      const token = localStorage.getItem('authToken');
+      try {
+        const params = new URLSearchParams();
+        params.set('status', orderState.tab);
+        params.set('limit', '20');
+        if (orderState.nextCursor) params.set('after_id', String(orderState.nextCursor));
+        const r = await fetch(`${API_URL}/api/orders?${params.toString()}`, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (!r.ok) { clAlert(`Could not load orders (${r.status}).`, 'error'); return; }
+        const d = await r.json();
+        orderState.orders = orderState.orders.concat(d.orders || []);
+        orderState.nextCursor = d.next_cursor;
+        orderState.hasMore = !!d.has_more;
+      } catch (e) {
+        clAlert('Network error while loading orders.', 'error');
+      } finally {
+        orderState.loading = false;
+        renderOrderList();
+      }
+    }
+
+    function loadMoreOrders() { loadOrders(false); }
+
+    function renderOrderList() {
+      const el = document.getElementById('orders-list');
+      const empty = document.getElementById('orders-empty');
+      const more = document.getElementById('orders-loadmore-wrap');
+      if (!el) return;
+      if (!orderState.orders.length) {
+        el.innerHTML = '';
+        if (empty) empty.style.display = orderState.loading ? 'none' : 'block';
+        if (more) more.style.display = 'none';
+        return;
+      }
+      if (empty) empty.style.display = 'none';
+      el.innerHTML = orderState.orders.map(function (o) {
+        const s = ORDER_STATUS_COLORS[o.status] || ORDER_STATUS_COLORS.pending;
+        const lbl = ORDER_STATUS_LABELS[o.status] || o.status;
+        const when = (typeof fmtAgo === 'function' && o.created_at) ? fmtAgo(o.created_at) : (o.created_at ? new Date(o.created_at).toLocaleString() : '');
+        const meta = o.item_count + ' item' + (o.item_count === 1 ? '' : 's') + ' \u00b7 ' + (o.delivery_type === 'delivery' ? 'Delivery' : 'Pickup');
+        return '<div onclick="openOrderDetail(' + o.id + ')" style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:10px;cursor:pointer;">'
+          + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">'
+          +   '<div style="min-width:0;flex:1;">'
+          +     '<div style="font-weight:700;font-size:.95rem;color:var(--text);">' + esc(o.customer_name) + '</div>'
+          +     '<div style="font-size:.78rem;color:var(--text3);margin-top:2px;">' + esc(o.customer_phone) + '</div>'
+          +   '</div>'
+          +   '<span style="display:inline-block;padding:4px 10px;border-radius:50px;background:' + s.bg + ';color:' + s.fg + ';font-size:.7rem;font-weight:700;white-space:nowrap;">' + esc(lbl) + '</span>'
+          + '</div>'
+          + '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;">'
+          +   '<div style="font-size:.8rem;color:var(--text2);">' + esc(meta) + '</div>'
+          +   '<div style="font-weight:800;color:var(--green);font-size:.95rem;">' + formatMoney(o.total, preferredCurrency) + '</div>'
+          + '</div>'
+          + '<div style="font-size:.72rem;color:var(--text3);margin-top:6px;">' + esc(when) + '</div>'
+        + '</div>';
+      }).join('');
+      if (more) more.style.display = orderState.hasMore ? 'block' : 'none';
+    }
+
+    async function updateOrdersBadge() {
+      const badge = document.getElementById('orders-nav-badge');
+      if (!badge) return;
+      const token = localStorage.getItem('authToken');
+      if (!token) return;
+      try {
+        const r = await fetch(`${API_URL}/api/orders/pending-count`, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (!r.ok) return;
+        const d = await r.json();
+        if (d.count > 0) {
+          badge.textContent = d.count > 99 ? '99+' : String(d.count);
+          badge.style.display = 'inline-block';
+        } else {
+          badge.style.display = 'none';
+        }
+      } catch (e) {}
+    }
+
+    async function openOrderDetail(id) {
+      const token = localStorage.getItem('authToken');
+      try {
+        const r = await fetch(`${API_URL}/api/orders/${id}`, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (!r.ok) { clAlert('Could not load order.', 'error'); return; }
+        const d = await r.json();
+        renderOrderDetail(d);
+        openModal('order-detail-modal');
+      } catch (e) {
+        clAlert('Network error while loading order.', 'error');
+      }
+    }
+
+    function renderOrderDetail(o) {
+      const body = document.getElementById('order-detail-body');
+      if (!body) return;
+      const s = ORDER_STATUS_COLORS[o.status] || ORDER_STATUS_COLORS.pending;
+      const lbl = ORDER_STATUS_LABELS[o.status] || o.status;
+      const when = (typeof fmtAgo === 'function' && o.created_at) ? fmtAgo(o.created_at) : (o.created_at ? new Date(o.created_at).toLocaleString() : '');
+
+      let html = '';
+      html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:16px;">'
+        +   '<div>'
+        +     '<div style="font-weight:700;font-size:1rem;color:var(--text);">' + esc(o.customer_name) + '</div>'
+        +     '<div style="font-size:.82rem;color:var(--text2);margin-top:2px;">' + esc(o.customer_phone) + '</div>'
+        +     '<div style="font-size:.72rem;color:var(--text3);margin-top:4px;">' + esc(when) + '</div>'
+        +   '</div>'
+        +   '<span style="display:inline-block;padding:4px 10px;border-radius:50px;background:' + s.bg + ';color:' + s.fg + ';font-size:.7rem;font-weight:700;">' + esc(lbl) + '</span>'
+        + '</div>';
+
+      html += '<div style="font-size:.74rem;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Items</div>';
+      html += '<div style="border:1px solid var(--border);border-radius:10px;padding:8px 14px;margin-bottom:16px;">';
+      (o.items || []).forEach(function (it, i) {
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;' + (i > 0 ? 'border-top:1px solid var(--border);' : '') + '">'
+          +   '<div>'
+          +     '<div style="font-weight:600;font-size:.9rem;color:var(--text);">' + esc(it.product_name) + '</div>'
+          +     '<div style="font-size:.74rem;color:var(--text3);margin-top:2px;">' + formatMoney(it.unit_price, preferredCurrency) + (it.unit_label ? ' \u00b7 ' + esc(it.unit_label) : '') + ' \u00d7 ' + it.quantity + '</div>'
+          +   '</div>'
+          +   '<div style="font-weight:700;color:var(--text);font-size:.9rem;">' + formatMoney(it.line_total, preferredCurrency) + '</div>'
+          + '</div>';
+      });
+      html += '</div>';
+
+      html += '<div style="display:flex;justify-content:space-between;padding:10px 0;border-top:2px solid var(--border);font-weight:800;font-size:1rem;margin-bottom:16px;">'
+        + '<span>Total</span><span style="color:var(--green);">' + formatMoney(o.total, preferredCurrency) + '</span>'
+        + '</div>';
+
+      html += '<div style="font-size:.74rem;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">' + (o.delivery_type === 'delivery' ? 'Delivery address' : 'Pickup') + '</div>';
+      if (o.delivery_type === 'delivery' && o.delivery_address) {
+        html += '<div style="font-size:.88rem;color:var(--text);margin-bottom:16px;line-height:1.5;white-space:pre-line;">' + esc(o.delivery_address) + '</div>';
+      } else {
+        html += '<div style="font-size:.88rem;color:var(--text2);margin-bottom:16px;">Customer will pick up.</div>';
+      }
+
+      if (o.note_to_seller) {
+        html += '<div style="font-size:.74rem;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Note from customer</div>';
+        html += '<div style="background:var(--bg2);border-radius:10px;padding:12px 14px;font-size:.88rem;color:var(--text);line-height:1.5;white-space:pre-line;margin-bottom:16px;">' + esc(o.note_to_seller) + '</div>';
+      }
+
+      html += '<div style="font-size:.74rem;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Payment receipt</div>';
+      if (o.has_receipt) {
+        html += '<div id="order-receipt-wrap" style="margin-bottom:16px;"><div style="width:100%;max-width:220px;border-radius:10px;border:1px solid var(--border);background:var(--bg2);min-height:100px;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:.8rem;">Loading receipt\u2026</div></div>';
+      } else {
+        html += '<div style="color:var(--text2);font-size:.85rem;margin-bottom:16px;">No receipt uploaded.</div>';
+      }
+
+      const canDo = ({ pending: ['paid'], paid: ['on_the_way'], on_the_way: ['done'], done: [] })[o.status] || [];
+      function sbtn(key, label) {
+        const enabled = canDo.indexOf(key) !== -1;
+        const bg = enabled ? 'var(--blue)' : 'var(--bg3)';
+        const fg = enabled ? '#fff' : 'var(--text3)';
+        return '<button type="button" onclick="advanceOrder(' + o.id + ', \'' + key + '\')" ' + (enabled ? '' : 'disabled') + ' style="flex:1;padding:11px 8px;border-radius:10px;border:none;background:' + bg + ';color:' + fg + ';font-size:.82rem;font-weight:700;cursor:' + (enabled ? 'pointer' : 'default') + ';font-family:inherit;">' + esc(label) + '</button>';
+      }
+      html += '<div style="display:flex;gap:6px;margin-top:8px;">'
+        + sbtn('paid', 'Confirm payment')
+        + sbtn('on_the_way', 'On the way')
+        + sbtn('done', 'Mark done')
+        + '</div>';
+
+      body.innerHTML = html;
+      if (o.has_receipt) loadReceiptIntoView(o.id);
+    }
+
+    async function loadReceiptIntoView(orderId) {
+      const wrap = document.getElementById('order-receipt-wrap');
+      if (!wrap) return;
+      const token = localStorage.getItem('authToken');
+      try {
+        const r = await fetch(`${API_URL}/api/orders/${orderId}/receipt`, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (!r.ok) { wrap.innerHTML = '<div style="padding:16px;color:var(--text3);font-size:.82rem;">Receipt could not be loaded.</div>'; return; }
+        const ct = r.headers.get('content-type') || '';
+        let src;
+        if (ct.indexOf('application/json') !== -1) {
+          const d = await r.json();
+          src = d.url;
+        } else {
+          const blob = await r.blob();
+          src = URL.createObjectURL(blob);
+        }
+        wrap.innerHTML = '<a href="' + esc(src) + '" target="_blank" rel="noopener"><img src="' + esc(src) + '" alt="Receipt" style="width:100%;max-width:220px;border-radius:10px;border:1px solid var(--border);display:block;"></a>';
+      } catch (e) {
+        wrap.innerHTML = '<div style="padding:16px;color:var(--text3);font-size:.82rem;">Receipt could not be loaded.</div>';
+      }
+    }
+
+    async function advanceOrder(orderId, newStatus) {
+      const token = localStorage.getItem('authToken');
+      let detail = null;
+      if (newStatus === 'on_the_way') {
+        try {
+          const r = await fetch(`${API_URL}/api/orders/${orderId}`, { headers: { 'Authorization': 'Bearer ' + token } });
+          if (r.ok) detail = await r.json();
+        } catch (e) {}
+        if (detail && detail.customer_phone) {
+          const phone = String(detail.customer_phone).replace(/\D/g, '');
+          const msg = 'Hi ' + detail.customer_name + ', your order is on the way.';
+          if (phone) window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank');
+        }
+      }
+      try {
+        const r = await fetch(`${API_URL}/api/orders/${orderId}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({ status: newStatus }),
+        });
+        if (!r.ok) {
+          const body = await r.text().catch(function(){ return ''; });
+          clAlert('Could not update status (' + r.status + '). ' + body, 'error');
+          return;
+        }
+        closeModal('order-detail-modal');
+        orderState.orders = orderState.orders.filter(function (o) { return o.id !== orderId; });
+        renderOrderList();
+        updateOrdersBadge();
+        clAlert('Status updated.', 'success');
+      } catch (e) {
+        clAlert('Network error while updating status.', 'error');
       }
     }
 

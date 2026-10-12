@@ -5,13 +5,26 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.models.customer import Customer
+from app.models.customer import Customer, CustomerType
 from app.models.order import Order, OrderItem
 from app.models.product import Product
 from app.models.user import User
 from app.services.phone import normalise_phone
 from app.services.storage import save_receipt, presigned_upload_url, presigned_download_url, receipt_path, backend_name
 from app.rate_limit import RateLimitedRouter
+
+from datetime import datetime as _dt
+
+
+def _parse_dob(s):
+    """Parse 'YYYY-MM-DD' into a datetime, or return None if invalid/empty."""
+    if not s:
+        return None
+    try:
+        return _dt.strptime(str(s).strip()[:10], "%Y-%m-%d")
+    except (ValueError, TypeError):
+        return None
+
 
 public_router = RateLimitedRouter(prefix="/api/public", tags=["public"], limit="60/minute")
 
@@ -178,25 +191,23 @@ async def submit_public_order(
         )
         customer = cust_row.scalar_one_or_none()
 
+    parsed_dob = _parse_dob(birthday)
     if customer is None:
         customer = Customer(
             user_id=user.id,
             name=name,
             phone_number=phone,
-            category="new",
+            customer_type=CustomerType.NEW,
         )
-        if birthday:
-            customer.birthday = birthday
+        if parsed_dob:
+            customer.date_of_birth = parsed_dob
         db.add(customer)
         await db.flush()
     else:
         if not customer.name:
             customer.name = name
-        if birthday and not getattr(customer, "birthday", None):
-            try:
-                customer.birthday = birthday
-            except Exception:
-                pass
+        if parsed_dob and not customer.date_of_birth:
+            customer.date_of_birth = parsed_dob
 
     order = Order(
         user_id=user.id,
