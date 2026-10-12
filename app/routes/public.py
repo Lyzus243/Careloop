@@ -10,7 +10,7 @@ from app.models.order import Order, OrderItem
 from app.models.product import Product
 from app.models.user import User
 from app.services.phone import normalise_phone
-from app.services.storage import save_receipt
+from app.services.storage import save_receipt, presigned_upload_url, presigned_download_url, receipt_path, backend_name
 from app.rate_limit import RateLimitedRouter
 
 public_router = RateLimitedRouter(prefix="/api/public", tags=["public"], limit="60/minute")
@@ -65,7 +65,7 @@ async def submit_public_order(
     request: Request,
     slug: str,
     data: str = Form(...),
-    receipt: UploadFile = File(...),
+    receipt: UploadFile = File(None),
     db: AsyncSession = Depends(get_db),
 ):
     """Receive an order from the public page. Rejects if any item is unavailable
@@ -150,12 +150,21 @@ async def submit_public_order(
             "line_total": line,
         })
 
-    # Receipt
-    contents = await receipt.read()
-    try:
-        receipt_key = save_receipt(receipt.filename or "", contents)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    # Receipt: accept either an uploaded file (multipart) or a key from a
+    # prior presigned upload. Exactly one must be provided.
+    receipt_key = (payload.get("receipt_key") or "").strip() or None
+    if receipt_key:
+        # Sanity: must look like one of our keys
+        if not receipt_key.startswith("receipts/") or ".." in receipt_key:
+            raise HTTPException(status_code=400, detail="Invalid receipt reference")
+    elif receipt is not None:
+        contents = await receipt.read()
+        try:
+            receipt_key = save_receipt(receipt.filename or "", contents)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+    else:
+        raise HTTPException(status_code=400, detail="Receipt is required")
 
     # Customer upsert
     cust_row = await db.execute(
@@ -211,3 +220,30 @@ async def submit_public_order(
 
     await db.commit()
     return {"success": True, "order_id": order.id}
+
+
+@public_router.post("/{slug}/receipt-url")
+async def request_receipt_upload_url(
+    request: Request,
+    slug: str,
+    data: dict,
+    db: AsyncSession = Depends(get_db),
+):
+    """Return a presigned PUT URL so the browser can upload the receipt
+    directly to storage, bypassing the API. Falls back with 501 on the local
+    backend so the client can use multipart upload instead."""
+    result = await db.execute(select(User).where(User.slug == slug))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="Business not found")
+
+    if backend_name() != "s3":
+        raise HTTPException(status_code=501, detail="Presigned uploads not available")
+
+    filename = (data.get("filename") or "").strip()
+    content_type = (data.get("content_type") or "").strip().lower()
+    try:
+        url, key = presigned_upload_url(filename, content_type)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return {"upload_url": url, "key": key, "expires_in": 600}

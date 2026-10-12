@@ -591,12 +591,35 @@
       }),
     };
 
+    var btn = document.getElementById('submit-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Uploading receipt\u2026'; }
+
+    // Try presigned direct upload first; fall back to multipart.
+    var receiptKey = null;
+    try {
+      var urlResp = await fetch('/api/public/' + encodeURIComponent(slug) + '/receipt-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: receiptFile.name, content_type: receiptFile.type }),
+      });
+      if (urlResp.ok) {
+        var urlData = await urlResp.json();
+        var putResp = await fetch(urlData.upload_url, {
+          method: 'PUT',
+          headers: { 'Content-Type': receiptFile.type },
+          body: receiptFile,
+        });
+        if (putResp.ok) receiptKey = urlData.key;
+      }
+    } catch (e) { /* fall through to multipart */ }
+
+    if (receiptKey) payload.receipt_key = receiptKey;
+
     var fd = new FormData();
     fd.append('data', JSON.stringify(payload));
-    fd.append('receipt', receiptFile);
+    if (!receiptKey) fd.append('receipt', receiptFile);
 
-    var btn = document.getElementById('submit-btn');
-    if (btn) { btn.disabled = true; btn.textContent = 'Sending\u2026'; }
+    if (btn) btn.textContent = 'Sending\u2026';
 
     try {
       var r = await fetch('/api/public/' + encodeURIComponent(slug) + '/orders', { method: 'POST', body: fd });

@@ -38,3 +38,4 @@ httpx
 # Excel import/export
 pandas
 openpyxl
+boto3>=1.34

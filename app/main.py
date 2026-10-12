@@ -9,7 +9,7 @@ from pydantic import ValidationError
 load_dotenv()
 from app.database import get_db, AsyncSessionLocal
 from app.models import Customer, User, RevokedToken
-from app.routes import auth, user, customer, message, notification, sale, billing, product, public
+from app.routes import auth, user, customer, message, notification, sale, billing, product, public, receipt
 from fastapi import APIRouter
 from app.schemas.user import ResetPasswordRequest
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -216,6 +216,7 @@ app.include_router(sale.router)
 app.include_router(billing.router)
 app.include_router(billing.public_router)
 app.include_router(public.public_router)
+app.include_router(receipt.router)
 
 @app.get("/careloop-signup.html", response_class=HTMLResponse)
 async def serve_signup_page():
