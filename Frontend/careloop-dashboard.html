@@ -3031,6 +3031,16 @@
 
     <!-- DASHBOARD PAGE -->
     <div class="page active" id="page-dashboard">
+      <div id="setup-checklist" style="display:none;background:linear-gradient(135deg,rgba(79,70,229,0.06),rgba(99,102,241,0.04));border:1px solid rgba(79,70,229,0.2);border-radius:14px;padding:20px 22px;margin-bottom:22px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px;">
+          <div>
+            <div style="font-size:1rem;font-weight:700;color:var(--text);">Get your order link ready</div>
+            <div style="font-size:.84rem;color:var(--text2);margin-top:3px;">Three quick steps to start receiving orders.</div>
+          </div>
+          <button type="button" onclick="document.getElementById('setup-checklist').style.display='none';localStorage.setItem('cl_hide_checklist','1');" title="Dismiss" style="background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:2px 4px;line-height:1;">&times;</button>
+        </div>
+        <div id="setup-checklist-items"></div>
+      </div>
       <div class="page-top">
         <div>
           <h1 class="page-title" id="dash-greeting" style="display:flex;align-items:center;gap:10px;">Good Morning</h1>
@@ -3105,6 +3115,13 @@
         </div>
         <div class="action-row">
           <button class="btn-primary" onclick="openProductAddModal()">+ Add product</button>
+          <button class="btn-outline" onclick="openBulkPasteModal()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 7V5a2 2 0 012-2h2"/><path d="M4 17v2a2 2 0 002 2h2"/><path d="M16 3h2a2 2 0 012 2v2"/><path d="M16 21h2a2 2 0 002-2v-2"/>
+              <line x1="8" y1="12" x2="16" y2="12"/>
+            </svg>
+            Bulk paste
+          </button>
           <button class="btn-outline" onclick="openProductsImportPicker()">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
@@ -3143,6 +3160,51 @@
         <div id="products-import-errors-list" style="font-size:12.5px;color:#78350f;line-height:1.6;max-height:220px;overflow-y:auto;"></div>
         <button type="button" onclick="document.getElementById('products-import-errors').style.display='none'"
           style="margin-top:10px;background:none;border:none;color:#92400e;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;text-decoration:underline;">Dismiss</button>
+      </div>
+    </div>
+
+    <div class="modal-backdrop" id="bulk-paste-modal">
+      <div class="modal-card" style="text-align:left;max-width:560px;max-height:88vh;overflow-y:auto;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <h3 style="font-size:1.1rem;font-weight:700;">Bulk paste products</h3>
+          <button onclick="closeModal('bulk-paste-modal')" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--text2);">&times;</button>
+        </div>
+
+        <div id="bulk-paste-step1">
+          <p style="font-size:13px;color:var(--text2);line-height:1.5;margin:0 0 14px;">
+            Paste one product per line. Format: <strong>Name price</strong> — e.g. <code style="background:var(--bg2);padding:1px 5px;border-radius:4px;">Jollof rice 1500</code>. Commas, pipes and dashes also work.
+          </p>
+          <textarea id="bulk-paste-textarea" class="field-input" rows="9" placeholder="Jollof rice 1500&#10;Fried rice, 1500&#10;Efo riro | 1800&#10;Pounded yam - 1200" style="width:100%;font-family:ui-monospace,monospace;font-size:13px;resize:vertical;margin-bottom:14px;"></textarea>
+
+          <div style="display:flex;gap:12px;margin-bottom:14px;">
+            <div style="flex:1;">
+              <label class="field-label">Category (all rows)</label>
+              <input type="text" id="bulk-paste-category" class="field-input" placeholder="e.g. Food">
+            </div>
+            <div style="flex:1;">
+              <label class="field-label">Unit label (all rows)</label>
+              <input type="text" id="bulk-paste-unit" class="field-input" placeholder="e.g. per plate">
+            </div>
+          </div>
+
+          <button class="btn-primary" onclick="reviewBulkPaste()" style="width:100%;justify-content:center;padding:12px;border-radius:10px;">Review</button>
+        </div>
+
+        <div id="bulk-paste-step2" style="display:none;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <div style="font-size:.82rem;color:var(--text2);"><span id="bulk-paste-ready-count">0</span> ready · <span id="bulk-paste-error-count">0</span> unreadable</div>
+            <button type="button" onclick="backToBulkPasteEdit()" style="background:none;border:none;color:var(--blue);font-size:.82rem;font-weight:600;cursor:pointer;font-family:inherit;">← Edit</button>
+          </div>
+
+          <div id="bulk-paste-errors" style="display:none;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.35);border-radius:10px;padding:12px 14px;margin-bottom:12px;">
+            <div style="font-size:12.5px;font-weight:600;color:#92400e;margin-bottom:6px;">These lines couldn't be read:</div>
+            <div id="bulk-paste-errors-list" style="font-size:12px;color:#78350f;line-height:1.6;max-height:120px;overflow-y:auto;font-family:ui-monospace,monospace;"></div>
+          </div>
+
+          <div id="bulk-paste-preview" style="border:1px solid var(--border);border-radius:10px;overflow:hidden;max-height:280px;overflow-y:auto;margin-bottom:14px;"></div>
+
+          <button id="bulk-paste-save-btn" class="btn-primary" onclick="submitBulkPaste()" style="width:100%;justify-content:center;padding:12px;border-radius:10px;">Save all</button>
+        </div>
       </div>
     </div>
 
@@ -5458,7 +5520,42 @@
     }
 
     // ─── DASHBOARD ───
+    // --- SETUP CHECKLIST ---
+    function renderSetupChecklist() {
+      const box = document.getElementById('setup-checklist');
+      if (!box) return;
+      if (localStorage.getItem('cl_hide_checklist') === '1') { box.style.display = 'none'; return; }
+
+      const hasProducts = Array.isArray(products) && products.length > 0;
+      const hasBank = !!(currentUser && currentUser.bank_name && currentUser.bank_account_number);
+      const hasSlug = !!(currentUser && currentUser.slug);
+
+      const steps = [
+        { key: 'products', done: hasProducts, label: 'Add your first product', action: "showPage('products')", actionLabel: hasProducts ? 'View' : 'Add product' },
+        { key: 'bank', done: hasBank, label: 'Add your bank details', action: "showPage('account-settings');setTimeout(function(){switchAsTab('business');},100);", actionLabel: hasBank ? 'View' : 'Add details' },
+        { key: 'slug', done: hasSlug, label: 'Share your order link with customers', action: "showPage('account-settings');setTimeout(function(){switchAsTab('business');},100);", actionLabel: 'Open link' },
+      ];
+      const allDone = steps.every(s => s.done);
+      if (allDone) {
+        box.style.display = 'none';
+        return;
+      }
+      box.style.display = 'block';
+      document.getElementById('setup-checklist-items').innerHTML = steps.map((s, i) => `
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 0;${i > 0 ? 'border-top:1px solid rgba(79,70,229,0.15);' : ''}">
+          <span style="width:22px;height:22px;border-radius:50%;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;
+            background:${s.done ? 'rgba(16,185,129,0.15)' : 'rgba(79,70,229,0.12)'};
+            color:${s.done ? '#059669' : 'var(--blue)'};">
+            ${s.done ? '\u2713' : (i + 1)}
+          </span>
+          <span style="flex:1;font-size:.9rem;font-weight:${s.done ? '400' : '600'};color:${s.done ? 'var(--text3)' : 'var(--text)'};${s.done ? 'text-decoration:line-through;' : ''}">${esc(s.label)}</span>
+          ${s.done ? '' : `<button type="button" onclick="${s.action}" style="padding:7px 14px;border-radius:50px;border:none;background:var(--blue);color:#fff;font-size:.8rem;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;">${esc(s.actionLabel)}</button>`}
+        </div>
+      `).join('');
+    }
+
     function renderDashboard() {
+      try { renderSetupChecklist(); } catch (e) {}
       buildFollowups();
       const due = followups.filter(f => f.status === 'due');
       const overdue = followups.filter(f => f.status === 'overdue');
@@ -6774,6 +6871,118 @@
         }
       };
       inp.click();
+    }
+
+    // --- BULK PASTE ---
+    let _bulkPasteParsed = { ready: [], errors: [] };
+
+    function openBulkPasteModal() {
+      document.getElementById('bulk-paste-textarea').value = '';
+      document.getElementById('bulk-paste-category').value = '';
+      document.getElementById('bulk-paste-unit').value = '';
+      document.getElementById('bulk-paste-step1').style.display = '';
+      document.getElementById('bulk-paste-step2').style.display = 'none';
+      openModal('bulk-paste-modal');
+    }
+
+    function _parseBulkLine(line) {
+      const s = line.trim();
+      if (!s) return null;
+      // Try: <name> <sep> <price>  — sep can be spaces, comma, pipe, dash, equals
+      const m = s.match(/^(.+?)[\s,|=\-]+(?:NGN|N|₦|\$)?\s*(\d+(?:[.,]\d{1,2})?)$/i);
+      if (!m) return null;
+      const name = m[1].trim().replace(/[,|=\-]\s*$/, '').trim();
+      const priceStr = m[2].replace(',', '.');
+      const price = parseFloat(priceStr);
+      if (!name || !isFinite(price) || price < 0) return null;
+      return { name: name, price: price };
+    }
+
+    function reviewBulkPaste() {
+      const text = document.getElementById('bulk-paste-textarea').value || '';
+      const lines = text.split('\n');
+      const ready = [];
+      const errors = [];
+      lines.forEach((line, i) => {
+        if (!line.trim()) return;
+        const p = _parseBulkLine(line);
+        if (p) ready.push(p);
+        else errors.push('Line ' + (i + 1) + ': ' + line.trim());
+      });
+      _bulkPasteParsed = { ready: ready, errors: errors };
+
+      document.getElementById('bulk-paste-ready-count').textContent = ready.length;
+      document.getElementById('bulk-paste-error-count').textContent = errors.length;
+      document.getElementById('bulk-paste-errors').style.display = errors.length ? 'block' : 'none';
+      document.getElementById('bulk-paste-errors-list').innerHTML = errors.map(e => esc(e)).join('<br>');
+
+      const preview = document.getElementById('bulk-paste-preview');
+      if (ready.length) {
+        preview.innerHTML = ready.map((r, i) => `
+          <div style="display:grid;grid-template-columns:1fr 110px;padding:9px 14px;background:${i % 2 === 0 ? 'var(--bg)' : 'var(--bg2)'};border-top:${i > 0 ? '1px solid var(--border)' : 'none'};font-size:.85rem;align-items:center;">
+            <span style="font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(r.name)}</span>
+            <span style="text-align:right;font-weight:700;color:var(--green);">${formatMoney(r.price, preferredCurrency)}</span>
+          </div>`).join('');
+      } else {
+        preview.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text2);font-size:.85rem;">No readable lines. Add name and price on each line.</div>';
+      }
+
+      const btn = document.getElementById('bulk-paste-save-btn');
+      btn.disabled = ready.length === 0;
+      btn.style.opacity = ready.length === 0 ? '0.5' : '1';
+
+      document.getElementById('bulk-paste-step1').style.display = 'none';
+      document.getElementById('bulk-paste-step2').style.display = '';
+    }
+
+    function backToBulkPasteEdit() {
+      document.getElementById('bulk-paste-step1').style.display = '';
+      document.getElementById('bulk-paste-step2').style.display = 'none';
+    }
+
+    async function submitBulkPaste() {
+      const ready = _bulkPasteParsed.ready;
+      if (!ready.length) return;
+      const category = document.getElementById('bulk-paste-category').value.trim() || null;
+      const unit = document.getElementById('bulk-paste-unit').value.trim() || null;
+      const payload = {
+        items: ready.map(r => ({
+          name: r.name,
+          price: r.price,
+          unit_label: unit,
+          category: category,
+          is_available_today: true,
+        })),
+      };
+      const btn = document.getElementById('bulk-paste-save-btn');
+      btn.disabled = true;
+      btn.textContent = 'Saving...';
+      const token = localStorage.getItem('authToken');
+      try {
+        const resp = await fetch(`${API_URL}/api/products/bulk-paste`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify(payload),
+        });
+        if (!resp.ok) {
+          const body = await resp.json().catch(() => ({}));
+          const detail = body.detail;
+          const msg = (detail && detail.message) || (typeof detail === 'string' ? detail : 'Could not save.');
+          clAlert(msg, 'error');
+          btn.disabled = false;
+          btn.textContent = 'Save all';
+          return;
+        }
+        const d = await resp.json();
+        closeModal('bulk-paste-modal');
+        await loadProducts();
+        renderProductsPage();
+        clAlert(`Added ${d.created} product${d.created === 1 ? '' : 's'}.`, 'success');
+      } catch (e) {
+        clAlert('Network error while saving.', 'error');
+        btn.disabled = false;
+        btn.textContent = 'Save all';
+      }
     }
 
     // --- PRODUCT IMAGE PICKER ---

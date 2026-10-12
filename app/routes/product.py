@@ -300,3 +300,64 @@ async def delete_product_image_route(
         p.image_key = None
         await db.commit()
         delete_product_image(key)
+
+
+from pydantic import BaseModel
+from typing import List, Optional
+
+
+class BulkPasteItem(BaseModel):
+    name: str
+    price: float
+    unit_label: Optional[str] = None
+    category: Optional[str] = None
+    is_available_today: bool = True
+
+
+class BulkPasteRequest(BaseModel):
+    items: List[BulkPasteItem]
+
+
+@router.post("/bulk-paste")
+async def bulk_paste_products(
+    request: Request,
+    data: BulkPasteRequest,
+    user_id: int = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db),
+):
+    """Create many products at once from a pasted list. Every row is validated
+    server-side before any are saved; a single bad row rejects the batch."""
+    if not data.items:
+        raise HTTPException(status_code=400, detail="No items to save")
+    if len(data.items) > 500:
+        raise HTTPException(status_code=400, detail="Maximum 500 items per paste")
+
+    errors = []
+    objs = []
+    for i, it in enumerate(data.items, 1):
+        name = (it.name or "").strip()
+        if not name:
+            errors.append(f"Row {i}: name is required")
+            continue
+        if len(name) > 200:
+            errors.append(f"Row {i}: name is too long (max 200 characters)")
+            continue
+        if it.price is None or it.price < 0:
+            errors.append(f"Row {i}: price must be a non-negative number")
+            continue
+
+        objs.append(Product(
+            user_id=user_id,
+            name=name,
+            price=it.price,
+            unit_label=(it.unit_label or "").strip()[:60] or None,
+            category=(it.category or "").strip()[:60] or None,
+            is_available_today=bool(it.is_available_today),
+        ))
+
+    if errors:
+        raise HTTPException(status_code=400, detail={"message": "Some rows are invalid", "errors": errors})
+
+    db.add_all(objs)
+    await db.commit()
+    return {"success": True, "created": len(objs)}
