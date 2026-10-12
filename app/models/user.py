@@ -57,3 +57,10 @@ class User(Base):
     ai_message_inactive_personalize = Column(Boolean, default=True, nullable=False)
     ai_message_inactive_rotation_index = Column(Integer, default=0, nullable=False)
     auto_inactive_days = Column(Integer, nullable=True)
+
+    # Order link (Phase 1)
+    slug = Column(String(80), unique=True, index=True, nullable=True)
+    bank_name = Column(String(120), nullable=True)
+    bank_account_number = Column(String(40), nullable=True)
+    bank_account_name = Column(String(120), nullable=True)
+    business_type = Column(String(40), nullable=True)

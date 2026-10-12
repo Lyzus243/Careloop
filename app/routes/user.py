@@ -253,3 +253,74 @@ async def accept_email_reminders_consent(
     user.last_consent_prompted_at = datetime.utcnow()
     await db.commit()
     return {"success": True, "email_reminders_consent": True}
+
+BUSINESS_TYPES = {
+    "food_drinks", "bakery_cakes", "fashion_accessories",
+    "beauty_hair", "provisions_groceries", "tailoring_custom", "other",
+}
+
+
+@router.put("/order-settings")
+async def update_order_settings(
+    request: Request,
+    data: dict,
+    user_id: int = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db),
+):
+    """Save bank details and business type for the order link, and ensure a slug."""
+    from sqlalchemy import select
+    from app.models.user import User
+    from app.services.slug import ensure_user_slug
+
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if "bank_name" in data:
+        user.bank_name = (data["bank_name"] or "").strip() or None
+    if "bank_account_number" in data:
+        user.bank_account_number = (data["bank_account_number"] or "").strip() or None
+    if "bank_account_name" in data:
+        user.bank_account_name = (data["bank_account_name"] or "").strip() or None
+    if "business_type" in data:
+        bt = (data["business_type"] or "").strip() or None
+        if bt and bt not in BUSINESS_TYPES:
+            raise HTTPException(status_code=400, detail="Invalid business type")
+        user.business_type = bt
+
+    await db.commit()
+    await db.refresh(user)
+
+    slug = await ensure_user_slug(db, user)
+    return {
+        "success": True,
+        "bank_name": user.bank_name,
+        "bank_account_number": user.bank_account_number,
+        "bank_account_name": user.bank_account_name,
+        "business_type": user.business_type,
+        "slug": slug,
+    }
+
+
+@router.get("/order-link")
+async def get_order_link(
+    request: Request,
+    user_id: int = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db),
+):
+    """Return this user's permanent order-link slug and public URL."""
+    import os as _os
+    from sqlalchemy import select
+    from app.models.user import User
+    from app.services.slug import ensure_user_slug
+
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    slug = await ensure_user_slug(db, user)
+    base = _os.getenv("FRONTEND_URL", "http://localhost:8000").rstrip("/")
+    return {"slug": slug, "url": f"{base}/o/{slug}"}
+

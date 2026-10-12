@@ -36,3 +36,4 @@ careloop.db-wal
 careloop.db-shm
 .env.local
 .vercel/
+receipts/

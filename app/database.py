@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import event
+from sqlalchemy import event, text
 from sqlalchemy.engine import Engine
 
 from app.models.base import Base
@@ -103,10 +103,11 @@ async def get_db() -> AsyncSession:
 
 
 async def init_db():
+    """Connectivity check. Schema is owned by Alembic — run `alembic upgrade head`."""
     try:
         async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
-        print("Database initialized successfully")
+            await conn.execute(text("SELECT 1"))
+        print("Database connection OK")
     except Exception as e:
         print(f"Database initialization error: {e}")
         raise e

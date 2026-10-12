@@ -9,7 +9,7 @@ from pydantic import ValidationError
 load_dotenv()
 from app.database import get_db, AsyncSessionLocal
 from app.models import Customer, User, RevokedToken
-from app.routes import auth, user, customer, message, notification, sale, billing
+from app.routes import auth, user, customer, message, notification, sale, billing, product, public
 from fastapi import APIRouter
 from app.schemas.user import ResetPasswordRequest
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -77,14 +77,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-from app.database import engine
-from app.models.base import Base
-
-@app.on_event("startup")
-async def init_db():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
 
 app.state.limiter = limiter
 add_rate_limit_exception_handler(app)
@@ -155,6 +147,16 @@ async def serve_create_password_page():
     except FileNotFoundError:
         return HTMLResponse(content="<h1>Create password page not found</h1>", status_code=404)
 
+@main_router.get("/o/{slug}", response_class=HTMLResponse)
+async def serve_order_page(slug: str):
+    """Serve the public order page. The slug is read client-side for the API call."""
+    try:
+        with open("Frontend/careloop-order.html", "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+    except FileNotFoundError:
+        return HTMLResponse(content="<h1>Order page not found</h1>", status_code=404)
+
+
 app.mount("/assets", StaticFiles(directory="Frontend/assets"), name="assets")
 app.include_router(main_router)
 app.include_router(auth.router, prefix="/api")
@@ -207,11 +209,13 @@ async def serve_signup_success_page():
 
 app.include_router(user.router, prefix="/api")
 app.include_router(customer.router)
+app.include_router(product.router)
 app.include_router(message.router)
 app.include_router(notification.router)
 app.include_router(sale.router)
 app.include_router(billing.router)
 app.include_router(billing.public_router)
+app.include_router(public.public_router)
 
 @app.get("/careloop-signup.html", response_class=HTMLResponse)
 async def serve_signup_page():

@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Order</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg2: #f9fafb;
+    --bg3: #f3f4f6;
+    --text: #111827;
+    --text2: #6b7280;
+    --text3: #9ca3af;
+    --border: #e5e7eb;
+    --blue: #4f46e5;
+    --green: #059669;
+    --red: #dc2626;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: var(--bg3);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.5;
+    padding-bottom: 40px;
+  }
+  .wrap { max-width: 560px; margin: 0 auto; padding: 0 16px; }
+
+  header { background: var(--bg); border-bottom: 1px solid var(--border); padding: 20px 0; }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand-logo {
+    width: 48px; height: 48px; border-radius: 12px; background: var(--bg3);
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden; flex-shrink: 0; border: 1px solid var(--border);
+    font-size: 20px; font-weight: 700; color: var(--blue);
+  }
+  .brand-logo img { width: 100%; height: 100%; object-fit: cover; }
+  .brand-name { font-size: 1.15rem; font-weight: 700; color: var(--text); margin: 0; }
+  .brand-sub { font-size: .82rem; color: var(--text2); margin-top: 2px; }
+
+  .state { padding: 60px 16px; text-align: center; color: var(--text2); font-size: .9rem; }
+  .state-icon { font-size: 32px; margin-bottom: 12px; }
+
+  .cat-tabs {
+    display: flex; gap: 8px; overflow-x: auto; padding: 16px 0 8px;
+    scrollbar-width: none; -ms-overflow-style: none;
+  }
+  .cat-tabs::-webkit-scrollbar { display: none; }
+  .cat-tab {
+    padding: 7px 16px; border-radius: 50px; border: 1.5px solid var(--border);
+    background: var(--bg); color: var(--text2); font-size: .82rem; font-weight: 600;
+    white-space: nowrap; cursor: pointer; font-family: inherit;
+    transition: all .12s;
+  }
+  .cat-tab.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+
+  .section-label {
+    font-size: .72rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .06em; color: var(--text3); margin: 18px 0 10px;
+  }
+
+  .product {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 12px;
+    padding: 14px 16px; margin-bottom: 10px;
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 14px;
+  }
+  .product.unavailable { opacity: .55; }
+  .product-name { font-weight: 600; font-size: .95rem; color: var(--text); }
+  .product-meta { font-size: .78rem; color: var(--text3); margin-top: 3px; }
+  .product-price { font-weight: 700; color: var(--green); font-size: .95rem; white-space: nowrap; }
+  .unavailable-tag {
+    display: inline-block; font-size: .68rem; font-weight: 600;
+    padding: 2px 8px; border-radius: 50px; background: var(--bg3);
+    color: var(--text3); margin-left: 6px; vertical-align: middle;
+  }
+
+  .bank-card {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 12px;
+    padding: 20px; margin-top: 24px;
+  }
+  .bank-title { font-weight: 700; font-size: .95rem; margin-bottom: 4px; }
+  .bank-sub { font-size: .78rem; color: var(--text2); margin-bottom: 14px; line-height: 1.5; }
+  .bank-row {
+    display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    padding: 10px 0; border-top: 1px solid var(--border);
+  }
+  .bank-label { font-size: .78rem; color: var(--text2); }
+  .bank-value { font-size: .9rem; font-weight: 600; color: var(--text); text-align: right; word-break: break-word; }
+  .copy-btn {
+    background: none; border: 1px solid var(--border); border-radius: 6px;
+    padding: 4px 10px; font-size: .72rem; font-weight: 600; color: var(--blue);
+    cursor: pointer; font-family: inherit; margin-left: 8px; flex-shrink: 0;
+  }
+  .copy-btn:active { background: var(--bg2); }
+
+  .empty-note {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 12px;
+    padding: 24px 16px; text-align: center; color: var(--text2); font-size: .85rem;
+  }
+
+  .foot-note {
+    margin-top: 22px; font-size: .72rem; color: var(--text3);
+    text-align: center; line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="brand">
+      <div class="brand-logo" id="brand-logo">?</div>
+      <div>
+        <h1 class="brand-name" id="brand-name">Loading…</h1>
+        <div class="brand-sub" id="brand-sub">Order from us</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap" id="main">
+  <div class="state" id="loading">
+    <div class="state-icon">⏳</div>
+    Loading the menu…
+  </div>
+  <div class="state" id="error" style="display:none;">
+    <div class="state-icon">🔗</div>
+    <div id="error-msg">This order link is not valid.</div>
+  </div>
+  <div id="content" style="display:none;"></div>
+</main>
+
+<script>
+(function () {
+  var pathParts = window.location.pathname.split('/').filter(Boolean);
+  var slug = decodeURIComponent(pathParts[pathParts.length - 1] || '');
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function money(n) {
+    try { return '₦' + Number(n).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+    catch (e) { return '₦' + Number(n).toFixed(2); }
+  }
+
+  function showError(msg) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('error').style.display = 'block';
+    document.getElementById('error-msg').textContent = msg;
+  }
+
+  function render(data) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('content').style.display = 'block';
+    document.title = data.business_name + ' — Order';
+    document.getElementById('brand-name').textContent = data.business_name;
+    document.getElementById('brand-sub').textContent = 'Order from us';
+
+    var logoEl = document.getElementById('brand-logo');
+    if (data.business_logo) {
+      var initial = (data.business_name || '?').charAt(0).toUpperCase();
+      logoEl.innerHTML = '<img src="' + esc(data.business_logo) + '" alt="" onerror="this.replaceWith(document.createTextNode(\'' + initial + '\'));">';
+    } else {
+      logoEl.textContent = (data.business_name || '?').charAt(0).toUpperCase();
+    }
+
+    var products = data.products || [];
+    var categories = [];
+    products.forEach(function (p) {
+      if (p.category && categories.indexOf(p.category) === -1) categories.push(p.category);
+    });
+    categories.sort();
+
+    var content = document.getElementById('content');
+    var html = '';
+
+    if (!products.length) {
+      html += '<div class="empty-note">This business hasn\'t listed any products yet.<br>Check back soon.</div>';
+    } else {
+      if (categories.length > 1) {
+        html += '<div class="cat-tabs" id="cat-tabs">';
+        html += '<button class="cat-tab active" data-cat="">All</button>';
+        categories.forEach(function (c) {
+          html += '<button class="cat-tab" data-cat="' + esc(c) + '">' + esc(c) + '</button>';
+        });
+        html += '</div>';
+      }
+      html += '<div id="product-list"></div>';
+    }
+
+    var bank = data.bank || {};
+    var hasBank = bank.bank_name || bank.account_number || bank.account_name;
+    if (hasBank) {
+      html += '<div class="bank-card">';
+      html += '<div class="bank-title">How to pay</div>';
+      html += '<div class="bank-sub">Transfer the total to the account below, then send your receipt to the business. Your payment is confirmed manually.</div>';
+      if (bank.bank_name) {
+        html += '<div class="bank-row"><span class="bank-label">Bank</span><span class="bank-value">' + esc(bank.bank_name) + '</span></div>';
+      }
+      if (bank.account_number) {
+        html += '<div class="bank-row"><span class="bank-label">Account number</span><span class="bank-value">' + esc(bank.account_number)
+             + '<button class="copy-btn" data-copy="' + esc(bank.account_number) + '">Copy</button></span></div>';
+      }
+      if (bank.account_name) {
+        html += '<div class="bank-row"><span class="bank-label">Account name</span><span class="bank-value">' + esc(bank.account_name) + '</span></div>';
+      }
+      html += '</div>';
+    }
+
+    html += '<div class="foot-note">Powered by Careloop</div>';
+    content.innerHTML = html;
+
+    // Render products (filtered by current category)
+    var currentCat = '';
+    function paintProducts() {
+      var listEl = document.getElementById('product-list');
+      if (!listEl) return;
+      var filtered = currentCat ? products.filter(function (p) { return p.category === currentCat; }) : products;
+      if (!filtered.length) {
+        listEl.innerHTML = '<div class="empty-note">Nothing in this category right now.</div>';
+        return;
+      }
+      listEl.innerHTML = filtered.map(function (p) {
+        var meta = [];
+        if (p.unit_label) meta.push(p.unit_label);
+        if (p.category) meta.push(p.category);
+        var cls = p.is_available_today ? 'product' : 'product unavailable';
+        var tag = p.is_available_today ? '' : '<span class="unavailable-tag">Unavailable</span>';
+        return '<div class="' + cls + '">'
+          + '<div><div class="product-name">' + esc(p.name) + tag + '</div>'
+          + (meta.length ? '<div class="product-meta">' + esc(meta.join(' · ')) + '</div>' : '')
+          + '</div>'
+          + '<div class="product-price">' + money(p.price) + '</div>'
+          + '</div>';
+      }).join('');
+    }
+    paintProducts();
+
+    // Category tab clicks
+    var tabs = document.getElementById('cat-tabs');
+    if (tabs) {
+      tabs.addEventListener('click', function (e) {
+        var t = e.target.closest('.cat-tab');
+        if (!t) return;
+        tabs.querySelectorAll('.cat-tab').forEach(function (b) { b.classList.remove('active'); });
+        t.classList.add('active');
+        currentCat = t.getAttribute('data-cat') || '';
+        paintProducts();
+      });
+    }
+
+    // Copy buttons
+    content.addEventListener('click', function (e) {
+      var btn = e.target.closest('.copy-btn');
+      if (!btn) return;
+      var text = btn.getAttribute('data-copy') || '';
+      navigator.clipboard.writeText(text).then(function () {
+        var old = btn.textContent;
+        btn.textContent = 'Copied';
+        setTimeout(function () { btn.textContent = old; }, 1400);
+      }).catch(function () {
+        var ta = document.createElement('textarea');
+        ta.value = text; document.body.appendChild(ta); ta.select();
+        try { document.execCommand('copy'); } catch (err) {}
+        document.body.removeChild(ta);
+        btn.textContent = 'Copied';
+        setTimeout(function () { btn.textContent = 'Copy'; }, 1400);
+      });
+    });
+  }
+
+  if (!slug) { showError('This order link is missing a business code.'); return; }
+
+  fetch('/api/public/' + encodeURIComponent(slug), { headers: { 'Accept': 'application/json' } })
+    .then(function (r) {
+      if (r.status === 404) { showError('This order link doesn\'t match any business.'); return null; }
+      if (!r.ok) { showError('Could not load this page. Please try again.'); return null; }
+      return r.json();
+    })
+    .then(function (d) { if (d) render(d); })
+    .catch(function () { showError('Could not load this page. Please check your connection.'); });
+})();
+</script>
+</body>
+</html>
