@@ -2979,6 +2979,10 @@
       </svg>
       Sales
     </button>
+    <button class="nav-item" id="nav-products" onclick="showPage('products')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+      <span>Products</span>
+    </button>
     <button class="nav-item" id="nav-add" onclick="showPage('add-customer')">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
         <line x1="12" y1="5" x2="12" y2="19" />
@@ -3089,6 +3093,78 @@
     </div>
 
     <!-- CUSTOMERS PAGE -->
+    <div class="page" id="page-products">
+      <div class="page-top">
+        <div>
+          <h1 class="page-title">Products</h1>
+          <p class="page-sub" id="products-sub">Add what you sell, then share your order link.</p>
+        </div>
+        <div class="action-row">
+          <button class="btn-primary" onclick="openProductAddModal()">+ Add product</button>
+          <button class="btn-outline" onclick="openProductsImportPicker()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
+            Import from Excel
+          </button>
+          <a href="/assets/careloop_products_import_template.xlsx" download
+            style="font-size:.85rem;font-weight:600;color:var(--blue);text-decoration:underline;align-self:center;">Download
+            template</a>
+        </div>
+      </div>
+
+      <div class="followup-list" id="products-table-wrap">
+        <div style="display:grid;grid-template-columns:36px 2.2fr 1.4fr 1fr 110px 100px;padding:12px 20px;background:var(--bg2);font-size:.78rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;gap:10px;">
+          <span><input type="checkbox" id="products-select-all" onchange="toggleSelectAllProducts(this)" style="width:15px;height:15px;cursor:pointer;accent-color:#4F46E5;"></span><span>Name</span><span>Price</span><span>Availability</span><span></span><span></span>
+        </div>
+        <div id="products-table-body"></div>
+      </div>
+      <div id="products-bulk-bar" style="display:none;padding:10px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;margin-top:12px;justify-content:space-between;align-items:center;gap:10px;">
+        <span id="products-bulk-count" style="font-size:13px;font-weight:600;color:var(--text);">0 selected</span>
+        <button type="button" onclick="deleteSelectedProducts()" style="padding:8px 16px;border-radius:50px;border:none;background:#DC2626;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">Delete selected</button>
+      </div>
+      <div id="products-empty" style="display:none;" class="empty-state">
+        <div class="empty-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3h18v18H3z"/><path d="M3 9h18M9 21V9"/></svg>
+        </div>
+        <div class="empty-title">No products yet.</div>
+        <div style="font-size:.85rem;color:var(--text2);margin-top:6px;margin-bottom:16px;">Add your first product, then share your order link with customers.</div>
+        <button class="btn-primary" onclick="openProductAddModal()">+ Add product</button>
+      </div>
+
+      <div id="products-import-errors" style="display:none;margin-top:16px;padding:14px 18px;border-radius:10px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.35);">
+        <div id="products-import-errors-title" style="font-size:13px;font-weight:600;color:#92400e;margin-bottom:8px;">Some rows were skipped:</div>
+        <div id="products-import-errors-list" style="font-size:12.5px;color:#78350f;line-height:1.6;max-height:220px;overflow-y:auto;"></div>
+        <button type="button" onclick="document.getElementById('products-import-errors').style.display='none'"
+          style="margin-top:10px;background:none;border:none;color:#92400e;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;text-decoration:underline;">Dismiss</button>
+      </div>
+    </div>
+
+    <div class="modal-backdrop" id="product-modal">
+      <div class="modal-card" style="text-align:left;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+          <h3 id="product-modal-title" style="font-size:1.1rem;font-weight:700;">Add product</h3>
+          <button onclick="closeModal('product-modal')" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--text2);">&times;</button>
+        </div>
+        <input type="hidden" id="product-id">
+        <label class="field-label">Name *</label>
+        <input type="text" class="field-input" id="product-name" placeholder="e.g. Jollof rice" style="margin-bottom:14px;">
+        <label class="field-label">Price *</label>
+        <input type="number" class="field-input" id="product-price" placeholder="0.00" step="0.01" min="0" style="margin-bottom:14px;">
+        <label class="field-label">Unit label</label>
+        <input type="text" class="field-input" id="product-unit" placeholder="e.g. per plate, per spoon" style="margin-bottom:14px;">
+        <label class="field-label">Category</label>
+        <input type="text" class="field-input" id="product-category" placeholder="e.g. Food, Drinks" style="margin-bottom:14px;">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--text);cursor:pointer;margin-bottom:20px;">
+          <input type="checkbox" id="product-available" checked style="width:15px;height:15px;cursor:pointer;accent-color:#4F46E5;">
+          Available today
+        </label>
+        <button class="btn-primary" onclick="submitProduct()" style="width:100%;justify-content:center;padding:12px;border-radius:10px;">Save product</button>
+      </div>
+    </div>
+
     <div class="page" id="page-account-settings">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
         <img class="brand-logo" src="/assets/primary_logo.png" alt="Careloop" style="height:24px;width:auto;">
@@ -3144,6 +3220,45 @@
           <option value="EUR">EUR - Euro</option>
           <option value="GBP">GBP - British Pound</option>
         </select>
+      </div>
+
+      <div
+        style="max-width:520px;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:24px;margin-top:16px;">
+        <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:6px;">Order link</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:16px;">Customers use this link to see your products, pay by bank transfer, and send you an order.</div>
+        <label class="field-label">Bank name</label>
+        <input type="text" class="field-input" id="os-bank-name" placeholder="e.g. GTBank" style="margin-bottom:14px;">
+        <label class="field-label">Account number</label>
+        <input type="text" class="field-input" id="os-bank-account-number" placeholder="e.g. 0123456789" style="margin-bottom:14px;">
+        <label class="field-label">Account name</label>
+        <input type="text" class="field-input" id="os-bank-account-name" placeholder="e.g. Funmi Ade" style="margin-bottom:14px;">
+        <label class="field-label">Business type</label>
+        <select class="field-input" id="os-business-type" style="margin-bottom:18px;cursor:pointer;">
+          <option value="">— Select —</option>
+          <option value="food_drinks">Food and drinks</option>
+          <option value="bakery_cakes">Bakery and cakes</option>
+          <option value="fashion_accessories">Fashion and accessories</option>
+          <option value="beauty_hair">Beauty and hair</option>
+          <option value="provisions_groceries">Provisions and groceries</option>
+          <option value="tailoring_custom">Tailoring and custom work</option>
+          <option value="other">Other</option>
+        </select>
+        <button class="btn-primary" onclick="saveOrderSettings()"
+          style="width:100%;justify-content:center;padding:12px;border-radius:10px;">Save</button>
+
+        <div style="margin-top:20px;padding-top:18px;border-top:1px solid var(--border);">
+          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px;">Your order link</div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input type="text" id="os-link-url-input" readonly value=""
+              style="flex:1;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:12.5px;font-family:ui-monospace,monospace;outline:none;"
+              placeholder="Save your settings to generate a link">
+            <button type="button" onclick="copyOrderLink()"
+              style="padding:10px 16px;border-radius:8px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">
+              Copy
+            </button>
+          </div>
+          <div id="os-link-url" style="display:none;"></div>
+        </div>
       </div>
 
       <div
@@ -4105,17 +4220,18 @@
       if (page === 'add-customer' && atCustomerLimit()) { showLimitReached(); return; }
       document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
       document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-      const labels = { dashboard: 'Dashboard', customers: 'Customers', 'add-customer': 'Add Customer', notifications: 'Notifications', sales: 'Sales', 'account-settings': 'Account Settings', billing: 'Plan & Billing' };
+      const labels = { dashboard: 'Dashboard', customers: 'Customers', 'add-customer': 'Add Customer', notifications: 'Notifications', sales: 'Sales', products: 'Products', 'account-settings': 'Account Settings', billing: 'Plan & Billing' };
       document.getElementById('header-label').textContent = labels[page] || 'Careloop';
       document.getElementById('page-' + page).classList.add('active');
-      const navMap = { dashboard: 'nav-dashboard', customers: 'nav-customers', 'add-customer': 'nav-add', sales: 'nav-sales', 'account-settings': 'nav-account-settings' };
+      const navMap = { dashboard: 'nav-dashboard', customers: 'nav-customers', 'add-customer': 'nav-add', sales: 'nav-sales', products: 'nav-products', 'account-settings': 'nav-account-settings' };
       if (navMap[page]) document.getElementById(navMap[page]).classList.add('active');
       if (page === 'add-customer') renderAddStep();
       if (page === 'notifications') { renderNotifPage(); markAllRead(); }
       if (page === 'customers') { loadCustomers().then(() => renderCustomers()); }
       if (page === 'dashboard') renderDashboard();
       if (page === 'sales') renderSalesPage();
-      if (page === 'account-settings') renderAccountSettings();
+      if (page === 'products') renderProductsPage();
+      if (page === 'account-settings') { renderAccountSettings(); loadOrderSettings(); }
       if (page === 'billing') renderBilling();
     }
 
@@ -6178,6 +6294,368 @@
       document.getElementById('bell-badge').style.display = 'none';
     }
 
+
+    // ─── PRODUCTS PAGE ───
+    let products = [];
+    let productsLoaded = false;
+
+    async function loadProducts() {
+      const token = localStorage.getItem('authToken');
+      try {
+        const r = await fetch(`${API_URL}/api/products`, { headers: { 'Authorization': 'Bearer ' + token } });
+        if (!r.ok) { products = []; }
+        else { products = await r.json(); }
+      } catch (e) { products = []; }
+      productsLoaded = true;
+    }
+
+    function renderProductsPage() {
+      if (!productsLoaded) {
+        loadProducts().then(renderProductsPage);
+        return;
+      }
+      _syncProductBulkUI();
+      const wrap = document.getElementById('products-table-wrap');
+      const tbody = document.getElementById('products-table-body');
+      const empty = document.getElementById('products-empty');
+      const sub = document.getElementById('products-sub');
+      if (!wrap || !tbody) return;
+      if (sub) sub.textContent = products.length ? `${products.length} product${products.length !== 1 ? 's' : ''}` : 'Add what you sell, then share your order link.';
+
+      if (!products.length) {
+        wrap.style.display = 'none';
+        if (empty) empty.style.display = 'block';
+        return;
+      }
+      wrap.style.display = 'block';
+      if (empty) empty.style.display = 'none';
+
+      tbody.innerHTML = products.map((p, i) => {
+        const bg = i % 2 === 0 ? 'var(--bg)' : 'var(--bg2)';
+        const available = p.is_available_today !== false;
+        const priceLabel = formatMoney(Number(p.price), preferredCurrency) +
+          (p.unit_label ? ` <span style="color:var(--text3);font-weight:400;font-size:.78rem;">${esc(p.unit_label)}</span>` : '');
+        const availBadge = available
+          ? '<span style="display:inline-block;padding:3px 10px;border-radius:50px;background:rgba(16,185,129,0.12);color:#059669;font-size:.72rem;font-weight:600;">Available</span>'
+          : '<span style="display:inline-block;padding:3px 10px;border-radius:50px;background:rgba(107,114,128,0.12);color:#6b7280;font-size:.72rem;font-weight:600;">Hidden</span>';
+        return `<div style="display:grid;grid-template-columns:36px 2.2fr 1.4fr 1fr 110px 100px;padding:14px 20px;background:${bg};border-top:1px solid var(--border);font-size:.875rem;align-items:center;gap:10px;">
+          <span><input type="checkbox" class="product-row-check" data-id="${p.id}"${productSelection.has(String(p.id)) ? ' checked' : ''} onchange="toggleProductSelection('${p.id}', this.checked)" style="width:15px;height:15px;cursor:pointer;accent-color:#4F46E5;"></span>
+          <span style="font-weight:600;color:var(--text);">${esc(p.name)}${p.category ? ` <span style="color:var(--text3);font-weight:400;font-size:.75rem;">\u00b7 ${esc(p.category)}</span>` : ''}</span>
+          <span style="font-weight:700;color:var(--green);">${priceLabel}</span>
+          <span>${availBadge}</span>
+          <button type="button" onclick="toggleProductAvailability('${p.id}')" style="padding:6px 10px;font-size:.75rem;border-radius:8px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);cursor:pointer;font-family:inherit;font-weight:600;">${available ? 'Hide today' : 'Show today'}</button>
+          <div style="display:flex;gap:6px;">
+            <button type="button" onclick="openProductEditModal('${p.id}')" title="Edit" style="background:none;border:none;padding:6px;cursor:pointer;color:var(--text2);">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4z"/></svg>
+            </button>
+            <button type="button" onclick="deleteProduct('${p.id}')" title="Delete" style="background:none;border:none;padding:6px;cursor:pointer;color:var(--text3);" onmouseover="this.style.color='#DC2626'" onmouseout="this.style.color='var(--text3)'">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+            </button>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function openProductAddModal() {
+      document.getElementById('product-modal-title').textContent = 'Add product';
+      document.getElementById('product-id').value = '';
+      document.getElementById('product-name').value = '';
+      document.getElementById('product-price').value = '';
+      document.getElementById('product-unit').value = '';
+      document.getElementById('product-category').value = '';
+      document.getElementById('product-available').checked = true;
+      openModal('product-modal');
+    }
+
+    function openProductEditModal(id) {
+      const p = products.find(x => String(x.id) === String(id));
+      if (!p) return;
+      document.getElementById('product-modal-title').textContent = 'Edit product';
+      document.getElementById('product-id').value = p.id;
+      document.getElementById('product-name').value = p.name || '';
+      document.getElementById('product-price').value = p.price || '';
+      document.getElementById('product-unit').value = p.unit_label || '';
+      document.getElementById('product-category').value = p.category || '';
+      document.getElementById('product-available').checked = p.is_available_today !== false;
+      openModal('product-modal');
+    }
+
+    async function submitProduct() {
+      const id = document.getElementById('product-id').value;
+      const name = document.getElementById('product-name').value.trim();
+      const price = parseFloat(document.getElementById('product-price').value);
+      if (!name) { clAlert('Enter a product name.', 'warning'); return; }
+      if (!isFinite(price) || price < 0) { clAlert('Enter a valid price.', 'warning'); return; }
+      const payload = {
+        name,
+        price: price.toFixed(2),
+        unit_label: document.getElementById('product-unit').value.trim() || null,
+        category: document.getElementById('product-category').value.trim() || null,
+        is_available_today: document.getElementById('product-available').checked,
+      };
+      const token = localStorage.getItem('authToken');
+      const url = id ? `${API_URL}/api/products/${id}` : `${API_URL}/api/products`;
+      const method = id ? 'PATCH' : 'POST';
+      try {
+        const r = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify(payload),
+        });
+        if (!r.ok) {
+          const body = await r.text().catch(() => '');
+          clAlert(`Could not save product (${r.status}). ${body || ''}`.trim(), 'error');
+          return;
+        }
+        closeModal('product-modal');
+        await loadProducts();
+        renderProductsPage();
+        clAlert(id ? 'Product updated.' : 'Product added.', 'success');
+      } catch (e) {
+        clAlert('Network error while saving.', 'error');
+      }
+    }
+
+    function deleteProduct(id) {
+      const p = products.find(x => String(x.id) === String(id));
+      if (!p) return;
+      clConfirm({
+        title: 'Delete this product?',
+        body: `${p.name} will be removed from your order link.\n\nThis cannot be undone.`,
+        confirmLabel: 'Delete product',
+        danger: true,
+        onConfirm: () => _deleteProductNow(id),
+      });
+    }
+
+    async function _deleteProductNow(id) {
+      const token = localStorage.getItem('authToken');
+      try {
+        const r = await fetch(`${API_URL}/api/products/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': 'Bearer ' + token },
+        });
+        if (!r.ok) { clAlert(`Could not delete product (${r.status}).`, 'error'); return; }
+        products = products.filter(x => String(x.id) !== String(id));
+        productSelection.delete(String(id));
+        renderProductsPage();
+        clAlert('Product deleted.', 'success');
+      } catch (e) {
+        clAlert('Network error while deleting.', 'error');
+      }
+    }
+
+    async function toggleProductAvailability(id) {
+      const token = localStorage.getItem('authToken');
+      try {
+        const r = await fetch(`${API_URL}/api/products/${id}/availability`, {
+          method: 'PATCH',
+          headers: { 'Authorization': 'Bearer ' + token },
+        });
+        if (!r.ok) { clAlert('Could not update availability.', 'error'); return; }
+        const updated = await r.json();
+        const idx = products.findIndex(x => String(x.id) === String(id));
+        if (idx >= 0) products[idx] = updated;
+        renderProductsPage();
+      } catch (e) {
+        clAlert('Network error.', 'error');
+      }
+    }
+
+    function openProductsImportPicker() {
+      const inp = document.createElement("input");
+      inp.type = "file";
+      inp.accept = ".xlsx,.xls";
+      inp.onchange = async e => {
+        const f = e.target.files[0];
+        if (!f) return;
+        const token = localStorage.getItem("authToken");
+        const formData = new FormData();
+        formData.append("file", f);
+        clAlert("Importing products, please wait...", "success");
+        try {
+          const r = await fetch(`${API_URL}/api/products/bulk-import`, {
+            method: "POST",
+            headers: { "Authorization": "Bearer " + token },
+            body: formData,
+          });
+          const d = await r.json().catch(() => ({}));
+          if (!r.ok) {
+            const detail = d.detail;
+            if (typeof detail === "string") clAlert(detail, "warning");
+            else if (detail && typeof detail === "object") clAlert(detail.message || "Import failed.", "warning");
+            else clAlert("Import failed.", "warning");
+            return;
+          }
+          await loadProducts();
+          renderProductsPage();
+
+          const panel = document.getElementById("products-import-errors");
+          const listEl = document.getElementById("products-import-errors-list");
+          const titleEl = document.getElementById("products-import-errors-title");
+
+          if (d.errors && d.errors.length) {
+            if (titleEl) titleEl.textContent = `Imported ${d.inserted}. Skipped ${d.skipped} row${d.skipped === 1 ? "" : "s"}:`;
+            if (listEl) {
+              listEl.innerHTML = d.errors.map(msg => `<div>\u2022 ${esc(msg)}</div>`).join("") +
+                (d.errors_truncated ? `<div style="margin-top:6px;font-style:italic;">\u2026 and ${d.errors_truncated} more.</div>` : "");
+            }
+            if (panel) panel.style.display = "block";
+            clAlert(`Imported ${d.inserted} product${d.inserted === 1 ? "" : "s"}. ${d.skipped} row${d.skipped === 1 ? "" : "s"} skipped.`, "warning");
+          } else {
+            if (panel) panel.style.display = "none";
+            clAlert(`Import complete: ${d.inserted} product${d.inserted === 1 ? "" : "s"} added.`, "success");
+          }
+        } catch (err) {
+          clAlert("Network error during import. Please try again.", "warning");
+        }
+      };
+      inp.click();
+    }
+
+    // ─── PRODUCT MULTI-SELECT ───
+    const productSelection = new Set();
+
+    function toggleProductSelection(id, checked) {
+      if (checked) productSelection.add(String(id));
+      else productSelection.delete(String(id));
+      _syncProductBulkUI();
+    }
+
+    function toggleSelectAllProducts(el) {
+      if (el.checked) {
+        products.forEach(p => productSelection.add(String(p.id)));
+      } else {
+        productSelection.clear();
+      }
+      renderProductsPage();
+    }
+
+    function _syncProductBulkUI() {
+      if (productSelection.size) {
+        const valid = new Set(products.map(p => String(p.id)));
+        for (const id of Array.from(productSelection)) {
+          if (!valid.has(id)) productSelection.delete(id);
+        }
+      }
+      const bar = document.getElementById('products-bulk-bar');
+      const count = document.getElementById('products-bulk-count');
+      const n = productSelection.size;
+      if (bar) bar.style.display = n > 0 ? 'flex' : 'none';
+      if (count) count.textContent = `${n} selected`;
+      const selectAll = document.getElementById('products-select-all');
+      if (selectAll) {
+        selectAll.checked = products.length > 0 && n === products.length;
+        selectAll.indeterminate = n > 0 && n < products.length;
+      }
+    }
+
+    function deleteSelectedProducts() {
+      const ids = Array.from(productSelection);
+      if (!ids.length) return;
+      clConfirm({
+        title: `Delete ${ids.length} product${ids.length === 1 ? '' : 's'}?`,
+        body: `${ids.length} product${ids.length === 1 ? '' : 's'} will be removed from your order link.\n\nThis cannot be undone.`,
+        confirmLabel: 'Delete',
+        danger: true,
+        onConfirm: () => _deleteSelectedProductsNow(ids),
+      });
+    }
+
+    async function _deleteSelectedProductsNow(ids) {
+      const token = localStorage.getItem('authToken');
+      try {
+        const r = await fetch(`${API_URL}/api/products/bulk-delete`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({ ids }),
+        });
+        if (!r.ok) {
+          const body = await r.text().catch(() => '');
+          clAlert(`Could not delete (${r.status}). ${body || ''}`.trim(), 'error');
+          return;
+        }
+        const d = await r.json();
+        products = products.filter(p => !productSelection.has(String(p.id)));
+        productSelection.clear();
+        renderProductsPage();
+        clAlert(`Deleted ${d.deleted} product${d.deleted === 1 ? '' : 's'}.`, 'success');
+      } catch (e) {
+        clAlert('Network error while deleting.', 'error');
+      }
+    }
+
+    // ─── ORDER LINK SETTINGS ───
+    async function loadOrderSettings() {
+      const token = localStorage.getItem('authToken');
+      try {
+        const prof = await fetch(`${API_URL}/api/user/profile`, { headers: { 'Authorization': 'Bearer ' + token } });
+        if (prof.ok) {
+          const u = await prof.json();
+          const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
+          set('os-bank-name', u.bank_name);
+          set('os-bank-account-number', u.bank_account_number);
+          set('os-bank-account-name', u.bank_account_name);
+          set('os-business-type', u.business_type);
+        }
+      } catch (e) {}
+      try {
+        const r = await fetch(`${API_URL}/api/user/order-link`, { headers: { 'Authorization': 'Bearer ' + token } });
+        if (r.ok) {
+          const d = await r.json();
+          const inp = document.getElementById('os-link-url-input');
+          const hidden = document.getElementById('os-link-url');
+          if (inp) inp.value = d.url || '';
+          if (hidden) hidden.textContent = d.url || '';
+        }
+      } catch (e) {}
+    }
+
+    async function saveOrderSettings() {
+      const payload = {
+        bank_name: document.getElementById('os-bank-name').value.trim(),
+        bank_account_number: document.getElementById('os-bank-account-number').value.trim(),
+        bank_account_name: document.getElementById('os-bank-account-name').value.trim(),
+        business_type: document.getElementById('os-business-type').value,
+      };
+      const token = localStorage.getItem('authToken');
+      try {
+        const r = await fetch(`${API_URL}/api/user/order-settings`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify(payload),
+        });
+        if (!r.ok) {
+          const body = await r.text().catch(() => '');
+          clAlert(`Could not save (${r.status}). ${body || ''}`.trim(), 'error');
+          return;
+        }
+        const d = await r.json();
+        if (d.slug) {
+          const url = `${API_URL.replace(/\/$/, '')}/o/${d.slug}`;
+          const inp = document.getElementById('os-link-url-input');
+          const hidden = document.getElementById('os-link-url');
+          if (inp) inp.value = url;
+          if (hidden) hidden.textContent = url;
+        }
+        clAlert('Order settings saved.', 'success');
+      } catch (e) {
+        clAlert('Network error while saving.', 'error');
+      }
+    }
+
+    async function copyOrderLink() {
+      const inp = document.getElementById('os-link-url-input');
+      const text = inp ? inp.value.trim() : '';
+      if (!text) { clAlert('Save your settings to generate a link first.', 'warning'); return; }
+      try {
+        await navigator.clipboard.writeText(text);
+        clAlert('Link copied.', 'success');
+      } catch (e) {
+        if (inp) { inp.select(); inp.setSelectionRange(0, 99999); }
+        clAlert('Could not copy — the link is selected, press Ctrl+C.', 'warning');
+      }
+    }
 
     // ─── SALES PAGE ───
     let revenueChart = null;
