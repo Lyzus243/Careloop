@@ -39,3 +39,5 @@ careloop.db-shm
 receipts/
 receipts/
 *.local-backup
+logo_test.png
+test_products_import*.xlsx
