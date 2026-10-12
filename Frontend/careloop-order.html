@@ -127,7 +127,8 @@
     color: var(--blue); font-size: 22px; font-weight: 800;
     overflow: hidden;
   }
-  .p-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .p-thumb { position: relative; }
+  .p-thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
   .p-body { flex: 1; min-width: 0; }
   .p-name { font-weight: 700; font-size: .95rem; color: var(--text); margin: 0 0 3px; }
   .p-meta { font-size: .76rem; color: var(--text3); }
@@ -246,6 +247,14 @@
   .totals { background: var(--bg2); border-radius: 14px; padding: 14px 16px; margin: 14px 0; border: 1px solid var(--border); }
   .totals-row { display: flex; justify-content: space-between; font-size: .88rem; padding: 4px 0; }
   .totals-row.big { font-weight: 800; font-size: 1rem; padding-top: 10px; margin-top: 6px; border-top: 1px solid var(--border); letter-spacing: -.01em; }
+
+  .privacy-note {
+    font-size: .74rem;
+    color: var(--text3);
+    line-height: 1.5;
+    text-align: center;
+    padding: 12px 4px 4px;
+  }
 
   .primary-cta {
     width: 100%; padding: 15px; border-radius: 12px; background: var(--blue); color: #fff;
@@ -410,7 +419,9 @@
       if (p.unit_label) meta.push(p.unit_label);
       if (p.category && !currentCat) meta.push(p.category);
       var initial = (p.name || '?').charAt(0).toUpperCase();
-      var thumb = '<div class="p-thumb">' + esc(initial) + '</div>';
+      var thumb = '<div class="p-thumb">' + esc(initial)
+        + (p.image_url ? '<img src="' + esc(p.image_url) + '" alt="" onerror="this.remove()">' : '')
+        + '</div>';
       var avail = p.is_available_today !== false;
       var qty = cart[p.id] || 0;
       var ctrl;
@@ -537,7 +548,8 @@
         '</div>' +
         '<input type="file" id="f-receipt" accept="image/jpeg,image/png,image/jpg" style="display:none" onchange="pickReceipt(this)">' +
       '</div>' +
-      '<div class="totals"><div class="totals-row big"><span>Total to pay</span><span>' + money(sub) + '</span></div></div>';
+      '<div class="totals"><div class="totals-row big"><span>Total to pay</span><span>' + money(sub) + '</span></div></div>' +
+      '<div class="privacy-note">Your details are used only by ' + esc(data.business_name) + ' for your order, greetings and updates.</div>';
     foot.innerHTML = '<button class="primary-cta" id="submit-btn" onclick="submitOrder()">I\u2019ve paid \u2014 send order</button>';
   }
 

@@ -3178,7 +3178,10 @@
         </div>
         <input type="file" id="product-image-input" accept="image/jpeg,image/png,image/jpg" style="display:none" onchange="onProductImageSelected(this)">
         <div id="product-image-status" style="display:none;font-size:12px;color:var(--text3);margin-bottom:14px;"></div>
-        <button class="btn-primary" onclick="submitProduct()" style="width:100%;justify-content:center;padding:12px;border-radius:10px;">Save product</button>
+        <div style="display:flex;gap:8px;">
+          <button class="btn-primary" onclick="submitProduct(false)" style="flex:1;justify-content:center;padding:12px;border-radius:10px;">Save product</button>
+          <button id="product-save-another" class="btn-outline" onclick="submitProduct(true)" style="flex:1;justify-content:center;padding:12px;border-radius:10px;display:none;">Save &amp; add another</button>
+        </div>
       </div>
     </div>
 
@@ -6534,6 +6537,9 @@
           <span>${availBadge}</span>
           <button type="button" onclick="toggleProductAvailability('${p.id}')" style="padding:6px 10px;font-size:.75rem;border-radius:8px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);cursor:pointer;font-family:inherit;font-weight:600;">${available ? 'Hide today' : 'Show today'}</button>
           <div style="display:flex;gap:6px;">
+            <button type="button" onclick="duplicateProduct('${p.id}')" title="Duplicate" style="background:none;border:none;padding:6px;cursor:pointer;color:var(--text3);" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--text3)'">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+            </button>
             <button type="button" onclick="openProductEditModal('${p.id}')" title="Edit" style="background:none;border:none;padding:6px;cursor:pointer;color:var(--text2);">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4z"/></svg>
             </button>
@@ -6554,6 +6560,8 @@
       document.getElementById('product-category').value = '';
       document.getElementById('product-available').checked = true;
       _resetProductImageUI(null);
+      const sa = document.getElementById('product-save-another');
+      if (sa) sa.style.display = 'inline-flex';
       openModal('product-modal');
     }
 
@@ -6576,6 +6584,24 @@
       }
     }
 
+    function duplicateProduct(id) {
+      const p = products.find(x => String(x.id) === String(id));
+      if (!p) return;
+      document.getElementById('product-modal-title').textContent = 'Duplicate product';
+      document.getElementById('product-id').value = '';
+      document.getElementById('product-name').value = (p.name || '') + ' (copy)';
+      document.getElementById('product-price').value = p.price || '';
+      document.getElementById('product-unit').value = p.unit_label || '';
+      document.getElementById('product-category').value = p.category || '';
+      document.getElementById('product-available').checked = p.is_available_today !== false;
+      window._pendingProductImage = null;
+      _resetProductImageUI(null);
+      const sa = document.getElementById('product-save-another');
+      if (sa) sa.style.display = 'inline-flex';
+      openModal('product-modal');
+      document.getElementById('product-name').focus();
+    }
+
     function openProductEditModal(id) {
       const p = products.find(x => String(x.id) === String(id));
       if (!p) return;
@@ -6587,10 +6613,12 @@
       document.getElementById('product-category').value = p.category || '';
       document.getElementById('product-available').checked = p.is_available_today !== false;
       _resetProductImageUI(p.image_key || null);
+      const sa = document.getElementById('product-save-another');
+      if (sa) sa.style.display = 'none';
       openModal('product-modal');
     }
 
-    async function submitProduct() {
+    async function submitProduct(keepOpen) {
       const id = document.getElementById('product-id').value;
       const name = document.getElementById('product-name').value.trim();
       const price = parseFloat(document.getElementById('product-price').value);
@@ -6631,7 +6659,18 @@
           } catch (e) {}
           window._pendingProductImage = null;
         }
-        closeModal('product-modal');
+        if (keepOpen && !id) {
+          document.getElementById('product-id').value = '';
+          document.getElementById('product-name').value = '';
+          document.getElementById('product-price').value = '';
+          document.getElementById('product-unit').value = '';
+          window._pendingProductImage = null;
+          _resetProductImageUI(null);
+          _setProductImageStatus('');
+          document.getElementById('product-name').focus();
+        } else {
+          closeModal('product-modal');
+        }
         await loadProducts();
         renderProductsPage();
         clAlert(id ? 'Product updated.' : 'Product added.', 'success');
