@@ -172,9 +172,26 @@ async def serve_create_password_page():
     except FileNotFoundError:
         return HTMLResponse(content="<h1>Create password page not found</h1>", status_code=404)
 
+_COMING_SOON_HTML = """<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Coming soon</title>
+<style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f1f5f9;margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;color:#0f172a;}
+.card{background:#fff;border-radius:20px;padding:40px 28px;max-width:420px;text-align:center;box-shadow:0 20px 40px -20px rgba(15,23,42,.15);}
+.emoji{font-size:44px;margin-bottom:12px;}
+.title{font-size:1.25rem;font-weight:800;margin:0 0 8px;}
+.body{color:#64748b;font-size:.92rem;line-height:1.6;}</style></head>
+<body><div class="card"><div class="emoji">🚧</div>
+<div class="title">Coming soon</div>
+<div class="body">This business hasn't opened online ordering yet. Check back soon, or contact them directly to place your order.</div>
+</div></body></html>"""
+
+
 @main_router.get("/o/{slug}", response_class=HTMLResponse)
 async def serve_order_page(slug: str):
-    """Serve the public order page. The slug is read client-side for the API call."""
+    """Serve the public order page, or a coming-soon placeholder when the
+    order-link feature is disabled."""
+    if os.getenv("ORDER_LINK_ENABLED", "false").lower() not in ("1", "true", "yes"):
+        return HTMLResponse(content=_COMING_SOON_HTML)
     try:
         with open("Frontend/careloop-order.html", "r", encoding="utf-8") as f:
             return HTMLResponse(content=f.read())
@@ -240,8 +257,10 @@ app.include_router(notification.router)
 app.include_router(sale.router)
 app.include_router(billing.router)
 app.include_router(billing.public_router)
-app.include_router(public.public_router)
-app.include_router(receipt.router)
+ORDER_LINK_ENABLED = os.getenv("ORDER_LINK_ENABLED", "false").lower() in ("1", "true", "yes")
+if ORDER_LINK_ENABLED:
+    app.include_router(public.public_router)
+    app.include_router(receipt.router)
 
 @app.get("/careloop-signup.html", response_class=HTMLResponse)
 async def serve_signup_page():

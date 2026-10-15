@@ -4438,7 +4438,44 @@
       switchAsTab(window._asCurrentTab || 'business');
     }
 
+    // ─── ORDER LINK FEATURE FLAG ───
+    // Populated from /api/config on boot. Defaults to false so a failed fetch
+    // never accidentally reveals the feature.
+    let _orderLinkEnabled = false;
+
+    function _applyOrderLinkVisibility() {
+      const hide = !_orderLinkEnabled;
+      // Sidebar
+      const navProducts = document.getElementById('nav-products');
+      const navOrders = document.getElementById('nav-orders');
+      if (navProducts) navProducts.style.display = hide ? 'none' : '';
+      if (navOrders) navOrders.style.display = hide ? 'none' : '';
+      // Order link card in Account Settings
+      const orderCard = document.querySelector('#page-account-settings [data-as-section="business"]');
+      // The card is chosen by tag; find the one whose innerText contains "Order link"
+      document.querySelectorAll('#page-account-settings [data-as-section="business"]').forEach(el => {
+        const t = (el.innerText || '');
+        if (t.indexOf('Order link') !== -1 && t.indexOf('Customers use this link') !== -1) {
+          el.style.display = hide ? 'none' : '';
+        }
+      });
+      // Dashboard setup checklist
+      const checklist = document.getElementById('setup-checklist');
+      if (checklist) checklist.style.display = hide ? 'none' : '';
+      // Notifications: hide order + renewal types while disabled
+      if (hide && typeof notifications !== 'undefined' && Array.isArray(notifications)) {
+        notifications = notifications.filter(n => n.type !== 'order' && n.type !== 'renewal');
+        try { if (typeof renderNotifPage === 'function') renderNotifPage(); } catch (e) {}
+        try { if (typeof renderDashNotifs === 'function') renderDashNotifs(); } catch (e) {}
+        const badge = document.getElementById('bell-badge');
+        if (badge) badge.style.display = notifications.length ? 'block' : 'none';
+      }
+    }
+
     function showPage(page) {
+      if (!_orderLinkEnabled && (page === 'products' || page === 'orders')) {
+        page = 'dashboard';
+      }
       if (page === 'add-customer' && atCustomerLimit()) { showLimitReached(); return; }
       document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
       document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -4489,12 +4526,14 @@
         localStorage.setItem('eyeCare', document.body.classList.contains('eye-care'));
       });
       updateUserUI();
+        _applyOrderLinkVisibility();
       await loadPreferences();
       await loadSales();
       await loadCustomers();
       try {
         const token = localStorage.getItem('authToken');
         const cfgR = await fetch(`${API_URL}/api/config`, { headers: { 'Authorization': 'Bearer ' + token } });
+        try { const _cfg = await cfgR.clone().json(); _orderLinkEnabled = !!_cfg.order_link_enabled; } catch (e) { _orderLinkEnabled = false; }
         if (cfgR.ok) followupConfig = await cfgR.json();
       } catch (e) { }
       checkConsentPrompt();
@@ -5524,6 +5563,11 @@
     function renderSetupChecklist() {
       const box = document.getElementById('setup-checklist');
       if (!box) return;
+      // Hide the whole checklist when the order link feature is disabled
+      if (typeof _orderLinkEnabled !== 'undefined' && !_orderLinkEnabled) {
+        box.style.display = 'none';
+        return;
+      }
       if (localStorage.getItem('cl_hide_checklist') === '1') { box.style.display = 'none'; return; }
 
       const hasProducts = Array.isArray(products) && products.length > 0;
