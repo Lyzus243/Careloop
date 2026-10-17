@@ -125,7 +125,7 @@ async def update_user_settings(
         personalize_key = f"ai_message_{cat}_personalize"
         if personalize_key in data:
             setattr(user, personalize_key, bool(data[personalize_key]))
-        for n in range(1, 6):
+        for n in range(1, 4):
             slot_key = f"ai_message_{cat}_{n}"
             if slot_key in data:
                 setattr(user, slot_key, data[slot_key] or None)
@@ -163,7 +163,7 @@ async def save_ai_message_to_rotation(
         raise HTTPException(status_code=404, detail="User not found")
 
     slot_used = None
-    for n in range(1, 6):
+    for n in range(1, 4):
         field_name = f"ai_message_{category}_{n}"
         if not getattr(user, field_name):
             setattr(user, field_name, message.strip())
@@ -172,7 +172,7 @@ async def save_ai_message_to_rotation(
 
     if slot_used is None:
         rotation_index = getattr(user, f"ai_message_{category}_rotation_index") or 0
-        slot_used = (rotation_index % 5) + 1
+        slot_used = (rotation_index % 3) + 1
         setattr(user, f"ai_message_{category}_{slot_used}", message.strip())
 
     setattr(user, f"ai_message_{category}_enabled", True)
