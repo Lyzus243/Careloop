@@ -5285,11 +5285,21 @@
         const props = ["name", "tel", "email"].filter(p => supported.includes(p));
         const picked = await navigator.contacts.select(props, { multiple: true });
         if (!picked || !picked.length) return;
-        openImportPreview(picked.map(c => ({
-          name: (c.name || [])[0] || "",
-          phone: (c.tel || [])[0] || "",
-          email: (c.email || [])[0] || ""
-        })), "phone contacts");
+        
+        // Flatten selected contacts into rows. If a contact has multiple
+        // phone numbers, create a separate row for each number.
+        const rows = [];
+        picked.forEach(c => {
+          const name = (c.name || [])[0] || "";
+          const email = (c.email || [])[0] || "";
+          const phones = c.tel && c.tel.length ? c.tel : [""];
+          
+          phones.forEach(phone => {
+            rows.push({ name: name, phone: phone, email: email });
+          });
+        });
+        
+        openImportPreview(rows, "phone contacts");
       } catch (e) {
         if (e && e.name !== "AbortError") clAlert("Could not open your contacts. Try pasting them or uploading a contacts file instead.", "warning");
       }
