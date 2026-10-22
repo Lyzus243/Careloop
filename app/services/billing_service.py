@@ -17,7 +17,7 @@ import calendar
 import json
 import logging
 import math
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone, timezone
 from typing import Optional
 
 from fastapi import HTTPException, status
@@ -578,7 +578,7 @@ async def _on_expiring_cards(db: AsyncSession, data, _event: str) -> None:
 
 async def process_subscriptions(db: AsyncSession) -> None:
     """End lapsed plans and send failed-payment reminders. Runs every hour."""
-    now = utcnow()
+    now = datetime.now(timezone.utc)
     grace = timedelta(days=PAYMENT_GRACE_DAYS)
     result = await db.execute(select(Subscription).where(or_(
         Subscription.plan != FREE_PLAN, Subscription.pending_plan.isnot(None)
@@ -617,7 +617,7 @@ async def send_due_renewal_reminders(db: AsyncSession) -> dict:
     from app.models.notification import Notification
     from app.services.email_service import email_service
 
-    now = utcnow()
+    now = datetime.now(timezone.utc)
     result = await db.execute(
         select(Subscription).where(
             Subscription.status == "active",

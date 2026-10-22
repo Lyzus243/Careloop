@@ -3361,11 +3361,11 @@
         <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:6px;">Order link</div>
         <div style="font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:16px;">Customers use this link to see your products, pay by bank transfer, and send you an order.</div>
         <label class="field-label">Bank name</label>
-        <input type="text" class="field-input" id="os-bank-name" placeholder="e.g. GTBank" style="margin-bottom:14px;">
+        <input type="text" class="field-input" id="os-bank-name" placeholder="e.g. GTBank" style="margin-bottom:14px;" oninput="checkBankDetailsStatus()">
         <label class="field-label">Account number</label>
-        <input type="text" class="field-input" id="os-bank-account-number" placeholder="e.g. 0123456789" style="margin-bottom:14px;">
+        <input type="text" class="field-input" id="os-bank-account-number" placeholder="e.g. 0123456789" style="margin-bottom:14px;" oninput="checkBankDetailsStatus()">
         <label class="field-label">Account name</label>
-        <input type="text" class="field-input" id="os-bank-account-name" placeholder="e.g. Funmi Ade" style="margin-bottom:14px;">
+        <input type="text" class="field-input" id="os-bank-account-name" placeholder="e.g. Funmi Ade" style="margin-bottom:14px;" oninput="checkBankDetailsStatus()">
         <label class="field-label">Business type</label>
         <select class="field-input" id="os-business-type" style="margin-bottom:18px;cursor:pointer;">
           <option value="">— Select —</option>
@@ -3380,19 +3380,18 @@
         <button class="btn-primary" onclick="saveOrderSettings()"
           style="width:100%;justify-content:center;padding:12px;border-radius:10px;">Save</button>
 
-        <div style="margin-top:20px;padding-top:18px;border-top:1px solid var(--border);">
-          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px;">Your order link</div>
+        <div id="os-link-box" style="display:none;border-top:1px solid var(--border);margin-top:22px;padding-top:18px;">
+          <label class="field-label">Your order link</label>
           <div style="display:flex;gap:8px;align-items:center;">
-            <input type="text" id="os-link-url-input" readonly value=""
-              style="flex:1;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:12.5px;font-family:ui-monospace,monospace;outline:none;"
-              placeholder="Save your settings to generate a link">
-            <button type="button" onclick="copyOrderLink()"
-              style="padding:10px 16px;border-radius:8px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">
-              Copy
-            </button>
+            <input type="text" class="field-input" id="os-link-url-input" readonly
+              style="flex:1;margin:0;font-family:monospace;font-size:13px;">
+            <button type="button" id="copy-order-link-btn" class="btn-outline" onclick="copyOrderLink()"
+              style="padding:10px 16px;border-radius:10px;white-space:nowrap;">Copy</button>
           </div>
-          <div id="os-link-url" style="display:none;"></div>
+          <span id="os-link-url" style="display:none;"></span>
         </div>
+
+        
       </div>
 
       <div
@@ -4405,7 +4404,7 @@
     // ─── ORDER LINK FEATURE FLAG ───
     // Populated from /api/config on boot. Defaults to false so a failed fetch
     // never accidentally reveals the feature.
-    let _orderLinkEnabled = false;
+    let _orderLinkEnabled = true;
 
     function _applyOrderLinkVisibility() {
       const hide = !_orderLinkEnabled;
@@ -4453,8 +4452,8 @@
       if (page === 'customers') { loadCustomers().then(() => renderCustomers()); }
       if (page === 'dashboard') renderDashboard();
       if (page === 'sales') renderSalesPage();
-      if (page === 'products') renderProductsPage();
-      if (page === 'orders') renderOrdersPage();
+      if (page === 'products') { if (!products || products.length === 0) productsLoaded = false; renderProductsPage(); }
+      if (page === 'orders') { if (!orderState.orders || orderState.orders.length === 0) orderState.booted = false; renderOrdersPage(); }
       if (page === 'account-settings') { renderAccountSettings(); loadOrderSettings(); _initAsTabs(); }
       if (page === 'billing') renderBilling();
     }
@@ -4490,6 +4489,7 @@
         localStorage.setItem('eyeCare', document.body.classList.contains('eye-care'));
       });
       updateUserUI();
+        
         _applyOrderLinkVisibility();
       await loadPreferences();
       await loadSales();
@@ -4497,9 +4497,16 @@
       try {
         const token = localStorage.getItem('authToken');
         const cfgR = await fetch(`${API_URL}/api/config`, { headers: { 'Authorization': 'Bearer ' + token } });
-        try { const _cfg = await cfgR.clone().json(); _orderLinkEnabled = !!_cfg.order_link_enabled; } catch (e) { _orderLinkEnabled = false; }
-        if (cfgR.ok) followupConfig = await cfgR.json();
-      } catch (e) { }
+        if (cfgR.ok) {
+          const _cfg = await cfgR.json();
+          followupConfig = _cfg;
+          if (typeof _cfg.order_link_enabled === 'boolean') _orderLinkEnabled = _cfg.order_link_enabled;
+          console.log('order_link_enabled =', _orderLinkEnabled);
+        } else {
+          console.warn('Config fetch failed, keeping server-injected flag:', cfgR.status);
+        }
+      } catch (e) { console.error('Config load error', e); }
+      _applyOrderLinkVisibility();
       checkConsentPrompt();
       checkUnresponsiveNudge();
 
@@ -4801,7 +4808,12 @@
           clAlert("Settings saved!", "success");
           try {
             const cfgR = await fetch(`${API_URL}/api/config`, { headers: { 'Authorization': 'Bearer ' + token } });
-            if (cfgR.ok) followupConfig = await cfgR.json();
+            if (cfgR.ok) {
+              const _cfg = await cfgR.json();
+              followupConfig = _cfg;
+              if (typeof _cfg.order_link_enabled === 'boolean') _orderLinkEnabled = _cfg.order_link_enabled;
+              _applyOrderLinkVisibility();
+            }
           } catch (e) { }
         } else {
           clAlert("Failed to save settings.", "warning");
@@ -7201,6 +7213,40 @@
     }
 
     // ─── ORDER LINK SETTINGS ───
+    
+    function _toggleOrderLinkBox(url) {
+      const box = document.getElementById('os-link-box');
+      if (box) box.style.display = (url && String(url).trim()) ? '' : 'none';
+    }
+
+    function checkBankDetailsStatus() {
+      const bankName = (document.getElementById('os-bank-name') || {}).value || '';
+      const accNum = (document.getElementById('os-bank-account-number') || {}).value || '';
+      const accName = (document.getElementById('os-bank-account-name') || {}).value || '';
+      const hasDetails = bankName.trim() && accNum.trim() && accName.trim();
+      
+      const btn = document.getElementById('copy-order-link-btn');
+      if (btn) {
+        btn.disabled = !hasDetails;
+        btn.style.opacity = hasDetails ? '1' : '0.5';
+        btn.style.cursor = hasDetails ? 'pointer' : 'not-allowed';
+        btn.title = hasDetails ? 'Copy link' : 'Enter bank details first';
+      }
+      return hasDetails;
+    }
+
+    // Modify the existing copyOrderLink function to enforce the rule
+    const originalCopyOrderLink = window.copyOrderLink;
+    window.copyOrderLink = async function() {
+      if (!checkBankDetailsStatus()) {
+        clAlert('Please enter and save your bank details before sharing the link.', 'warning');
+        return;
+      }
+      if (typeof originalCopyOrderLink === 'function') {
+        return originalCopyOrderLink();
+      }
+    }
+
     async function loadOrderSettings() {
       const token = localStorage.getItem('authToken');
       try {
@@ -7212,6 +7258,7 @@
           set('os-bank-account-number', u.bank_account_number);
           set('os-bank-account-name', u.bank_account_name);
           set('os-business-type', u.business_type);
+          checkBankDetailsStatus();
         }
       } catch (e) {}
       try {
@@ -7221,7 +7268,7 @@
           const inp = document.getElementById('os-link-url-input');
           const hidden = document.getElementById('os-link-url');
           if (inp) inp.value = d.url || '';
-          if (hidden) hidden.textContent = d.url || '';
+          if (hidden) hidden.textContent = d.url || ''; _toggleOrderLinkBox(d.url);
         }
       } catch (e) {}
     }
@@ -8481,6 +8528,86 @@
   </script>
 
 
+<script>
+/* cl-order-link-ui */
+(function () {
+  var dirty = false;
+  function $(id) { return document.getElementById(id); }
+  function val(id) { var e = $(id); return e && e.value ? e.value.trim() : ""; }
+  function allFilled() {
+    return !!(val("os-bank-name") && val("os-bank-account-number") && val("os-bank-account-name"));
+  }
+  function linkBox() {
+    var inp = $("os-link-url-input");
+    return $("os-link-box") || (inp && inp.parentElement && inp.parentElement.parentElement);
+  }
+  function sync() {
+    var saveBtn = document.querySelector('button[onclick="saveOrderSettings()"]');
+    if (saveBtn) {
+      var on = allFilled() && dirty;
+      saveBtn.disabled = !on;
+      saveBtn.style.background = on ? "" : "#d1d5db";
+      saveBtn.style.color = on ? "" : "#6b7280";
+      saveBtn.style.cursor = on ? "pointer" : "not-allowed";
+    }
+    var inp = $("os-link-url-input");
+    var hasLink = !!(inp && inp.value && inp.value.trim());
+    var box = linkBox();
+    if (box) box.style.display = hasLink ? "" : "none";
+    var copyBtn = $("copy-order-link-btn");
+    if (copyBtn) {
+      copyBtn.disabled = !hasLink;
+      copyBtn.style.opacity = hasLink ? "1" : "0.5";
+      copyBtn.style.cursor = hasLink ? "pointer" : "not-allowed";
+      copyBtn.title = hasLink ? "Copy link" : "";
+    }
+  }
+
+  window.checkBankDetailsStatus = function () { sync(); return allFilled(); };
+
+  var origSave = window.saveOrderSettings;
+  if (typeof origSave === "function") {
+    window.saveOrderSettings = async function () {
+      if (!allFilled()) return;
+      var r = await origSave.apply(this, arguments);
+      dirty = false;
+      sync();
+      return r;
+    };
+  }
+
+  var origLoad = window.loadOrderSettings;
+  if (typeof origLoad === "function") {
+    window.loadOrderSettings = async function () {
+      var r = await origLoad.apply(this, arguments);
+      dirty = false;
+      sync();
+      return r;
+    };
+  }
+
+  window.copyOrderLink = async function () {
+    var inp = $("os-link-url-input");
+    var t = inp ? inp.value.trim() : "";
+    if (!t) return;
+    try {
+      await navigator.clipboard.writeText(t);
+      clAlert("Link copied.", "success");
+    } catch (e) {
+      if (inp) { inp.select(); inp.setSelectionRange(0, 99999); }
+      clAlert("Could not copy. The link is selected, press Ctrl+C.", "warning");
+    }
+  };
+
+  ["os-bank-name", "os-bank-account-number", "os-bank-account-name"].forEach(function (id) {
+    var e = $(id);
+    if (e) e.addEventListener("input", function () { dirty = true; sync(); });
+  });
+
+  sync();
+  document.addEventListener("DOMContentLoaded", sync);
+})();
+</script>
 </body>
 
 </html>

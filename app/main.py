@@ -136,7 +136,11 @@ async def serve_login_page():
 async def serve_dashboard_page():
     try:
         with open("Frontend/careloop-dashboard.html", "r", encoding="utf-8") as f:
-            return HTMLResponse(content=f.read())
+            html = f.read()
+        flag = "true" if os.getenv("ORDER_LINK_ENABLED", "false").lower() in ("1", "true", "yes") else "false"
+        html = html.replace("let _orderLinkEnabled = false;", f"let _orderLinkEnabled = {flag};")
+        html = html.replace("let _orderLinkEnabled = true;", f"let _orderLinkEnabled = {flag};")
+        return HTMLResponse(content=html)
     except FileNotFoundError:
         return HTMLResponse(content="<h1>Dashboard page not found</h1>", status_code=404)
 
@@ -186,7 +190,7 @@ _COMING_SOON_HTML = """<!DOCTYPE html>
 </div></body></html>"""
 
 
-@main_router.get("/o/{slug}", response_class=HTMLResponse)
+@main_router.get("/o/{slug}/order", response_class=HTMLResponse)
 async def serve_order_page(slug: str):
     """Serve the public order page, or a coming-soon placeholder when the
     order-link feature is disabled."""
@@ -282,7 +286,11 @@ async def serve_login_page():
 async def serve_dashboard_page():
     try:
         with open("Frontend/careloop-dashboard.html", "r", encoding="utf-8") as f:
-            return HTMLResponse(content=f.read())
+            html = f.read()
+        flag = "true" if os.getenv("ORDER_LINK_ENABLED", "false").lower() in ("1", "true", "yes") else "false"
+        html = html.replace("let _orderLinkEnabled = false;", f"let _orderLinkEnabled = {flag};")
+        html = html.replace("let _orderLinkEnabled = true;", f"let _orderLinkEnabled = {flag};")
+        return HTMLResponse(content=html)
     except FileNotFoundError:
         return HTMLResponse(content="<h1>Page not found</h1>", status_code=404)
 
@@ -332,6 +340,7 @@ async def get_config(user_id: int = Depends(get_current_user_id), db: AsyncSessi
             rules["new_customer_followup_days"] = user.custom_new_customer_days
         if user.custom_existing_customer_days is not None:
             rules["existing_customer_followup_days"] = user.custom_existing_customer_days
+    rules["order_link_enabled"] = os.getenv("ORDER_LINK_ENABLED", "false").strip().lower() in ("1", "true", "yes")
     return rules
 
 @app.get("/api")

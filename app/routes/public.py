@@ -245,6 +245,22 @@ async def submit_public_order(
     ))
 
     await db.commit()
+    
+    # Send email notification to the owner
+    try:
+        from app.services.email_service import email_service
+        import asyncio
+        asyncio.create_task(asyncio.to_thread(
+            email_service.send_new_order_email,
+            to_email=user.email,
+            owner_name=user.full_name or "there",
+            customer_name=name,
+            total=float(subtotal),
+            currency=user.preferred_currency or "NGN"
+        ))
+    except Exception as e:
+        print(f"Failed to send order email: {e}")
+
     return {"success": True, "order_id": order.id}
 
 

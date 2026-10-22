@@ -338,7 +338,8 @@
 
 <script>
 (function () {
-  var slug = decodeURIComponent((window.location.pathname.split('/').filter(Boolean).pop() || ''));
+  var pathParts = window.location.pathname.split('/').filter(Boolean);
+  var slug = pathParts.length >= 2 ? decodeURIComponent(pathParts[pathParts.length - 2]) : '';
   var data = null;
   var cart = {};
   var step = 'cart';

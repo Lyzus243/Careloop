@@ -545,5 +545,19 @@ class EmailService:
         )
         return self._send(to_email, f"Your {plan_name} plan renews in {days_left} {plural}", html)
 
+    def send_new_order_email(self, to_email: str, owner_name: str, customer_name: str, total: float, currency: str, base_url: str = "https://mycareloop.com.ng") -> bool:
+        # Format currency nicely
+        amt_str = f"{total:,.2f}"
+        
+        html = self._render_account_notice(
+            "New Order",
+            f"You have a new order from {customer_name}!",
+            owner_name,
+            f"{customer_name} just placed an order for {currency} {amt_str}. Log in to your dashboard to view the receipt, confirm the payment, and send them a WhatsApp update.",
+            "View Order",
+            f"{base_url}/dashboard"
+        )
+        return self._send(to_email, f"New order from {customer_name}!", html)
+
 # Create a singleton instance
 email_service = EmailService()

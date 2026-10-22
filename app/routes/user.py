@@ -320,7 +320,11 @@ async def get_order_link(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
+    # Only generate the link if bank details are completely filled in
+    if not (user.bank_name and user.bank_account_number and user.bank_account_name):
+        return {"slug": None, "url": ""}
+
     slug = await ensure_user_slug(db, user)
     base = _os.getenv("FRONTEND_URL", "http://localhost:8000").rstrip("/")
-    return {"slug": slug, "url": f"{base}/o/{slug}"}
+    return {"slug": slug, "url": f"{base}/o/{slug}/order"}
 
