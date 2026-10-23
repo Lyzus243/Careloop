@@ -325,6 +325,8 @@ async def get_order_link(
         return {"slug": None, "url": ""}
 
     slug = await ensure_user_slug(db, user)
-    base = _os.getenv("FRONTEND_URL", "http://localhost:8000").rstrip("/")
+    base = (_os.getenv("FRONTEND_URL") or "").strip().rstrip("/")
+    if not base or "vercel.app" in base:
+        base = "https://mycareloop.com.ng"
     return {"slug": slug, "url": f"{base}/o/{slug}/order"}
 
