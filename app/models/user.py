@@ -2,6 +2,9 @@ from sqlalchemy import Column, Integer, String, DateTime, Boolean, Text
 from sqlalchemy.sql import func
 from .base import Base
 
+from sqlalchemy import String as _String, Boolean as _Boolean
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -64,3 +67,5 @@ class User(Base):
     bank_account_number = Column(String(40), nullable=True)
     bank_account_name = Column(String(120), nullable=True)
     business_type = Column(String(40), nullable=True)
+    tracking_stages = Column(_String(2000), nullable=True)
+    tracking_enabled = Column(_Boolean, nullable=False, default=True)

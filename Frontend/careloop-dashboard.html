@@ -7531,6 +7531,8 @@
         html += '<div style="font-size:.88rem;color:var(--text2);margin-bottom:16px;">Customer will pick up.</div>';
       }
 
+      html += (typeof trackingBlockHtml === "function") ? trackingBlockHtml(o) : "";
+
       if (o.note_to_seller) {
         html += '<div style="font-size:.74rem;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Note from customer</div>';
         html += '<div style="background:var(--bg2);border-radius:10px;padding:12px 14px;font-size:.88rem;color:var(--text);line-height:1.5;white-space:pre-line;margin-bottom:16px;">' + esc(o.note_to_seller) + '</div>';
@@ -8606,6 +8608,81 @@
 
   sync();
   document.addEventListener("DOMContentLoaded", sync);
+})();
+</script>
+<script>
+/* cl-tracking-ui */
+(function () {
+  var cache = {};
+  function waUrl(phone, msg) {
+    var d = String(phone || '').replace(/\D/g, '');
+    if (d.charAt(0) === '0' && d.length === 11) d = '234' + d.slice(1);
+    return 'https://wa.me/' + d + '?text=' + encodeURIComponent(msg || '');
+  }
+  function hdrs(token) { return { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }; }
+  async function refresh(id) {
+    var token = localStorage.getItem('authToken');
+    try {
+      var r = await fetch(API_URL + '/api/orders/' + id, { headers: { 'Authorization': 'Bearer ' + token } });
+      if (r.ok) renderOrderDetail(await r.json());
+    } catch (e) {}
+  }
+
+  window.trackingBlockHtml = function (o) {
+    if (!o || !o.tracking_code) return '';
+    cache[o.id] = { m: o.tracking_message, p: o.customer_phone };
+    var h = '<div style="border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:16px;">';
+    h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">'
+      + '<div style="font-size:.74rem;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;">Tracking</div>'
+      + '<div style="font-family:monospace;font-size:.85rem;color:var(--text);">' + esc(o.tracking_code) + '</div></div>';
+    h += '<label style="display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--text);margin-bottom:12px;cursor:pointer;">'
+      + '<input type="checkbox" ' + (o.tracking_enabled ? 'checked ' : '') + 'onchange="toggleOrderTracking(' + o.id + ', this.checked)"> Track this order</label>';
+    if (o.tracking_enabled) {
+      h += '<div style="font-size:.88rem;color:var(--text);margin-bottom:10px;">Now at: <b>' + esc(o.tracking_stage) + '</b></div>';
+      if (o.tracking_next) {
+        h += '<button class="btn-primary" onclick="advanceOrderTracking(' + o.id + ')" style="width:100%;justify-content:center;padding:12px;border-radius:10px;margin-bottom:8px;">Mark as ' + esc(o.tracking_next) + ' and message customer</button>';
+      } else {
+        h += '<div style="font-size:.82rem;color:var(--text2);margin-bottom:8px;">Last stage reached.</div>';
+      }
+      h += '<button class="btn-outline" onclick="resendOrderTracking(' + o.id + ')" style="width:100%;justify-content:center;padding:10px;border-radius:10px;">Message customer again</button>';
+    }
+    h += '</div>';
+    return h;
+  };
+
+  window.advanceOrderTracking = async function (id) {
+    var token = localStorage.getItem('authToken');
+    var w = window.open('', '_blank');
+    try {
+      var r = await fetch(API_URL + '/api/orders/' + id + '/tracking-next', { method: 'PATCH', headers: hdrs(token), body: '{}' });
+      var d = {};
+      try { d = await r.json(); } catch (e) {}
+      if (!r.ok) { if (w) w.close(); clAlert(d.detail || 'Could not update the stage.', 'error'); return; }
+      var url = waUrl(d.customer_phone, d.tracking_message);
+      if (w) { w.location.href = url; } else { window.open(url, '_blank'); }
+      await refresh(id);
+      /* cl-refresh-list */
+      try { if (typeof loadOrders === 'function') loadOrders(true); if (typeof updateOrdersBadge === 'function') updateOrdersBadge(); } catch (e2) {}
+    } catch (e) {
+      if (w) w.close();
+      clAlert('Network error. Please try again.', 'error');
+    }
+  };
+
+  window.resendOrderTracking = function (id) {
+    var c = cache[id];
+    if (!c) return;
+    window.open(waUrl(c.p, c.m), '_blank');
+  };
+
+  window.toggleOrderTracking = async function (id, on) {
+    var token = localStorage.getItem('authToken');
+    try {
+      var r = await fetch(API_URL + '/api/orders/' + id + '/tracking-toggle', { method: 'PATCH', headers: hdrs(token), body: JSON.stringify({ enabled: !!on }) });
+      if (!r.ok) { clAlert('Could not change tracking.', 'error'); }
+    } catch (e) { clAlert('Network error. Please try again.', 'error'); }
+    await refresh(id);
+  };
 })();
 </script>
 </body>

@@ -1,7 +1,7 @@
-from datetime import datetime
+from datetime import datetime, date
 from decimal import Decimal
 
-from sqlalchemy import String, Integer, Numeric, ForeignKey, DateTime, Text
+from sqlalchemy import String, Integer, Numeric, ForeignKey, DateTime, Text, Boolean, Date
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
@@ -24,6 +24,10 @@ class Order(Base):
     status: Mapped[str] = mapped_column(String(20), default="pending")  # pending/paid/on_the_way/done
     receipt_key: Mapped[str | None] = mapped_column(String(300), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    tracking_code: Mapped[str | None] = mapped_column(String(12), index=True, unique=True, nullable=True)
+    tracking_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    tracking_stage: Mapped[str | None] = mapped_column(String(60), nullable=True)
+    due_date: Mapped[date | None] = mapped_column(Date, nullable=True)
 
 
 class OrderItem(Base):

@@ -211,6 +211,7 @@ async def submit_public_order(
         if parsed_dob and not customer.date_of_birth:
             customer.date_of_birth = parsed_dob
 
+    from app.services import tracking as _trk
     order = Order(
         user_id=user.id,
         customer_id=customer.id,
@@ -224,9 +225,13 @@ async def submit_public_order(
         total=subtotal,
         status="pending",
         receipt_key=receipt_key,
+        tracking_code=_trk.new_tracking_code(),
+        tracking_enabled=(True if user.tracking_enabled is None else bool(user.tracking_enabled)),
+        tracking_stage=_trk.parse_stages(user.tracking_stages)[0],
     )
     db.add(order)
     await db.flush()
+    _track_code = order.tracking_code if order.tracking_enabled else None
 
     for od in order_items_data:
         db.add(OrderItem(order_id=order.id, **od))
@@ -261,7 +266,11 @@ async def submit_public_order(
     except Exception as e:
         print(f"Failed to send order email: {e}")
 
-    return {"success": True, "order_id": order.id}
+    return {
+        "success": True,
+        "order_id": order.id,
+        "tracking_code": _track_code,
+    }
 
 
 @public_router.post("/{slug}/receipt-url")
@@ -305,3 +314,41 @@ async def serve_product_image(
     return Response(content=data, media_type=mime, headers={
         "Cache-Control": "public, max-age=86400, immutable",
     })
+
+
+@public_router.get("/track/{code}")
+async def public_track_order(
+    request: Request,
+    code: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """Public, no login. Returns only what a customer needs to follow their order."""
+    from app.services import tracking as _trk
+    code = (code or "").strip().upper()
+    if not code or len(code) > 12:
+        raise HTTPException(status_code=404, detail="Tracking code not found")
+    res = await db.execute(select(Order).where(Order.tracking_code == code))
+    order = res.scalar_one_or_none()
+    if not order:
+        raise HTTPException(status_code=404, detail="Tracking code not found")
+    ures = await db.execute(select(User).where(User.id == order.user_id))
+    owner = ures.scalar_one_or_none()
+    business = ((owner.business_name or owner.full_name) if owner else None) or "Your order"
+    if not order.tracking_enabled:
+        return {"enabled": False, "business_name": business, "tracking_code": order.tracking_code}
+    stages = _trk.parse_stages(owner.tracking_stages if owner else None)
+    cur = _trk.current_stage(stages, order.tracking_stage)
+    items_res = await db.execute(
+        select(OrderItem).where(OrderItem.order_id == order.id).order_by(OrderItem.id.asc())
+    )
+    items = [str(i.quantity) + " x " + i.product_name_snapshot for i in items_res.scalars().all()]
+    return {
+        "enabled": True,
+        "business_name": business,
+        "tracking_code": order.tracking_code,
+        "stages": stages,
+        "current_index": stages.index(cur),
+        "current_stage": cur,
+        "items": items,
+        "due_date": order.due_date.isoformat() if order.due_date else None,
+    }

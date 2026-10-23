@@ -132,6 +132,24 @@ async def serve_login_page():
     except FileNotFoundError:
         return HTMLResponse(content="<h1>Login page not found</h1>", status_code=404)
 
+@main_router.get("/track", response_class=HTMLResponse)
+async def serve_track_page_root():
+    try:
+        with open("Frontend/careloop-track.html", "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+    except FileNotFoundError:
+        return HTMLResponse(content="<h1>Page not found</h1>", status_code=404)
+
+
+@main_router.get("/track/{code}", response_class=HTMLResponse)
+async def serve_track_page(code: str):
+    try:
+        with open("Frontend/careloop-track.html", "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+    except FileNotFoundError:
+        return HTMLResponse(content="<h1>Page not found</h1>", status_code=404)
+
+
 @main_router.get("/dashboard", response_class=HTMLResponse)
 async def serve_dashboard_page():
     try:
@@ -188,6 +206,12 @@ _COMING_SOON_HTML = """<!DOCTYPE html>
 <div class="title">Coming soon</div>
 <div class="body">This business hasn't opened online ordering yet. Check back soon, or contact them directly to place your order.</div>
 </div></body></html>"""
+
+
+@main_router.get("/o/{slug}")
+async def order_link_short(slug: str):
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/o/" + slug + "/order", status_code=307)
 
 
 @main_router.get("/o/{slug}/order", response_class=HTMLResponse)

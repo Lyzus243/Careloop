@@ -555,6 +555,23 @@
   }
 
   function renderSuccessStep(body, foot) {
+    _clRenderSuccessBase(body, foot);
+    _clAppendTrack(body);
+  }
+
+  function _clAppendTrack(body) {
+    var c = window._clTrackCode;
+    if (!c) return;
+    var s = body.querySelector('.success') || body;
+    var h = '<div style="margin:18px auto 0;max-width:340px;">'
+      + '<p class="success-body" style="margin-bottom:8px;">Save your tracking code to follow your order:</p>'
+      + '<div style="font-family:monospace;font-size:1.3rem;font-weight:800;letter-spacing:.04em;margin-bottom:12px;">' + esc(c) + '</div>'
+      + '<a class="primary-cta" href="/track/' + encodeURIComponent(c) + '" style="display:block;text-decoration:none;text-align:center;">Track my order</a>'
+      + '</div>';
+    s.insertAdjacentHTML('beforeend', h);
+  }
+
+  function _clRenderSuccessBase(body, foot) {
     body.innerHTML = '<div class="success">' +
       '<div class="success-emoji">🎉</div>' +
       '<h3 class="success-title">Order received</h3>' +
@@ -643,6 +660,7 @@
         alert(msg);
         return;
       }
+      window._clTrackCode = d.tracking_code || null;
       step = 'success';
       renderSheet();
     } catch (e) {
@@ -681,5 +699,6 @@
     .catch(function () { showError('Could not load this page. Please check your connection.'); });
 })();
 </script>
+<div style="text-align:center;padding:20px 16px 96px;font-size:.85rem;"><a href="/track" style="color:var(--text2);">Already ordered? Track your order</a></div>
 </body>
 </html>

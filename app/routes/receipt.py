@@ -126,6 +126,7 @@ async def get_order_detail(
         "subtotal": float(order.subtotal),
         "total": float(order.total),
         "has_receipt": bool(order.receipt_key),
+        **(await _tracking_fields(order, db)),
         "created_at": order.created_at.isoformat() if order.created_at else None,
         "items": [
             {
@@ -138,6 +139,24 @@ async def get_order_detail(
             }
             for i in items
         ],
+    }
+
+
+async def _tracking_fields(order, db):
+    from app.models.user import User
+    from app.services import tracking as trk
+    ures = await db.execute(select(User).where(User.id == order.user_id))
+    owner = ures.scalar_one_or_none()
+    stages = trk.parse_stages(owner.tracking_stages if owner else None)
+    cur = trk.current_stage(stages, order.tracking_stage)
+    business = ((owner.business_name or owner.full_name) if owner else None) or ""
+    return {
+        "tracking_code": order.tracking_code,
+        "tracking_enabled": bool(order.tracking_enabled),
+        "tracking_stage": cur,
+        "tracking_next": trk.next_stage(stages, cur),
+        "tracking_stages": stages,
+        "tracking_message": trk.build_message(business, order.customer_name, order.tracking_code or "", cur),
     }
 
 
@@ -179,6 +198,13 @@ async def update_order_status(
         )
 
     order.status = new_status
+    if new_status == "done" and order.tracking_enabled:
+        from app.models.user import User as _U
+        from app.services import tracking as _t
+        _ur = await db.execute(select(_U).where(_U.id == user_id))
+        _ow = _ur.scalar_one_or_none()
+        _st = _t.parse_stages(_ow.tracking_stages if _ow else None)
+        order.tracking_stage = _st[-1]
 
     # First completed order -> mark customer active + has_purchased
     if new_status == "done" and order.customer_id:
@@ -218,3 +244,63 @@ async def get_receipt_url(
     if not p:
         raise HTTPException(status_code=404, detail="Receipt file missing")
     return FileResponse(p)
+
+
+async def _get_owned_order(db, order_id, user_id):
+    result = await db.execute(
+        select(Order).where(Order.id == order_id, Order.user_id == user_id)
+    )
+    order = result.scalar_one_or_none()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    return order
+
+
+@router.patch("/{order_id}/tracking-next")
+async def advance_tracking(
+    order_id: int,
+    request: Request,
+    user_id: int = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db),
+):
+    from app.models.user import User
+    from app.services import tracking as trk
+    order = await _get_owned_order(db, order_id, user_id)
+    if not order.tracking_enabled:
+        raise HTTPException(status_code=400, detail="Tracking is turned off for this order")
+    ures = await db.execute(select(User).where(User.id == user_id))
+    owner = ures.scalar_one_or_none()
+    stages = trk.parse_stages(owner.tracking_stages if owner else None)
+    cur = trk.current_stage(stages, order.tracking_stage)
+    nxt = trk.next_stage(stages, cur)
+    if not nxt:
+        raise HTTPException(status_code=400, detail="This order is already at the last stage")
+    order.tracking_stage = nxt
+    # Last stage reached: close the order too, but never skip payment
+    if trk.next_stage(stages, nxt) is None and order.status in ("paid", "on_the_way"):
+        order.status = "done"
+        if order.customer_id:
+            from app.models.customer import Customer, CustomerType
+            cres = await db.execute(select(Customer).where(Customer.id == order.customer_id))
+            cust = cres.scalar_one_or_none()
+            if cust:
+                cust.has_purchased = True
+                if cust.customer_type == CustomerType.NEW:
+                    cust.customer_type = CustomerType.ACTIVE
+    await db.commit()
+    fields = await _tracking_fields(order, db)
+    return {"success": True, "customer_phone": order.customer_phone, **fields}
+
+
+@router.patch("/{order_id}/tracking-toggle")
+async def toggle_tracking(
+    order_id: int,
+    request: Request,
+    data: dict,
+    user_id: int = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db),
+):
+    order = await _get_owned_order(db, order_id, user_id)
+    order.tracking_enabled = bool(data.get("enabled"))
+    await db.commit()
+    return {"success": True, "tracking_enabled": order.tracking_enabled}
