@@ -545,19 +545,100 @@ class EmailService:
         )
         return self._send(to_email, f"Your {plan_name} plan renews in {days_left} {plural}", html)
 
-    def send_new_order_email(self, to_email: str, owner_name: str, customer_name: str, total: float, currency: str, base_url: str = "https://mycareloop.com.ng") -> bool:
-        # Format currency nicely
-        amt_str = f"{total:,.2f}"
-        
-        html = self._render_account_notice(
-            "New Order",
-            f"You have a new order from {customer_name}!",
-            owner_name,
-            f"{customer_name} just placed an order for {currency} {amt_str}. Log in to your dashboard to view the receipt, confirm the payment, and send them a WhatsApp update.",
-            "View Order",
-            f"{base_url}/dashboard"
+    def send_new_order_email(self, to_email: str, owner_name: str, customer_name: str, total: float, currency: str, base_url: str = "https://mycareloop.com.ng", items=None, customer_phone: str = None, delivery_type: str = None, delivery_address: str = None, note: str = None, tracking_code: str = None, order_id=None) -> bool:
+        import html as _h
+
+        def esc(v):
+            return _h.escape(str(v if v is not None else ""))
+
+        sym = {"NGN": "\u20a6", "USD": "$", "GBP": "\u00a3", "EUR": "\u20ac"}.get(str(currency).upper(), str(currency) + " ")
+
+        def money(n):
+            return sym + format(float(n or 0), ",.2f")
+
+        rows = ""
+        for it in (items or []):
+            unit = ""
+            if it.get("unit"):
+                unit = ' <span style="color:#9ca3af;">(' + esc(it.get("unit")) + ')</span>'
+            rows += (
+                '<tr>'
+                '<td style="padding:10px 0;border-bottom:1px solid #f0f0f0;font-size:14px;color:#111111;">' + esc(it.get("name")) + unit + '</td>'
+                '<td style="padding:10px 8px;border-bottom:1px solid #f0f0f0;font-size:13px;color:#4b5563;text-align:center;white-space:nowrap;">' + esc(it.get("qty")) + ' x ' + money(it.get("unit_price")) + '</td>'
+                '<td style="padding:10px 0;border-bottom:1px solid #f0f0f0;font-size:14px;color:#111111;text-align:right;white-space:nowrap;">' + money(it.get("line_total")) + '</td>'
+                '</tr>'
+            )
+
+        info = [("Customer", esc(customer_name))]
+        if customer_phone:
+            info.append(("Phone", esc(customer_phone)))
+        dt = (delivery_type or "").lower()
+        if dt == "delivery":
+            info.append(("Delivery", "Delivery to " + esc(delivery_address)))
+        elif dt == "pickup":
+            info.append(("Delivery", "Pickup"))
+        if note:
+            info.append(("Note", esc(note).replace("\n", "<br>")))
+        if tracking_code:
+            info.append(("Tracking code", esc(tracking_code)))
+        info_html = "".join(
+            '<tr><td style="padding:6px 0;width:110px;font-size:13px;color:#6b7280;vertical-align:top;">' + lbl + '</td>'
+            '<td style="padding:6px 0;font-size:14px;color:#111111;">' + val + '</td></tr>'
+            for lbl, val in info
         )
-        return self._send(to_email, f"New order from {customer_name}!", html)
+
+        label = "New order" + (" #" + str(order_id) if order_id else "")
+        safe_customer = esc(customer_name)
+        safe_owner = esc(owner_name)
+        total_str = money(total)
+        dash_url = base_url + "/dashboard"
+        items_block = ""
+        if rows:
+            items_block = (
+                '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 6px;">' + rows +
+                '<tr><td colspan="2" style="padding:12px 0 0;font-size:14px;font-weight:700;color:#111111;">Total</td>'
+                '<td style="padding:12px 0 0;font-size:16px;font-weight:700;color:#111111;text-align:right;white-space:nowrap;">' + total_str + '</td></tr></table>'
+            )
+        else:
+            items_block = '<p style="font-size:15px;color:#111111;margin:0 0 6px;"><b>Total: ' + total_str + '</b></p>'
+
+        html = f"""
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:8px;overflow:hidden;border:1px solid #e5e7eb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+          <tr>
+            <td style="height:4px;background:#4F46E5;line-height:4px;font-size:1px;">&nbsp;</td>
+          </tr>
+          <tr>
+            <td style="padding:40px 36px 8px;">
+              <div style="font-size:13px;font-weight:600;color:#4F46E5;letter-spacing:0.6px;text-transform:uppercase;margin-bottom:14px;">{label}</div>
+              <div style="font-size:22px;font-weight:700;color:#111111;line-height:1.3;margin-bottom:20px;letter-spacing:-0.4px;">You have a new order from {safe_customer}!</div>
+              <p style="font-size:15px;color:#4b5563;line-height:1.7;margin:0 0 20px;">Hi {safe_owner}, here are the details. Open your dashboard to view the receipt, confirm payment and update the customer.</p>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;">{info_html}</table>
+              {items_block}
+              <table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:24px;">
+                <tr>
+                  <td style="border-radius:6px;background:#4F46E5;">
+                    <a href="{dash_url}" style="display:inline-block;padding:12px 24px;font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:6px;">View Order</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:18px 36px;background:#fafafa;border-top:1px solid #f0f0f0;">
+              <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td style="font-size:11px;color:#b0b3b9;vertical-align:middle;">Sent with</td>
+                  <td style="width:70px;vertical-align:middle;padding-left:6px;">
+                    <img src="data:image/jpeg;base64,{CARELOOP_LOGO_B64}" alt="Careloop" style="height:16px;width:auto;display:block;opacity:0.55;">
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+        """
+        subject_name = str(customer_name).replace("\r", " ").replace("\n", " ")
+        return self._send(to_email, "New order from " + subject_name + " - " + total_str, html)
 
 # Create a singleton instance
 email_service = EmailService()

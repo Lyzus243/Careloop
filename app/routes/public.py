@@ -261,7 +261,14 @@ async def submit_public_order(
             owner_name=user.full_name or "there",
             customer_name=name,
             total=float(subtotal),
-            currency=user.preferred_currency or "NGN"
+            currency=user.preferred_currency or "NGN",
+            items=[{"name": d["product_name_snapshot"], "unit": d["unit_label_snapshot"], "qty": d["quantity"], "unit_price": float(d["unit_price_snapshot"]), "line_total": float(d["line_total"])} for d in order_items_data],
+            customer_phone=phone,
+            delivery_type=delivery_type,
+            delivery_address=address,
+            note=note,
+            tracking_code=_track_code,
+            order_id=order.id
         ))
     except Exception as e:
         print(f"Failed to send order email: {e}")
