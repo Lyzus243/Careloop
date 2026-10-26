@@ -348,7 +348,7 @@
   var currentCat = ''; var currentPage = 1; var PAGE_SIZE = 5;
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
-  function money(n) { try { return '\u20a6' + Number(n).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); } catch (e) { return '\u20a6' + Number(n).toFixed(2); } }
+  function money(n) { var c = (data && data.currency) || 'NGN'; try { return new Intl.NumberFormat('en-NG', {style:'currency', currency:c}).format(Number(n)); } catch (e) { return c + ' ' + Number(n).toFixed(2); } }
 
   // Try to load the logo string in any common format — data URL, http URL, or base64
   // of PNG/JPEG/GIF/WEBP. Falls back to the initial letter only if all fail.
@@ -548,6 +548,24 @@
     foot.innerHTML = '<button class="primary-cta" onclick="goCheckout()">Proceed to checkout</button>';
   }
 
+  function arrangeCombinedPayment() {
+    return form.delivery_type === 'delivery' && data.delivery_fee_mode === 'whatsapp';
+  }
+  function submitOrderLabel() {
+    return arrangeCombinedPayment() ? 'Submit order - arrange delivery and payment' : 'I’ve paid — send order';
+  }
+  function checkoutDeliveryFee() {
+    return form.delivery_type === 'delivery' && data.delivery_fee_mode !== 'whatsapp' ? Number(data.delivery_fee || 0) : 0;
+  }
+  function deliveryTotals(sub) {
+    var delivery = form.delivery_type === 'delivery';
+    var separate = delivery && data.delivery_fee_mode === 'whatsapp';
+    return '<div class="totals"><div class="totals-row"><span>Items</span><span>' + money(sub) + '</span></div>' +
+      (delivery ? '<div class="totals-row"><span>Delivery fee</span><span>' + (separate ? 'To be confirmed' : money(checkoutDeliveryFee())) + '</span></div>' : '') +
+      '<div class="totals-row big"><span>' + (separate ? 'Items subtotal - not payable yet' : 'Total to pay') + '</span><span>' + money(sub + checkoutDeliveryFee()) + '</span></div></div>' +
+      (separate ? '<p class="field-hint">Do not pay yet. Submit your order without a receipt, then contact the owner on WhatsApp to agree the delivery fee and pay once for items plus delivery.</p>' : '');
+  }
+
   function renderCheckoutStep(body, foot) {
     var sub = cartTotal();
     var bank = data.bank || {};
@@ -572,23 +590,58 @@
         ? '<div class="field"><label>Delivery address *</label><textarea id="f-addr" placeholder="Street, area, landmark">' + esc(form.delivery_address) + '</textarea></div>'
         : '') +
       '<div class="field"><label>Note to seller (optional)</label><textarea id="f-note" placeholder="e.g. no pepper, deliver after 5pm">' + esc(form.note_to_seller) + '</textarea></div>' +
-      bankHtml +
-      '<div class="field"><label>Payment receipt *</label>' +
+      pickupLocationHtml() +
+      (arrangeCombinedPayment() ? '' : bankHtml) +
+      (arrangeCombinedPayment() ? '' : '<div class="field"><label>Payment receipt *</label>' +
         '<div class="receipt-drop' + (receiptFile ? ' has-file' : '') + '" onclick="document.getElementById(\'f-receipt\').click()">' +
           '<div class="receipt-icon">' + (receiptFile ? '✅' : '📎') + '</div>' +
           '<div class="receipt-title">' + (receiptFile ? esc(receiptFile.name) : 'Tap to upload your receipt') + '</div>' +
           '<div class="receipt-sub">' + (receiptFile ? 'Tap to change' : 'JPG or PNG, up to 5MB') + '</div>' +
         '</div>' +
         '<input type="file" id="f-receipt" accept="image/jpeg,image/png,image/jpg" style="display:none" onchange="pickReceipt(this)">' +
-      '</div>' +
-      '<div class="totals"><div class="totals-row big"><span>Total to pay</span><span>' + money(sub) + '</span></div></div>' +
+      '</div>') +
+      (form.delivery_type === 'delivery' && data.delivery_available === false ? '<p class="field-hint">Delivery is currently unavailable. Please contact the business or choose pickup.</p>' : '') +
+      deliveryTotals(sub) +
       '<div class="privacy-note">Your details are used only by ' + esc(data.business_name) + ' for your order, greetings and updates.</div>';
-    foot.innerHTML = '<button class="primary-cta" id="submit-btn" onclick="submitOrder()">I\u2019ve paid \u2014 send order</button>';
+    foot.innerHTML = '<button class="primary-cta" id="submit-btn" onclick="submitOrder()">' + submitOrderLabel() + '</button>';
   }
 
   function renderSuccessStep(body, foot) {
     _clRenderSuccessBase(body, foot);
     _clAppendTrack(body);
+    appendPickupContact(body);
+    var url = window._clDeliveryContactUrl;
+    if (url && /^https:\/\/wa\.me\/[1-9][0-9]{7,14}\?/.test(url)) {
+      var box = body.querySelector('.success') || body;
+      box.insertAdjacentHTML('beforeend', '<p class="success-body">No payment is due yet. Agree the delivery fee with the owner and pay once for items plus delivery.</p>');
+      var link = document.createElement('a');
+      link.className = 'primary-cta'; link.href = url; link.target = '_blank'; link.rel = 'noopener noreferrer';
+      link.style.cssText = 'display:block;text-decoration:none;text-align:center;margin-top:12px;';
+      link.textContent = 'Arrange delivery and combined payment'; box.appendChild(link);
+    }
+  }
+
+  function appendPickupContact(body) {
+    var url = window._clPickupContactUrl;
+    if (form.delivery_type !== 'pickup' || !url || !/^https:\/\/wa\.me\/[1-9][0-9]{7,14}\?/.test(url)) return;
+    var box = body.querySelector('.success') || body;
+    var link = document.createElement('a');
+    link.href = url; link.target = '_blank'; link.rel = 'noopener noreferrer'; link.className = 'primary-cta';
+    link.style.cssText = 'display:block;text-align:center;text-decoration:none;margin-top:12px;';
+    link.textContent = 'Arrange pickup on WhatsApp'; box.appendChild(link);
+    var hint = document.createElement('p'); hint.className = 'success-body';
+    hint.textContent = 'Opens a message with your order details. Tap Send in WhatsApp to confirm pickup location and time.';
+    box.appendChild(hint);
+  }
+
+  function pickupLocationHtml() {
+    if (form.delivery_type !== 'pickup') return '';
+    var address = data.pickup_address;
+    var html = '<div class="field"><label>Pickup location</label><div style="white-space:pre-line;overflow-wrap:anywhere;">' +
+      (address ? esc(address) : 'Please confirm the pickup location with the business before paying.') + '</div>';
+    var url = data.pickup_enquiry_url;
+    if (url && /^https:\/\/wa\.me\/[1-9][0-9]{7,14}\?/.test(url)) html += '<a href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">Ask about pickup on WhatsApp</a>';
+    return html + '</div>';
   }
 
   function _clAppendTrack(body) {
@@ -607,7 +660,7 @@
     body.innerHTML = '<div class="success">' +
       '<div class="success-emoji">🎉</div>' +
       '<h3 class="success-title">Order received</h3>' +
-      '<p class="success-body">' + esc(data.business_name) + ' will confirm your payment shortly and reach out on WhatsApp.</p>' +
+      '<p class="success-body">' + (arrangeCombinedPayment() ? 'Your order is awaiting payment. Contact ' + esc(data.business_name) + ' below to agree the delivery fee and pay the combined total once.' : esc(data.business_name) + ' will confirm your payment shortly and reach out on WhatsApp.') + '</p>' +
     '</div>';
     foot.innerHTML = '<button class="primary-cta" onclick="closeSheet()">Done</button>';
   }
@@ -637,14 +690,18 @@
     form.note_to_seller = form.note_to_seller.trim();
     if (!form.customer_name) return alert('Please enter your name.');
     if (!form.customer_phone) return alert('Please enter your phone number.');
+    if (form.delivery_type === 'delivery' && data.delivery_available === false) return alert('Delivery is unavailable until the business sets its WhatsApp number. Please contact the business or choose pickup.');
     if (form.delivery_type === 'delivery' && !form.delivery_address) return alert('Please enter a delivery address.');
-    if (!receiptFile) return alert('Please upload your payment receipt.');
+    var needsReceipt = !arrangeCombinedPayment();
+    if (needsReceipt && !receiptFile) return alert('Please upload your payment receipt.');
 
     var payload = {
       customer_name: form.customer_name,
       customer_phone: form.customer_phone,
       customer_birthday: form.customer_birthday || null,
       delivery_type: form.delivery_type,
+      expected_delivery_fee_mode: form.delivery_type === 'pickup' ? 'pickup' : (data.delivery_fee_mode || 'upfront'),
+      expected_delivery_fee: form.delivery_type === 'delivery' && data.delivery_fee_mode === 'whatsapp' ? null : checkoutDeliveryFee(),
       delivery_address: form.delivery_address || null,
       note_to_seller: form.note_to_seller || null,
       items: Object.keys(cart).map(function (k) {
@@ -654,10 +711,11 @@
     };
 
     var btn = document.getElementById('submit-btn');
-    if (btn) { btn.disabled = true; btn.textContent = 'Uploading receipt\u2026'; }
+    if (btn) { btn.disabled = true; btn.textContent = needsReceipt ? 'Uploading receipt\u2026' : 'Sending order\u2026'; }
 
     // Try presigned direct upload first; fall back to multipart.
     var receiptKey = null;
+    if (needsReceipt) {
     try {
       var urlResp = await fetch('/api/public/' + encodeURIComponent(slug) + '/receipt-url', {
         method: 'POST',
@@ -674,12 +732,13 @@
         if (putResp.ok) receiptKey = urlData.key;
       }
     } catch (e) { /* fall through to multipart */ }
+    }
 
     if (receiptKey) payload.receipt_key = receiptKey;
 
     var fd = new FormData();
     fd.append('data', JSON.stringify(payload));
-    if (!receiptKey) fd.append('receipt', receiptFile);
+    if (needsReceipt && !receiptKey) fd.append('receipt', receiptFile);
 
     if (btn) btn.textContent = 'Sending\u2026';
 
@@ -687,16 +746,18 @@
       var r = await fetch('/api/public/' + encodeURIComponent(slug) + '/orders', { method: 'POST', body: fd });
       var d = await r.json().catch(function () { return {}; });
       if (!r.ok) {
-        if (btn) { btn.disabled = false; btn.textContent = 'I\u2019ve paid \u2014 send order'; }
+        if (btn) { btn.disabled = false; btn.textContent = submitOrderLabel(); }
         var msg = typeof d.detail === 'string' ? d.detail : ((d.detail && d.detail.message) || 'Could not submit your order. Please try again.');
         alert(msg);
         return;
       }
+      window._clPickupContactUrl = d.pickup_contact_url || null;
+      window._clDeliveryContactUrl = d.delivery_contact_url || null;
       window._clTrackCode = d.tracking_code || null;
       step = 'success';
       renderSheet();
     } catch (e) {
-      if (btn) { btn.disabled = false; btn.textContent = 'I\u2019ve paid \u2014 send order'; }
+      if (btn) { btn.disabled = false; btn.textContent = submitOrderLabel(); }
       alert('Network error. Please try again.');
     }
   };

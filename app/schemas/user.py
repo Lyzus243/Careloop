@@ -32,6 +32,10 @@ class LogoutRequest(BaseModel):
     refresh_token: Optional[str] = None
 
 class UserResponse(BaseModel):
+    delivery_fee_mode: str = "whatsapp"
+    pickup_address: Optional[str] = None
+    delivery_fee: float = 0
+    delivery_whatsapp: Optional[str] = None
     bank_name: Optional[str] = None
     bank_account_number: Optional[str] = None
     bank_account_name: Optional[str] = None

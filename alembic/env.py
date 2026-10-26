@@ -57,16 +57,27 @@ def run_migrations_online() -> None:
         poolclass=pool.NullPool,
     )
 
-    with connectable.connect() as connection:
-        context.configure(
-            connection=connection,
-            target_metadata=target_metadata,
-            compare_type=True,
-            render_as_batch=connection.dialect.name == "sqlite",
-        )
-
-        with context.begin_transaction():
-            context.run_migrations()
+    try:
+        with connectable.connect() as connection:
+            # Keep the migration lock and all schema/version changes on one
+            # connection and transaction, including with transaction poolers.
+            with connection.begin():
+                if connection.dialect.name == "postgresql":
+                    connection.exec_driver_sql("SET LOCAL lock_timeout = '120s'")
+                    connection.exec_driver_sql("SELECT pg_advisory_xact_lock(726384120195)")
+                elif connection.dialect.name == "sqlite":
+                    connection.exec_driver_sql("PRAGMA busy_timeout = 120000")
+                    connection.exec_driver_sql("BEGIN IMMEDIATE")
+                context.configure(
+                    connection=connection,
+                    target_metadata=target_metadata,
+                    compare_type=True,
+                    render_as_batch=connection.dialect.name == "sqlite",
+                )
+                with context.begin_transaction():
+                    context.run_migrations()
+    finally:
+        connectable.dispose()
 
 
 if context.is_offline_mode():

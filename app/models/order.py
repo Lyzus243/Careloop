@@ -9,6 +9,11 @@ from .base import Base
 
 class Order(Base):
     __tablename__ = "orders"
+    currency: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    pickup_address: Mapped[str | None] = mapped_column(Text, nullable=True)
+    delivery_fee_mode: Mapped[str] = mapped_column(String(20), nullable=False, default="legacy", server_default="legacy")
+    delivery_fee: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
+    delivery_whatsapp: Mapped[str | None] = mapped_column(String(20), nullable=True)
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)

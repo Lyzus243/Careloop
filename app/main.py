@@ -37,6 +37,12 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc"
 )
+@app.on_event("startup")
+async def migrate_database_before_startup():
+    from app.services.startup_migrations import apply_startup_migrations
+    await apply_startup_migrations()
+
+
 @app.get("/health")
 async def health():
     return {"status": "ok"}

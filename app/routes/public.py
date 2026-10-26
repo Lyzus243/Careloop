@@ -1,5 +1,6 @@
 import json
 from decimal import Decimal
+from app.services.delivery import delivery_quote, quote_matches, delivery_contact_url, pickup_contact_url
 from fastapi import Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import Response
 from sqlalchemy import select
@@ -54,6 +55,12 @@ async def get_public_business(
         "business_name": user.business_name or user.full_name or "Business",
         "business_logo": user.business_logo,
         "business_type": user.business_type,
+        "currency": user.preferred_currency or "NGN",
+        "delivery_fee_mode": "whatsapp",
+        "delivery_fee": None,
+        "pickup_address": user.pickup_address,
+        "pickup_enquiry_url": pickup_contact_url(user.delivery_whatsapp),
+        "delivery_available": bool(user.delivery_whatsapp),
         "products": [
             {
                 "id": p.id,
@@ -113,6 +120,13 @@ async def submit_public_order(
     if delivery_type == "delivery" and not address:
         raise HTTPException(status_code=400, detail="Address is required for delivery")
 
+    fee_mode, delivery_fee = delivery_quote(user, delivery_type)
+    if delivery_type == "delivery":
+        if not user.delivery_whatsapp:
+            raise HTTPException(status_code=400, detail="Delivery is unavailable until the business sets its WhatsApp number. Please contact the business or choose pickup.")
+        if not quote_matches(fee_mode, delivery_fee, payload.get("expected_delivery_fee_mode"), payload.get("expected_delivery_fee")):
+            raise HTTPException(status_code=409, detail="Delivery is now arranged on WhatsApp. Reload checkout and submit without payment. If already paid, contact the business before paying again.")
+
     note = (payload.get("note_to_seller") or "").strip() or None
     items_in = payload.get("items") or []
     if not items_in:
@@ -166,7 +180,7 @@ async def submit_public_order(
         })
 
     # Receipt: accept either an uploaded file (multipart) or a key from a
-    # prior presigned upload. Exactly one must be provided.
+    # prior presigned upload. Required except for delivery arranged on WhatsApp.
     receipt_key = (payload.get("receipt_key") or "").strip() or None
     if receipt_key:
         # Sanity: must look like one of our keys
@@ -178,8 +192,12 @@ async def submit_public_order(
             receipt_key = save_receipt(receipt.filename or "", contents)
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e))
-    else:
+    elif fee_mode != "whatsapp":
         raise HTTPException(status_code=400, detail="Receipt is required")
+
+    amount_due = subtotal + (delivery_fee or Decimal("0.00"))
+    if amount_due > Decimal("9999999999.99"):
+        raise HTTPException(status_code=400, detail="Order total is too large")
 
     # Customer upsert
     cust_row = await db.execute(
@@ -222,7 +240,12 @@ async def submit_public_order(
         delivery_address=address,
         note_to_seller=note,
         subtotal=subtotal,
-        total=subtotal,
+        total=amount_due,
+        currency=(user.preferred_currency or "NGN").upper(),
+        delivery_fee_mode=fee_mode,
+        delivery_fee=delivery_fee,
+        delivery_whatsapp=user.delivery_whatsapp,
+        pickup_address=(user.pickup_address if delivery_type == "pickup" else None),
         status="pending",
         receipt_key=receipt_key,
         tracking_code=_trk.new_tracking_code(),
@@ -246,7 +269,7 @@ async def submit_public_order(
         user_id=user.id,
         type="order",
         title=f"New order from {name}",
-        names=f"{item_count} {unit} \u00b7 {delivery_word} \u00b7 {subtotal:.2f} {currency}",
+        names=f"{item_count} {unit} \u00b7 {delivery_word} \u00b7 {amount_due:.2f} {currency}",
     ))
 
     await db.commit()
@@ -260,14 +283,15 @@ async def submit_public_order(
             to_email=user.email,
             owner_name=user.full_name or "there",
             customer_name=name,
-            total=float(subtotal),
+            total=float(amount_due),
             currency=user.preferred_currency or "NGN",
-            items=[{"name": d["product_name_snapshot"], "unit": d["unit_label_snapshot"], "qty": d["quantity"], "unit_price": float(d["unit_price_snapshot"]), "line_total": float(d["line_total"])} for d in order_items_data],
+            items=[{"name": d["product_name_snapshot"], "unit": d["unit_label_snapshot"], "qty": d["quantity"], "unit_price": float(d["unit_price_snapshot"]), "line_total": float(d["line_total"])} for d in order_items_data] + ([{"name": "Delivery fee", "qty": 1, "unit_price": float(delivery_fee), "line_total": float(delivery_fee)}] if delivery_type == "delivery" and delivery_fee is not None else []),
             customer_phone=phone,
             delivery_type=delivery_type,
-            delivery_address=address,
-            note=note,
+            delivery_address=(order.pickup_address if delivery_type == "pickup" else address),
+            note=((note + "\n" if note else "") + "Payment pending. Agree the delivery fee on WhatsApp, then collect ONE payment for items plus delivery. The listed amount is the items subtotal, not the final payable total." if fee_mode == "whatsapp" else note),
             tracking_code=_track_code,
+            delivery_payment_pending=(fee_mode == "whatsapp"),
             order_id=order.id
         ))
     except Exception as e:
@@ -277,6 +301,8 @@ async def submit_public_order(
         "success": True,
         "order_id": order.id,
         "tracking_code": _track_code,
+        "delivery_contact_url": delivery_contact_url(order.delivery_whatsapp, order.id, _track_code, name, address) if fee_mode == "whatsapp" else None,
+        "pickup_contact_url": pickup_contact_url(order.delivery_whatsapp, order.id, _track_code, name, order.pickup_address) if delivery_type == "pickup" else None,
     }
 
 

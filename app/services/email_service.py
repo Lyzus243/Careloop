@@ -545,7 +545,7 @@ class EmailService:
         )
         return self._send(to_email, f"Your {plan_name} plan renews in {days_left} {plural}", html)
 
-    def send_new_order_email(self, to_email: str, owner_name: str, customer_name: str, total: float, currency: str, base_url: str = "https://mycareloop.com.ng", items=None, customer_phone: str = None, delivery_type: str = None, delivery_address: str = None, note: str = None, tracking_code: str = None, order_id=None) -> bool:
+    def send_new_order_email(self, to_email: str, owner_name: str, customer_name: str, total: float, currency: str, base_url: str = "https://mycareloop.com.ng", items=None, customer_phone: str = None, delivery_type: str = None, delivery_address: str = None, note: str = None, tracking_code: str = None, order_id=None, delivery_payment_pending: bool = False) -> bool:
         import html as _h
 
         def esc(v):
@@ -576,7 +576,7 @@ class EmailService:
         if dt == "delivery":
             info.append(("Delivery", "Delivery to " + esc(delivery_address)))
         elif dt == "pickup":
-            info.append(("Delivery", "Pickup"))
+            info.append(("Delivery", "Pickup" + (" at " + esc(delivery_address) if delivery_address else "")))
         if note:
             info.append(("Note", esc(note).replace("\n", "<br>")))
         if tracking_code:
@@ -591,16 +591,17 @@ class EmailService:
         safe_customer = esc(customer_name)
         safe_owner = esc(owner_name)
         total_str = money(total)
+        total_label = "Items subtotal (delivery fee pending)" if delivery_payment_pending else "Total"
         dash_url = base_url + "/dashboard"
         items_block = ""
         if rows:
             items_block = (
                 '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 6px;">' + rows +
-                '<tr><td colspan="2" style="padding:12px 0 0;font-size:14px;font-weight:700;color:#111111;">Total</td>'
+                '<tr><td colspan="2" style="padding:12px 0 0;font-size:14px;font-weight:700;color:#111111;">' + total_label + '</td>'
                 '<td style="padding:12px 0 0;font-size:16px;font-weight:700;color:#111111;text-align:right;white-space:nowrap;">' + total_str + '</td></tr></table>'
             )
         else:
-            items_block = '<p style="font-size:15px;color:#111111;margin:0 0 6px;"><b>Total: ' + total_str + '</b></p>'
+            items_block = '<p style="font-size:15px;color:#111111;margin:0 0 6px;"><b>' + total_label + ': ' + total_str + '</b></p>'
 
         html = f"""
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:8px;overflow:hidden;border:1px solid #e5e7eb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
@@ -611,7 +612,7 @@ class EmailService:
             <td style="padding:40px 36px 8px;">
               <div style="font-size:13px;font-weight:600;color:#4F46E5;letter-spacing:0.6px;text-transform:uppercase;margin-bottom:14px;">{label}</div>
               <div style="font-size:22px;font-weight:700;color:#111111;line-height:1.3;margin-bottom:20px;letter-spacing:-0.4px;">You have a new order from {safe_customer}!</div>
-              <p style="font-size:15px;color:#4b5563;line-height:1.7;margin:0 0 20px;">Hi {safe_owner}, here are the details. Open your dashboard to view the receipt, confirm payment and update the customer.</p>
+              <p style="font-size:15px;color:#4b5563;line-height:1.7;margin:0 0 20px;">Hi {safe_owner}, here are the details. Open your dashboard to review the order, confirm payment when received and update the customer.</p>
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;">{info_html}</table>
               {items_block}
               <table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:24px;">

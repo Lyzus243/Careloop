@@ -41,3 +41,5 @@ receipts/
 *.local-backup
 logo_test.png
 test_products_import*.xlsx
+careloop_*_patch.py
+careloop-*-backup-*/

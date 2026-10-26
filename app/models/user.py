@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, Text
+from sqlalchemy import Numeric, Column, Integer, String, DateTime, Boolean, Text
 from sqlalchemy.sql import func
 from .base import Base
 
@@ -60,6 +60,11 @@ class User(Base):
     ai_message_inactive_personalize = Column(Boolean, default=True, nullable=False)
     ai_message_inactive_rotation_index = Column(Integer, default=0, nullable=False)
     auto_inactive_days = Column(Integer, nullable=True)
+
+    delivery_fee_mode = Column(String(20), nullable=False, default="whatsapp", server_default="whatsapp")
+    delivery_fee = Column(Numeric(12, 2), nullable=False, default=0, server_default="0")
+    delivery_whatsapp = Column(String(20), nullable=True)
+    pickup_address = Column(Text, nullable=True)
 
     # Order link (Phase 1)
     slug = Column(String(80), unique=True, index=True, nullable=True)

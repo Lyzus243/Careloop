@@ -277,6 +277,23 @@ async def update_order_settings(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
+    from app.services.delivery import delivery_settings
+    try:
+        mode, fee, number = delivery_settings(user, data)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    user.delivery_fee_mode = mode
+    user.delivery_fee = fee
+    user.delivery_whatsapp = number
+    if "pickup_address" in data:
+        pickup_address = data["pickup_address"]
+        if pickup_address is not None and not isinstance(pickup_address, str):
+            raise HTTPException(status_code=400, detail="Pickup address must be text")
+        pickup_address = (pickup_address or "").strip()
+        if len(pickup_address) > 2000:
+            raise HTTPException(status_code=400, detail="Pickup address must be at most 2000 characters")
+        user.pickup_address = pickup_address or None
+
     if "bank_name" in data:
         user.bank_name = (data["bank_name"] or "").strip() or None
     if "bank_account_number" in data:
@@ -299,6 +316,10 @@ async def update_order_settings(
         "bank_account_number": user.bank_account_number,
         "bank_account_name": user.bank_account_name,
         "business_type": user.business_type,
+        "delivery_fee_mode": user.delivery_fee_mode,
+        "delivery_fee": float(user.delivery_fee),
+        "delivery_whatsapp": user.delivery_whatsapp,
+        "pickup_address": user.pickup_address,
         "slug": slug,
     }
 

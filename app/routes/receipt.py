@@ -68,6 +68,7 @@ async def list_orders(
                 "customer_phone": o.customer_phone,
                 "status": o.status,
                 "total": float(o.total),
+                "currency": o.currency,
                 "delivery_type": o.delivery_type,
                 "created_at": o.created_at.isoformat() if o.created_at else None,
                 "item_count": counts.get(o.id, 0),
@@ -122,7 +123,11 @@ async def get_order_detail(
         "status": order.status,
         "delivery_type": order.delivery_type,
         "delivery_address": order.delivery_address,
+        "pickup_address": order.pickup_address,
         "note_to_seller": order.note_to_seller,
+        "delivery_fee_mode": order.delivery_fee_mode,
+        "delivery_fee": float(order.delivery_fee) if order.delivery_fee is not None else None,
+        "currency": order.currency,
         "subtotal": float(order.subtotal),
         "total": float(order.total),
         "has_receipt": bool(order.receipt_key),
@@ -177,6 +182,9 @@ async def update_order_status(
     db: AsyncSession = Depends(get_db),
 ):
     new_status = (data.get("status") or "").strip()
+    if new_status == "paid":
+        from app.services.order_sales import confirm_order_payment
+        return await confirm_order_payment(db, user_id, order_id, data)
     if new_status not in ("pending", "paid", "on_the_way", "done"):
         raise HTTPException(status_code=400, detail="Invalid status")
 

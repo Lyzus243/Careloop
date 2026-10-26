@@ -12,6 +12,7 @@ class SaleCreate(BaseModel):
 class SaleResponse(BaseModel):
     model_config = {"from_attributes": True}
 
+    order_id: Optional[int] = None
     id: int
     user_id: int
     customer_id: int

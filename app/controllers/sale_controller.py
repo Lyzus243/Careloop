@@ -59,10 +59,10 @@ class SaleController:
                 preferred_currency
             )
 
-            sale.amount = converted_amount
-            sale.currency = preferred_currency
-
-            converted_sales.append(sale)
+            # Convert the response only; never dirty the stored payment amount.
+            converted_sales.append(SaleResponse.model_validate(sale).model_copy(update={
+                "amount": converted_amount, "currency": preferred_currency,
+            }))
 
         total = await db.execute(
             select(func.count()).where(Sale.user_id == user_id)
