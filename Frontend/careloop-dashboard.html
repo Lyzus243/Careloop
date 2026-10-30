@@ -6189,7 +6189,6 @@
     <div class="panel-field" style="flex-direction:column;align-items:flex-start;gap:6px;"><span class="panel-field-label">Email</span><input type="email" id="panel-email" value="" placeholder="customer@example.com" style="border:1.5px solid var(--border);border-radius:var(--radius);padding:8px 12px;font-size:.875rem;color:var(--text);background:var(--bg);width:100%;margin-top:6px;"></div>
     <button class="btn-save-cust" id="dob-save-btn">Save Changes</button>
     <button class="btn-save-cust" onclick="closePanel()">Save Customer</button>
-    <button class="btn-save-cust" onclick="deleteCustomerFromPanel(${c.id})" style="background:#FEF2F2;color:#B91C1C;border:1px solid #FCA5A5;margin-top:8px;">Delete Customer</button>
   `;
       document.getElementById('panel-dob').value = c.date_of_birth ? c.date_of_birth.split('T')[0] : '';
       document.getElementById('panel-email').value = c.email || '';
