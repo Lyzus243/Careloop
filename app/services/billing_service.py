@@ -17,7 +17,7 @@ import calendar
 import json
 import logging
 import math
-from datetime import datetime, timedelta, timezone, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import HTTPException, status
@@ -30,6 +30,7 @@ from app.models.user import User
 from app.plans import (
     PLANS, FREE_PLAN, PAYMENT_GRACE_DAYS, LAUNCH_OFFER_ENDS,
     plan_rank, paystack_plan_code, plan_for_paystack_code, is_purchasable, launch_offer_active,
+    subscriptions_enabled,
 )
 from app.services.paystack_service import paystack_service, PaystackError
 from app.services.email_service import email_service
@@ -90,6 +91,8 @@ async def current_plan(db: AsyncSession, user_id: int) -> str:
 
 async def remaining_customer_slots(db: AsyncSession, user_id: int) -> Optional[int]:
     """How many more customers the user can add, or None when unlimited."""
+    if not subscriptions_enabled():
+        return None
     limit = PLANS[await current_plan(db, user_id)]["customer_limit"]
     if limit is None:
         return None
@@ -119,12 +122,14 @@ async def billing_status(db: AsyncSession, user_id: int) -> dict:
     grace_ends_at = None
     if sub and sub.status == "past_due" and sub.payment_failed_at:
         grace_ends_at = sub.payment_failed_at + timedelta(days=PAYMENT_GRACE_DAYS)
+    enabled = subscriptions_enabled()
     return {
+        "subscriptions_enabled": enabled,
         "plan": plan,
         "plan_name": PLANS[plan]["name"],
         "status": sub.status if sub else "active",
         "customer_count": await count_customers(db, user_id),
-        "customer_limit": PLANS[plan]["customer_limit"],
+        "customer_limit": PLANS[plan]["customer_limit"] if enabled else None,
         "bulk_messaging": PLANS[plan]["bulk_messaging"],
         "current_period_end": sub.current_period_end.isoformat() + "Z" if sub and sub.current_period_end and plan != FREE_PLAN else None,
         "pending_plan": sub.pending_plan if sub else None,
@@ -190,6 +195,8 @@ async def change_plan(
 ) -> dict:
     if target not in PLANS:
         raise HTTPException(status_code=400, detail="Unknown plan.")
+    if target != FREE_PLAN and not subscriptions_enabled():
+        raise HTTPException(status_code=503, detail="Paid plans are paused. Careloop is free to use for now.")
     if target != FREE_PLAN and not paystack_service.configured:
         raise HTTPException(status_code=503, detail="Payments are not set up yet.")
     if target == "automation" and not meta_fees_acknowledged:
@@ -332,9 +339,10 @@ async def cancel_for_deleted_account(db: AsyncSession, user_id: int) -> None:
 
 # ─── State changes ───
 
-async def _end_paid_plan(db: AsyncSession, sub: Subscription) -> None:
-    """Drop to Free limits. Customers are kept; the user just can't add more while over 10."""
-    to_disable = [(sub.paystack_subscription_code, sub.paystack_email_token), _clear_pending(sub)]
+def _reset_to_free(sub: Subscription) -> list[tuple]:
+    """Put the row on the Free plan and return the (code, token) pairs of the
+    Paystack subscriptions it was using, for the caller to disable."""
+    old = [(sub.paystack_subscription_code, sub.paystack_email_token), _clear_pending(sub)]
     sub.plan = FREE_PLAN
     sub.status = "active"
     sub.current_period_end = None
@@ -342,9 +350,57 @@ async def _end_paid_plan(db: AsyncSession, sub: Subscription) -> None:
     sub.last_payment_reminder_at = None
     sub.paystack_subscription_code = None
     sub.paystack_email_token = None
+    return old
+
+
+async def _end_paid_plan(db: AsyncSession, sub: Subscription) -> None:
+    """Drop to Free limits. Customers are kept; the user just can't add more while over 10."""
+    to_disable = _reset_to_free(sub)
     await db.commit()
     for code, token in to_disable:
         await _disable_quietly(code, token)
+
+
+# ─── Cancelling everyone while subscriptions are switched off ───
+
+# Paystack statuses for a subscription that won't charge again.
+_STOPPED_STATUSES = {"non-renewing", "cancelled", "complete", "completed"}
+
+
+async def paid_subscriptions(db: AsyncSession) -> list[Subscription]:
+    """Rows that are on a paid plan or still hold a Paystack subscription."""
+    result = await db.execute(select(Subscription).where(or_(
+        Subscription.plan != FREE_PLAN,
+        Subscription.paystack_subscription_code.isnot(None),
+        Subscription.pending_subscription_code.isnot(None),
+    )).order_by(Subscription.id))
+    return list(result.scalars().all())
+
+
+async def cancel_to_free(db: AsyncSession, sub: Subscription) -> list[str]:
+    """Stop the user's Paystack subscriptions (current and scheduled) and move them
+    to Free, without emailing them. Returns Paystack's errors. The row is only reset
+    when there are none, so a subscription that may still charge is never forgotten
+    and running again retries it."""
+    errors = []
+    for code, token in ((sub.paystack_subscription_code, sub.paystack_email_token),
+                        (sub.pending_subscription_code, sub.pending_email_token)):
+        if not code:
+            continue
+        try:
+            current = await paystack_service.fetch_subscription(code)
+            if current.get("status") not in _STOPPED_STATUSES:
+                await paystack_service.disable_subscription(code, current.get("email_token") or token)
+        except PaystackError as e:
+            errors.append(f"{code}: {e}")
+    if errors:
+        return errors
+    # Pick up anything a webhook changed while Paystack was being called, then reset.
+    # Webhooks arriving after this commit no longer match the cleared codes.
+    await db.refresh(sub)
+    _reset_to_free(sub)
+    await db.commit()
+    return []
 
 
 def _promote_pending(sub: Subscription) -> None:
@@ -578,7 +634,9 @@ async def _on_expiring_cards(db: AsyncSession, data, _event: str) -> None:
 
 async def process_subscriptions(db: AsyncSession) -> None:
     """End lapsed plans and send failed-payment reminders. Runs every hour."""
-    now = datetime.now(timezone.utc)
+    if not subscriptions_enabled():
+        return
+    now = utcnow()  # naive UTC, like every time stored on Subscription
     grace = timedelta(days=PAYMENT_GRACE_DAYS)
     result = await db.execute(select(Subscription).where(or_(
         Subscription.plan != FREE_PLAN, Subscription.pending_plan.isnot(None)
@@ -613,11 +671,13 @@ async def process_subscriptions(db: AsyncSession) -> None:
 async def send_due_renewal_reminders(db: AsyncSession) -> dict:
     """Once per day, email owners whose paid plan renews in 3 days or 1 day.
     Idempotent within 20 hours."""
+    if not subscriptions_enabled():
+        return {"sent": 0, "checked": 0}
     from app.models.user import User
     from app.models.notification import Notification
     from app.services.email_service import email_service
 
-    now = datetime.now(timezone.utc)
+    now = utcnow()  # naive UTC, like every time stored on Subscription
     result = await db.execute(
         select(Subscription).where(
             Subscription.status == "active",

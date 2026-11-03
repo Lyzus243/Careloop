@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.customer import Customer
 from app.models.order import Order
-from app.plans import PLANS
+from app.plans import PLANS, subscriptions_enabled
 from app.services.billing_service import current_plan
 
 
@@ -24,6 +24,8 @@ async def get_over_limit_customer_ids(db: AsyncSession, user_id: int, limit: int
 
 async def get_visibility(db: AsyncSession, user_id: int):
     """Returns (hidden_customer_ids, limit, over_limit)."""
+    if not subscriptions_enabled():
+        return set(), None, False
     plan = await current_plan(db, user_id)
     limit = PLANS[plan]["customer_limit"]
     hidden_ids = await get_over_limit_customer_ids(db, user_id, limit)

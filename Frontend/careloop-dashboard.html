@@ -2677,6 +2677,8 @@
     /* ── PLAN & BILLING ── */
     .billing-banner { display: none; align-items: center; gap: 12px; flex-wrap: wrap; background: #FEF3C7; color: #92400E; border: 1px solid #FCD34D; border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; font-size: 14px; line-height: 1.5; }
     .billing-banner.show { display: flex; }
+    /* Billing UI only shows while the server has subscriptions switched on. */
+    body:not(.billing-on) .billing-only { display: none !important; }
     .billing-banner span { flex: 1; min-width: 200px; }
     .plan-chip { display: block; width: 100%; margin-bottom: 10px; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg2); color: var(--text2); font-size: 12.5px; font-weight: 500; font-family: inherit; text-align: left; cursor: pointer; }
     .plan-chip:hover { color: var(--blue); border-color: var(--blue); }
@@ -3014,7 +3016,7 @@
             </svg>
             Account Settings
           </button>
-          <button onclick="showPage('billing');closeHeaderMenu();"
+          <button class="billing-only" onclick="showPage('billing');closeHeaderMenu();"
             style="width:100%;display:flex;align-items:center;gap:10px;padding:12px 16px;border:none;background:none;color:var(--text);font-size:14px;font-family:inherit;cursor:pointer;text-align:left;border-top:1px solid var(--border);">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
               <rect x="2" y="5" width="20" height="14" rx="2" />
@@ -3085,7 +3087,7 @@
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
         Account Settings
       </button>
-      <button class="plan-chip" id="sidebar-plan-chip" style="display:none;" onclick="showPage('billing')"></button>
+      <button class="plan-chip billing-only" id="sidebar-plan-chip" style="display:none;" onclick="showPage('billing')"></button>
       <div class="sidebar-user">
         <button class="avatar-btn" id="sidebar-avatar" onclick="changeAvatar()"><img id="sidebar-avatar-img"
             alt=""><span id="sidebar-avatar-initials"></span></button>
@@ -3110,7 +3112,7 @@
   <!-- MAIN -->
   <main class="main">
 
-    <div class="billing-banner" id="billing-banner">
+    <div class="billing-banner billing-only" id="billing-banner">
       <span id="billing-banner-text"></span>
       <button class="btn-primary" onclick="showPage('billing')">Pay now</button>
     </div>
@@ -3341,7 +3343,7 @@
         </div>
       </div>
 
-      <div id="orders-hidden-banner" style="display:none;margin-bottom:16px;padding:14px 18px;border-radius:12px;background:linear-gradient(135deg,rgba(79,70,229,0.08),rgba(99,102,241,0.05));border:1px solid rgba(79,70,229,0.25);">
+      <div id="orders-hidden-banner" class="billing-only" style="display:none;margin-bottom:16px;padding:14px 18px;border-radius:12px;background:linear-gradient(135deg,rgba(79,70,229,0.08),rgba(99,102,241,0.05));border:1px solid rgba(79,70,229,0.25);">
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
           <div style="flex:1;min-width:200px;">
             <div id="orders-hidden-title" style="font-weight:700;font-size:.92rem;color:var(--text);">You have orders waiting.</div>
@@ -4562,6 +4564,7 @@
       if (!_orderLinkEnabled && (page === 'products' || page === 'orders')) {
         page = 'dashboard';
       }
+      if (page === 'billing' && billing && !billingOn()) page = 'dashboard';
       if (page === 'add-customer' && atCustomerLimit()) { showLimitReached(); return; }
       document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
       document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -8191,7 +8194,9 @@
     function fmtOfferDate(ymd) { const [y, m, d] = ymd.split('-').map(Number); return new Date(y, m - 1, d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); }
     function billingPlan(key) { return billing.plans.find(p => p.key === key); }
     function billingRank(key) { return billing.plans.findIndex(p => p.key === key); }
-    function atCustomerLimit() { return !!billing && billing.customer_limit != null && billing.customer_count >= billing.customer_limit; }
+    // Older servers don't send subscriptions_enabled; treat that as on.
+    function billingOn() { return !!billing && billing.subscriptions_enabled !== false; }
+    function atCustomerLimit() { return billingOn() && billing.customer_limit != null && billing.customer_count >= billing.customer_limit; }
 
     function showLimitReached(message) {
       document.getElementById('limit-modal-text').textContent = message ||
@@ -8201,6 +8206,7 @@
 
     // The sidebar chip and the failed-payment banner show on every page.
     function renderBillingChrome() {
+      document.body.classList.toggle('billing-on', billingOn());
       if (!billing) return;
       const chip = document.getElementById('sidebar-plan-chip');
       chip.style.display = '';

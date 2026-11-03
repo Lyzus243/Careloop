@@ -53,6 +53,15 @@ PLANS = {
 
 FREE_PLAN = "free"
 
+# Paid plans are switched off for now: everyone uses Careloop free with no
+# customer limits, nobody can buy a plan, billing emails stop, and the dashboard
+# hides Plan & Billing. Set to True to bring subscriptions back.
+SUBSCRIPTIONS_ENABLED = False
+
+
+def subscriptions_enabled() -> bool:
+    return SUBSCRIPTIONS_ENABLED
+
 # Last day (Lagos time) of the launch discount. Until then each plan's
 # original_price is shown crossed out with a "Launch discount" label; after it,
 # both disappear on their own. Paystack keeps charging the plan's amount, so
