@@ -20,9 +20,11 @@ from app.models.base import Base
 from app.models.customer import Customer
 from app.models.subscription import Subscription
 from app.models.user import User
+from app import plans
 from app.plans import PLANS
 from app.services import billing_service
 from app.services.customer_import_service import import_customer_rows
+from app.services.paystack_service import PaystackError
 
 CALLBACK = "https://example.test/dashboard?page=billing&checkout=return"
 
@@ -33,6 +35,8 @@ class FakePaystack:
     def __init__(self):
         self.calls = []
         self._next = 0
+        self.statuses = {}  # subscription code -> Paystack status; "active" if missing
+        self.failing = set()  # codes whose disable call errors
 
     def _code(self, prefix):
         self._next += 1
@@ -46,7 +50,13 @@ class FakePaystack:
         self.calls.append(("create_subscription", kwargs))
         return {"subscription_code": self._code("SUB_sched"), "email_token": self._code("tok")}
 
+    async def fetch_subscription(self, code):
+        self.calls.append(("fetch", code))
+        return {"status": self.statuses.get(code, "active"), "email_token": f"tok_{code}"}
+
     async def disable_subscription(self, code, token=None):
+        if code in self.failing:
+            raise PaystackError("Paystack is down")
         self.calls.append(("disable", code))
 
     async def enable_subscription(self, code, token=None):
@@ -61,6 +71,7 @@ class FakePaystack:
 
 @pytest.fixture
 def env(monkeypatch):
+    monkeypatch.setattr(plans, "SUBSCRIPTIONS_ENABLED", True)
     for plan in ("basic", "standard", "premium", "automation"):
         monkeypatch.setenv(f"PAYSTACK_PLAN_{plan.upper()}", f"PLN_{plan}")
     monkeypatch.setitem(PLANS["automation"], "price", 15000)
@@ -175,6 +186,107 @@ def test_import_stops_at_the_limit_and_reports_skipped_rows(db, env):
         assert len(result["failed"]) == 3
         assert result["limit_reached"] is True
         assert await billing_service.count_customers(db, user.id) == 10
+    run(go())
+
+
+# ─── Subscriptions switched off ───
+
+@pytest.fixture
+def free_mode(monkeypatch):
+    monkeypatch.setattr(plans, "SUBSCRIPTIONS_ENABLED", False)
+    paystack = FakePaystack()
+    monkeypatch.setattr(billing_service, "paystack_service", paystack)
+    return paystack
+
+
+def test_switched_off_there_is_no_customer_limit(db, free_mode):
+    async def go():
+        user = await make_user(db, customers=10)
+        await billing_service.ensure_can_add_customer(db, user.id)  # 11th is fine
+        assert await billing_service.remaining_customer_slots(db, user.id) is None
+        rows = [{"name": f"New {i}", "phone_number": f"+2348111111{i:03d}"} for i in range(5)]
+        result = await import_customer_rows(
+            db, user.id, rows, max_new=await billing_service.remaining_customer_slots(db, user.id)
+        )
+        assert result["created"] == 5
+        assert not result.get("limit_reached")
+    run(go())
+
+
+def test_switched_off_no_orders_are_hidden(db, free_mode):
+    from app.services.order_visibility import get_visibility
+
+    async def go():
+        user = await make_user(db, customers=15)
+        assert await get_visibility(db, user.id) == (set(), None, False)
+    run(go())
+
+
+def test_switched_off_status_reports_it_and_plans_cannot_be_bought(db, free_mode):
+    async def go():
+        user = await make_user(db, customers=12)
+        status = await billing_service.billing_status(db, user.id)
+        assert status["subscriptions_enabled"] is False
+        assert status["customer_limit"] is None
+        with pytest.raises(HTTPException) as e:
+            await billing_service.change_plan(db, user, "basic", CALLBACK)
+        assert e.value.status_code == 503
+        assert free_mode.calls == []
+    run(go())
+
+
+def test_switched_off_background_jobs_do_nothing(db, free_mode):
+    async def go():
+        user = await make_user(db)
+        sub = await subscribe(db, user, "basic", "SUB_basic", period_end=datetime.utcnow() - timedelta(days=10))
+        await billing_service.process_subscriptions(db)
+        await db.refresh(sub)
+        assert sub.plan == "basic"
+        assert await billing_service.send_due_renewal_reminders(db) == {"sent": 0, "checked": 0}
+    run(go())
+
+
+def test_switched_off_paid_users_are_cancelled_and_moved_to_free(db, free_mode):
+    async def go():
+        paid = await make_user(db, customers=40)
+        sub = await subscribe(db, paid, "standard", "SUB_std")
+        sub.pending_plan, sub.pending_subscription_code = "basic", "SUB_basic_sched"
+        await db.commit()
+        await make_user(db, email="free@example.com")  # no paid plan: left alone
+
+        assert [s.user_id for s in await billing_service.paid_subscriptions(db)] == [paid.id]
+        assert await billing_service.cancel_to_free(db, sub) == []
+        assert free_mode.disabled() == ["SUB_std", "SUB_basic_sched"]
+        await db.refresh(sub)
+        assert (sub.plan, sub.status, sub.pending_plan) == ("free", "active", None)
+        assert sub.paystack_subscription_code is None and sub.pending_subscription_code is None
+        assert await billing_service.count_customers(db, paid.id) == 40  # data kept
+        assert await billing_service.paid_subscriptions(db) == []
+    run(go())
+
+
+def test_switched_off_already_stopped_subscriptions_are_not_disabled_again(db, free_mode):
+    async def go():
+        user = await make_user(db)
+        sub = await subscribe(db, user, "basic", "SUB_basic")
+        free_mode.statuses["SUB_basic"] = "non-renewing"
+        assert await billing_service.cancel_to_free(db, sub) == []
+        assert free_mode.disabled() == []
+        await db.refresh(sub)
+        assert sub.plan == "free"
+    run(go())
+
+
+def test_switched_off_failed_cancellation_leaves_the_user_to_retry(db, free_mode):
+    async def go():
+        user = await make_user(db)
+        sub = await subscribe(db, user, "premium", "SUB_prem")
+        free_mode.failing.add("SUB_prem")
+        errors = await billing_service.cancel_to_free(db, sub)
+        assert errors == ["SUB_prem: Paystack is down"]
+        await db.refresh(sub)
+        assert (sub.plan, sub.paystack_subscription_code) == ("premium", "SUB_prem")
+        assert len(await billing_service.paid_subscriptions(db)) == 1
     run(go())
 
 
@@ -354,6 +466,21 @@ def test_paying_during_grace_restores_the_plan(db, env):
         await billing_service.handle_webhook(db, charge_success(user, "basic", await checkout_metadata(paystack)))
         sub = await billing_service.get_subscription(db, user.id)
         assert (sub.plan, sub.status, sub.payment_failed_at) == ("basic", "active", None)
+    run(go())
+
+
+def test_renewal_reminder_goes_out_3_days_before(db, env, monkeypatch):
+    sent = []
+    monkeypatch.setattr(billing_service.email_service, "send_renewal_reminder",
+                        lambda **k: sent.append(k) or True)
+
+    async def go():
+        user = await make_user(db)
+        await subscribe(db, user, "basic", "SUB_basic", period_end=datetime.utcnow() + timedelta(days=3, hours=1))
+        assert await billing_service.send_due_renewal_reminders(db) == {"sent": 1, "checked": 1}
+        assert sent[0]["days_left"] == 3
+        # Not sent twice the same day.
+        assert await billing_service.send_due_renewal_reminders(db) == {"sent": 0, "checked": 1}
     run(go())
 
 
