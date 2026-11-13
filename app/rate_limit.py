@@ -36,13 +36,17 @@ class RateLimitedRouter(APIRouter):
     unlimited.
     """
 
-    def __init__(self, limit: str = "30/minute", **kwargs: Any):
+    def __init__(self, limit: str = "30/minute", key_func: Any = None, **kwargs: Any):
         super().__init__(**kwargs)
         self.default_limit = limit
+        self.key_func = key_func
 
     def add_api_route(self, path: str, endpoint: Callable, **kwargs: Any) -> None:
         limit_value = getattr(endpoint, RATE_LIMIT_ATTR, self.default_limit)
-        endpoint = limiter.limit(limit_value)(endpoint)
+        if self.key_func is not None:
+            endpoint = limiter.limit(limit_value, key_func=self.key_func)(endpoint)
+        else:
+            endpoint = limiter.limit(limit_value)(endpoint)
         return super().add_api_route(path, endpoint, **kwargs)
 
 

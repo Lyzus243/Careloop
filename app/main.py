@@ -286,6 +286,8 @@ async def serve_signup_success_page():
 app.include_router(user.router, prefix="/api")
 app.include_router(customer.router)
 app.include_router(product.router)
+from app.routes import mobile as _mobile_routes
+app.include_router(_mobile_routes.router)
 app.include_router(message.router)
 app.include_router(notification.router)
 app.include_router(sale.router)
